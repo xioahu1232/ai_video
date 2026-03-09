@@ -17,7 +17,7 @@ const TOUR_STEPS: Array<{
     id: 'welcome',
     title: '欢迎使用长风跨境Prompt智能体',
     content: '这是一个AI视频提示词生成器，帮助您快速生成高质量的视频制作提示词。让我们开始了解如何使用它吧！',
-    target: null, // 居中显示
+    target: null,
     position: 'center',
   },
   {
@@ -75,21 +75,37 @@ interface TourGuideProps {
   onComplete?: () => void;
 }
 
+// 检测是否为移动端
+const isMobile = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  return window.innerWidth < 768;
+};
+
 export function TourGuide({ onComplete }: TourGuideProps) {
   const [isActive, setIsActive] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
+  const [isMobileDevice, setIsMobileDevice] = useState(false);
 
-  // 检查是否需要显示引导
+  // 检测是否需要显示引导
   useEffect(() => {
     const hasCompletedTour = localStorage.getItem('tour_completed');
     if (!hasCompletedTour) {
-      // 延迟显示，等待页面加载完成
       const timer = setTimeout(() => {
         setIsActive(true);
+        setIsMobileDevice(isMobile());
       }, 1500);
       return () => clearTimeout(timer);
     }
+  }, []);
+
+  // 监听屏幕尺寸变化
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobileDevice(isMobile());
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   // 更新目标元素位置
@@ -128,11 +144,16 @@ export function TourGuide({ onComplete }: TourGuideProps) {
       if (step.target) {
         const element = document.querySelector(step.target);
         if (element) {
-          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          // 移动端滚动时留出底部空间给提示框
+          if (isMobileDevice) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          } else {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
         }
       }
     }
-  }, [currentStep, isActive]);
+  }, [currentStep, isActive, isMobileDevice]);
 
   const handleNext = () => {
     if (currentStep < TOUR_STEPS.length - 1) {
@@ -158,16 +179,10 @@ export function TourGuide({ onComplete }: TourGuideProps) {
     onComplete?.();
   };
 
-  // 重新触发引导
-  const startTour = () => {
-    setCurrentStep(0);
-    setIsActive(true);
-  };
-
   const step = TOUR_STEPS[currentStep];
 
-  // 计算提示框位置
-  const getTooltipStyle = (): React.CSSProperties => {
+  // 计算提示框位置（桌面端）
+  const getTooltipStyleDesktop = (): React.CSSProperties => {
     if (step.position === 'center') {
       return {
         top: '50%',
@@ -191,27 +206,54 @@ export function TourGuide({ onComplete }: TourGuideProps) {
     switch (step.position) {
       case 'right':
         return {
-          top: targetRect.top + targetRect.height / 2 - tooltipHeight / 2,
+          top: Math.max(16, Math.min(targetRect.top + targetRect.height / 2 - tooltipHeight / 2, window.innerHeight - tooltipHeight - 16)),
           left: targetRect.right + gap,
         };
       case 'left':
         return {
-          top: targetRect.top + targetRect.height / 2 - tooltipHeight / 2,
-          left: targetRect.left - tooltipWidth - gap,
+          top: Math.max(16, Math.min(targetRect.top + targetRect.height / 2 - tooltipHeight / 2, window.innerHeight - tooltipHeight - 16)),
+          left: Math.max(16, targetRect.left - tooltipWidth - gap),
         };
       case 'bottom':
         return {
           top: targetRect.bottom + gap,
-          left: targetRect.left + targetRect.width / 2 - tooltipWidth / 2,
+          left: Math.max(16, Math.min(targetRect.left + targetRect.width / 2 - tooltipWidth / 2, window.innerWidth - tooltipWidth - 16)),
         };
       case 'top':
         return {
-          top: targetRect.top - tooltipHeight - gap,
-          left: targetRect.left + targetRect.width / 2 - tooltipWidth / 2,
+          top: Math.max(16, targetRect.top - tooltipHeight - gap),
+          left: Math.max(16, Math.min(targetRect.left + targetRect.width / 2 - tooltipWidth / 2, window.innerWidth - tooltipWidth - 16)),
         };
       default:
         return {};
     }
+  };
+
+  // 计算提示框位置（移动端）
+  const getTooltipStyleMobile = (): React.CSSProperties => {
+    // 移动端固定在底部
+    if (step.position === 'center') {
+      return {
+        bottom: '16px',
+        left: '16px',
+        right: '16px',
+        width: 'auto',
+      };
+    }
+    return {
+      bottom: '16px',
+      left: '16px',
+      right: '16px',
+      width: 'auto',
+    };
+  };
+
+  // 计算提示框位置
+  const getTooltipStyle = (): React.CSSProperties => {
+    if (isMobileDevice) {
+      return getTooltipStyleMobile();
+    }
+    return getTooltipStyleDesktop();
   };
 
   // 计算高亮区域
@@ -247,38 +289,39 @@ export function TourGuide({ onComplete }: TourGuideProps) {
       
       {/* 提示框 */}
       <div
-        className="fixed z-[10000] w-[320px] sm:w-[360px]"
+        className={`fixed z-[10000] ${isMobileDevice ? '' : 'w-[320px] sm:w-[360px]'}`}
         style={getTooltipStyle()}
       >
         <div className="bg-white rounded-2xl shadow-2xl overflow-hidden border border-gray-100">
           {/* 头部 */}
-          <div className="bg-gradient-to-r from-[#1a3a6b] to-[#4fa3d1] px-5 py-4">
+          <div className="bg-gradient-to-r from-[#1a3a6b] to-[#4fa3d1] px-4 sm:px-5 py-3 sm:py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-white" />
-                <span className="text-white font-semibold text-sm">
+                <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                <span className="text-white font-semibold text-xs sm:text-sm">
                   步骤 {currentStep + 1}/{TOUR_STEPS.length}
                 </span>
               </div>
               <button
                 onClick={handleSkip}
-                className="text-white/80 hover:text-white transition-colors"
+                className="text-white/80 hover:text-white transition-colors p-1"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
             </div>
           </div>
           
           {/* 内容 */}
-          <div className="p-5">
-            <h3 className="text-lg font-bold text-gray-800 mb-2">{step.title}</h3>
-            <p className="text-sm text-gray-600 leading-relaxed">{step.content}</p>
+          <div className="p-4 sm:p-5">
+            <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-1.5 sm:mb-2">{step.title}</h3>
+            <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">{step.content}</p>
           </div>
           
           {/* 底部 */}
-          <div className="px-5 py-4 bg-gray-50 border-t border-gray-100">
+          <div className="px-4 sm:px-5 py-3 sm:py-4 bg-gray-50 border-t border-gray-100">
             <div className="flex items-center justify-between">
-              <div className="flex gap-1.5">
+              {/* 进度指示器 - 移动端隐藏 */}
+              <div className="hidden sm:flex gap-1.5">
                 {TOUR_STEPS.map((_, index) => (
                   <div
                     key={index}
@@ -293,22 +336,27 @@ export function TourGuide({ onComplete }: TourGuideProps) {
                 ))}
               </div>
               
-              <div className="flex items-center gap-2">
+              {/* 移动端进度显示 */}
+              <div className="sm:hidden text-xs text-gray-500">
+                {currentStep + 1} / {TOUR_STEPS.length}
+              </div>
+              
+              <div className="flex items-center gap-1.5 sm:gap-2">
                 {currentStep > 0 && (
                   <button
                     onClick={handlePrev}
-                    className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800 transition-colors"
+                    className="flex items-center gap-0.5 sm:gap-1 px-2 sm:px-3 py-1.5 text-xs sm:text-sm text-gray-600 hover:text-gray-800 transition-colors"
                   >
-                    <ChevronLeft className="w-4 h-4" />
-                    上一步
+                    <ChevronLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                    <span className="hidden sm:inline">上一步</span>
                   </button>
                 )}
                 <button
                   onClick={handleNext}
-                  className="flex items-center gap-1 px-4 py-2 text-sm font-medium text-white bg-[#4fa3d1] hover:bg-[#3d8ab8] rounded-lg transition-colors"
+                  className="flex items-center gap-0.5 sm:gap-1 px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-white bg-[#4fa3d1] hover:bg-[#3d8ab8] rounded-lg transition-colors"
                 >
                   {currentStep === TOUR_STEPS.length - 1 ? '完成' : '下一步'}
-                  {currentStep < TOUR_STEPS.length - 1 && <ChevronRight className="w-4 h-4" />}
+                  {currentStep < TOUR_STEPS.length - 1 && <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
                 </button>
               </div>
             </div>
@@ -325,11 +373,9 @@ export function TourHelpButton() {
 
   const handleStartTour = () => {
     setShowTour(false);
-    // 延迟一帧后启动，确保状态重置
     requestAnimationFrame(() => {
       setShowTour(true);
     });
-    // 清除已完成标记
     localStorage.removeItem('tour_completed');
   };
 
@@ -337,11 +383,11 @@ export function TourHelpButton() {
     <>
       <button
         onClick={handleStartTour}
-        className="fixed bottom-6 right-6 z-[9990] w-12 h-12 rounded-full bg-[#4fa3d1] hover:bg-[#3d8ab8] text-white shadow-lg hover:shadow-xl transition-all flex items-center justify-center group"
+        className="fixed bottom-20 sm:bottom-6 right-6 z-[9990] w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-[#4fa3d1] hover:bg-[#3d8ab8] text-white shadow-lg hover:shadow-xl transition-all flex items-center justify-center group"
         title="新手引导"
       >
-        <HelpCircle className="w-6 h-6" />
-        <span className="absolute right-full mr-3 px-3 py-1.5 bg-gray-800 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+        <HelpCircle className="w-5 h-5 sm:w-6 sm:h-6" />
+        <span className="absolute right-full mr-3 px-3 py-1.5 bg-gray-800 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap hidden sm:block">
           新手引导
         </span>
       </button>
