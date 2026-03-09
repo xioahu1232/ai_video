@@ -52,6 +52,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // 为新用户创建余额记录，赠送1次免费体验
+    const { error: balanceError } = await supabase
+      .from('user_balances')
+      .insert({
+        user_id: data.user.id,
+        balance: 1, // 赠送1次免费体验
+        total_used: 0,
+        total_purchased: 1, // 记录为赠送
+      });
+
+    if (balanceError) {
+      console.error('Create balance error:', balanceError);
+      // 不影响注册流程，只记录错误
+    }
+
     return NextResponse.json({
       success: true,
       user: {
@@ -59,6 +74,7 @@ export async function POST(request: NextRequest) {
         email: data.user.email,
         name: data.user.user_metadata?.name || email.split('@')[0],
       },
+      message: '注册成功，获得1次免费体验额度',
     });
   } catch (error) {
     console.error('Register error:', error);
