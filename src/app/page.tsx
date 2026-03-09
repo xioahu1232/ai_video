@@ -2,9 +2,9 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { 
-  Video, Clock, Upload, Loader2, CheckCircle2, XCircle, 
+  Video, Upload, Loader2, CheckCircle2, XCircle, 
   Copy, Check, Sparkles, ChevronDown, ChevronUp, Trash2, 
-  ImageIcon, ArrowRight, Zap
+  ImageIcon, ArrowRight, Zap, Globe
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import Image from 'next/image';
 
 // 语言选项
 const LANGUAGES = [
@@ -291,35 +292,53 @@ export default function Home() {
       <div className="fixed inset-0 bg-gradient-radial pointer-events-none" />
       
       {/* 主内容 */}
-      <div className="relative max-w-6xl mx-auto px-6 py-12 md:py-20">
+      <div className="relative max-w-6xl mx-auto px-6 py-8 md:py-12">
         {/* 头部区域 */}
-        <header className={`text-center mb-16 transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+        <header className={`text-center mb-12 transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+          {/* Logo */}
+          <div className="flex justify-center mb-6">
+            <div className="relative w-20 h-20 md:w-24 md:h-24">
+              <Image
+                src="https://code.coze.cn/api/sandbox/coze_coding/file/proxy?expire_time=-1&file_path=assets%2F%E9%95%BF%E9%A3%8E%E8%B7%A8%E5%A2%83logo%E6%8F%90%E5%8F%96.png&nonce=53b72a74-c3e7-4c4c-8632-417105b99d47&project_id=7615252896803864582&sign=a7b7df82deb47526062c47ad01bbef2b148a43f5c08de9c3127ab3a27bc61cf9"
+                alt="长风跨境"
+                fill
+                className="object-contain"
+                unoptimized
+              />
+            </div>
+          </div>
+          
           {/* 标签 */}
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 mb-8">
-            <Sparkles className="h-3.5 w-3.5 text-blue-400" />
-            <span className="text-xs font-medium tracking-wide text-white/80">AI Video Generator</span>
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/5 border border-primary/20 mb-6">
+            <Sparkles className="h-3.5 w-3.5 text-sky-500" />
+            <span className="text-xs font-medium tracking-wide text-primary">AI Video Generator</span>
           </div>
           
           {/* 标题 */}
-          <h1 className="text-4xl md:text-5xl font-semibold tracking-tight mb-4">
-            梵梦AIGC
+          <h1 className="text-3xl md:text-4xl font-semibold tracking-tight mb-3 text-gradient">
+            长风跨境
           </h1>
           <p className="text-lg text-muted-foreground max-w-md mx-auto leading-relaxed">
-            智能生成视频提示词<br className="md:hidden" />
-            <span className="hidden md:inline">，</span>让创意触手可及
+            智能生成视频提示词，助力出海营销
+          </p>
+          
+          {/* 品牌标语 */}
+          <p className="text-sm text-muted-foreground/70 mt-3 flex items-center justify-center gap-2">
+            <Globe className="h-4 w-4" />
+            <span>帮助中国商家出海</span>
           </p>
         </header>
 
         {/* 主内容区 */}
-        <div className={`grid grid-cols-1 lg:grid-cols-2 gap-8 transition-all duration-700 delay-200 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+        <div className={`grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 transition-all duration-700 delay-200 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
           
           {/* 左侧：表单区域 */}
           <div className="space-y-6">
             {/* 表单卡片 */}
-            <div className="glass rounded-3xl border border-white/10 p-8 card-hover">
-              <div className="flex items-center gap-3 mb-8">
-                <div className="w-10 h-10 rounded-2xl bg-blue-500/10 flex items-center justify-center">
-                  <Video className="h-5 w-5 text-blue-400" />
+            <div className="glass rounded-3xl border border-border p-6 md:p-8 card-hover">
+              <div className="flex items-center gap-3 mb-6 md:mb-8">
+                <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center">
+                  <Video className="h-5 w-5 text-primary" />
                 </div>
                 <div>
                   <h2 className="text-lg font-medium">生成提示词</h2>
@@ -327,7 +346,7 @@ export default function Home() {
                 </div>
               </div>
 
-              <div className="space-y-6">
+              <div className="space-y-5 md:space-y-6">
                 {/* 核心卖点 */}
                 <div className="space-y-2">
                   <Label className="text-sm font-medium">
@@ -337,7 +356,7 @@ export default function Home() {
                     placeholder="如：30天见效、无副作用、天然成分..."
                     value={coreSellingPoint}
                     onChange={(e) => setCoreSellingPoint(e.target.value)}
-                    className="h-12 bg-white/5 border-white/10 rounded-xl text-foreground placeholder:text-muted-foreground/50 input-glow transition-smooth"
+                    className="h-12 bg-secondary border-border rounded-xl text-foreground placeholder:text-muted-foreground/50 input-glow transition-smooth"
                   />
                 </div>
 
@@ -349,16 +368,16 @@ export default function Home() {
                   
                   {imagePreview ? (
                     <div className="relative group">
-                      <div className="relative w-full h-32 rounded-2xl overflow-hidden bg-white/5 border border-white/10">
+                      <div className="relative w-full h-32 rounded-2xl overflow-hidden bg-secondary border border-border">
                         <img 
                           src={imagePreview} 
                           alt="产品预览" 
                           className="w-full h-full object-cover img-zoom"
                         />
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-smooth flex items-center justify-center">
+                        <div className="absolute inset-0 bg-primary/40 opacity-0 group-hover:opacity-100 transition-smooth flex items-center justify-center">
                           <button
                             onClick={removeImage}
-                            className="px-3 py-1.5 bg-white/10 backdrop-blur-sm rounded-lg text-sm font-medium hover:bg-white/20 transition-smooth"
+                            className="px-3 py-1.5 bg-white/10 backdrop-blur-sm rounded-lg text-sm font-medium text-white hover:bg-white/20 transition-smooth"
                           >
                             更换图片
                           </button>
@@ -368,10 +387,10 @@ export default function Home() {
                   ) : (
                     <button
                       onClick={() => fileInputRef.current?.click()}
-                      className="w-full h-32 rounded-2xl border-2 border-dashed border-white/10 hover:border-white/20 bg-white/[0.02] hover:bg-white/[0.04] transition-smooth flex flex-col items-center justify-center gap-3 group"
+                      className="w-full h-32 rounded-2xl border-2 border-dashed border-border hover:border-primary/30 bg-secondary/30 hover:bg-secondary/50 transition-smooth flex flex-col items-center justify-center gap-3 group"
                     >
-                      <div className="w-12 h-12 rounded-2xl bg-white/5 group-hover:bg-white/10 transition-smooth flex items-center justify-center">
-                        <Upload className="h-5 w-5 text-muted-foreground" />
+                      <div className="w-12 h-12 rounded-2xl bg-secondary group-hover:bg-primary/10 transition-smooth flex items-center justify-center">
+                        <Upload className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-smooth" />
                       </div>
                       <span className="text-sm text-muted-foreground">点击上传产品图片</span>
                     </button>
@@ -395,7 +414,7 @@ export default function Home() {
                         type="number"
                         value={speechDuration}
                         onChange={(e) => setSpeechDuration(e.target.value)}
-                        className="h-12 bg-white/5 border-white/10 rounded-xl pr-12 input-glow transition-smooth"
+                        className="h-12 bg-secondary border-border rounded-xl pr-12 input-glow transition-smooth"
                       />
                       <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">秒</span>
                     </div>
@@ -407,7 +426,7 @@ export default function Home() {
                         type="number"
                         value={videoDuration}
                         onChange={(e) => setVideoDuration(e.target.value)}
-                        className="h-12 bg-white/5 border-white/10 rounded-xl pr-12 input-glow transition-smooth"
+                        className="h-12 bg-secondary border-border rounded-xl pr-12 input-glow transition-smooth"
                       />
                       <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">秒</span>
                     </div>
@@ -420,15 +439,15 @@ export default function Home() {
                     语言 <span className="text-red-400">*</span>
                   </Label>
                   <Select value={language} onValueChange={setLanguage}>
-                    <SelectTrigger className="h-12 bg-white/5 border-white/10 rounded-xl">
+                    <SelectTrigger className="h-12 bg-secondary border-border rounded-xl">
                       <SelectValue placeholder="选择语言" />
                     </SelectTrigger>
-                    <SelectContent className="bg-[#1c1c1e] border-white/10 rounded-xl">
+                    <SelectContent className="bg-popover border-border rounded-xl">
                       {LANGUAGES.map((lang) => (
                         <SelectItem 
                           key={lang.value} 
                           value={lang.value}
-                          className="rounded-lg focus:bg-white/10"
+                          className="rounded-lg focus:bg-secondary"
                         >
                           {lang.label}
                         </SelectItem>
@@ -441,7 +460,7 @@ export default function Home() {
                 <Button
                   onClick={handleSubmit}
                   disabled={!coreSellingPoint.trim() || !productImage || isSubmitting}
-                  className="w-full h-14 bg-white text-black hover:bg-white/90 rounded-2xl font-medium text-base transition-smooth btn-ripple disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="w-full h-14 btn-brand rounded-2xl font-medium text-base btn-ripple disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
                 >
                   {isSubmitting ? (
                     <div className="flex items-center gap-3">
@@ -462,13 +481,13 @@ export default function Home() {
           {/* 右侧：结果区域 */}
           <div className="space-y-4">
             {/* 结果卡片 */}
-            <div className="glass rounded-3xl border border-white/10 overflow-hidden">
+            <div className="glass rounded-3xl border border-border overflow-hidden">
               {/* 头部 */}
-              <div className="p-6 border-b border-white/5">
+              <div className="p-5 md:p-6 border-b border-border">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-2xl bg-purple-500/10 flex items-center justify-center">
-                      <Zap className="h-5 w-5 text-purple-400" />
+                    <div className="w-10 h-10 rounded-2xl bg-sky-500/10 flex items-center justify-center">
+                      <Zap className="h-5 w-5 text-sky-500" />
                     </div>
                     <div>
                       <h2 className="text-lg font-medium">生成结果</h2>
@@ -481,10 +500,10 @@ export default function Home() {
               </div>
 
               {/* 内容区 */}
-              <div className="p-6">
+              <div className="p-5 md:p-6">
                 {tasks.length === 0 ? (
-                  <div className="py-16 flex flex-col items-center justify-center">
-                    <div className="w-20 h-20 rounded-3xl bg-white/5 flex items-center justify-center mb-6">
+                  <div className="py-12 md:py-16 flex flex-col items-center justify-center">
+                    <div className="w-20 h-20 rounded-3xl bg-secondary flex items-center justify-center mb-6">
                       <ImageIcon className="h-8 w-8 text-muted-foreground/30" />
                     </div>
                     <p className="text-muted-foreground text-center">
@@ -492,7 +511,7 @@ export default function Home() {
                     </p>
                   </div>
                 ) : (
-                  <div className="space-y-4 max-h-[520px] overflow-y-auto pr-2 -mr-2">
+                  <div className="space-y-4 max-h-[500px] overflow-y-auto pr-1 -mr-1">
                     {tasks.map((task, index) => (
                       <div
                         key={task.id}
@@ -500,8 +519,8 @@ export default function Home() {
                           task.status === 'failed' 
                             ? 'bg-red-500/5 border border-red-500/20' 
                             : task.status === 'completed'
-                            ? 'bg-white/[0.03] border border-white/10'
-                            : 'bg-white/[0.02] border border-white/5'
+                            ? 'bg-secondary/50 border border-border'
+                            : 'bg-secondary/30 border border-border/50'
                         }`}
                         style={{
                           animationDelay: `${index * 100}ms`
@@ -515,10 +534,10 @@ export default function Home() {
                               <img 
                                 src={task.imagePreview || task.imageUrl} 
                                 alt="产品" 
-                                className="w-16 h-16 object-cover rounded-xl"
+                                className="w-14 h-14 md:w-16 md:h-16 object-cover rounded-xl"
                               />
                             ) : (
-                              <div className="w-16 h-16 rounded-xl bg-white/5 flex items-center justify-center">
+                              <div className="w-14 h-14 md:w-16 md:h-16 rounded-xl bg-secondary flex items-center justify-center">
                                 <ImageIcon className="h-6 w-6 text-muted-foreground/30" />
                               </div>
                             )}
@@ -527,8 +546,7 @@ export default function Home() {
                           {/* 任务信息 */}
                           <div className="flex-1 min-w-0">
                             {/* 状态行 */}
-                            <div className="flex items-center gap-2 mb-1.5">
-                              {/* 状态图标 */}
+                            <div className="flex items-center gap-2 mb-1">
                               {task.status === 'completed' && (
                                 <CheckCircle2 className="h-4 w-4 text-green-500" />
                               )}
@@ -536,7 +554,7 @@ export default function Home() {
                                 <XCircle className="h-4 w-4 text-red-500" />
                               )}
                               {(task.status === 'processing' || task.status === 'uploading') && (
-                                <Loader2 className="h-4 w-4 text-blue-400 animate-spin" />
+                                <Loader2 className="h-4 w-4 text-primary animate-spin" />
                               )}
                               
                               <span className="text-sm font-medium">
@@ -554,9 +572,9 @@ export default function Home() {
                               
                               {task.status === 'processing' && (
                                 <span className="flex gap-1 ml-1">
-                                  <span className="w-1 h-1 rounded-full bg-blue-400 animate-bounce" style={{animationDelay: '0ms'}} />
-                                  <span className="w-1 h-1 rounded-full bg-blue-400 animate-bounce" style={{animationDelay: '150ms'}} />
-                                  <span className="w-1 h-1 rounded-full bg-blue-400 animate-bounce" style={{animationDelay: '300ms'}} />
+                                  <span className="w-1 h-1 rounded-full bg-primary animate-bounce" style={{animationDelay: '0ms'}} />
+                                  <span className="w-1 h-1 rounded-full bg-primary animate-bounce" style={{animationDelay: '150ms'}} />
+                                  <span className="w-1 h-1 rounded-full bg-primary animate-bounce" style={{animationDelay: '300ms'}} />
                                 </span>
                               )}
                             </div>
@@ -579,7 +597,7 @@ export default function Home() {
                             <div className="flex items-center gap-1">
                               <button
                                 onClick={() => toggleExpand(task.id)}
-                                className="w-8 h-8 rounded-lg hover:bg-white/10 flex items-center justify-center transition-smooth"
+                                className="w-8 h-8 rounded-lg hover:bg-secondary flex items-center justify-center transition-smooth"
                               >
                                 {task.expanded ? (
                                   <ChevronUp className="h-4 w-4" />
@@ -589,7 +607,7 @@ export default function Home() {
                               </button>
                               <button
                                 onClick={() => deleteTask(task.id)}
-                                className="w-8 h-8 rounded-lg hover:bg-red-500/10 hover:text-red-400 flex items-center justify-center transition-smooth"
+                                className="w-8 h-8 rounded-lg hover:bg-red-500/10 hover:text-red-500 flex items-center justify-center transition-smooth"
                               >
                                 <Trash2 className="h-4 w-4" />
                               </button>
@@ -600,9 +618,9 @@ export default function Home() {
                         {/* 进度条 */}
                         {(task.status === 'uploading' || task.status === 'processing') && (
                           <div className="px-4 pb-4">
-                            <div className="h-1 bg-white/5 rounded-full overflow-hidden">
+                            <div className="h-1 bg-secondary rounded-full overflow-hidden">
                               <div
-                                className="h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full transition-all duration-700"
+                                className="h-full progress-brand rounded-full transition-all duration-700"
                                 style={{ width: `${task.progress}%` }}
                               />
                             </div>
@@ -612,7 +630,7 @@ export default function Home() {
                         {/* 错误信息 */}
                         {task.status === 'failed' && task.error && (
                           <div className="px-4 pb-4">
-                            <p className="text-sm text-red-400 bg-red-500/10 rounded-xl px-4 py-3">
+                            <p className="text-sm text-red-500 bg-red-500/10 rounded-xl px-4 py-3">
                               {task.error}
                             </p>
                           </div>
@@ -623,17 +641,17 @@ export default function Home() {
                           <div className="px-4 pb-4 space-y-3">
                             {/* Sora */}
                             {task.sora && (
-                              <div className="bg-white/[0.03] rounded-xl overflow-hidden">
-                                <div className="flex items-center justify-between px-4 py-3 border-b border-white/5">
-                                  <span className="text-xs font-medium text-blue-400">Sora</span>
+                              <div className="bg-secondary/50 rounded-xl overflow-hidden">
+                                <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+                                  <span className="text-xs font-medium text-primary">Sora</span>
                                   <button
                                     onClick={() => copyToClipboard(task.sora!, `${task.id}-sora`)}
                                     className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-smooth"
                                   >
                                     {copiedId === `${task.id}-sora` ? (
                                       <>
-                                        <Check className="h-3.5 w-3.5 text-green-400" />
-                                        <span className="text-green-400">已复制</span>
+                                        <Check className="h-3.5 w-3.5 text-green-500" />
+                                        <span className="text-green-500">已复制</span>
                                       </>
                                     ) : (
                                       <>
@@ -653,17 +671,17 @@ export default function Home() {
 
                             {/* Seedance */}
                             {task.seedance && (
-                              <div className="bg-white/[0.03] rounded-xl overflow-hidden">
-                                <div className="flex items-center justify-between px-4 py-3 border-b border-white/5">
-                                  <span className="text-xs font-medium text-purple-400">Seedance</span>
+                              <div className="bg-secondary/50 rounded-xl overflow-hidden">
+                                <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+                                  <span className="text-xs font-medium text-sky-500">Seedance</span>
                                   <button
                                     onClick={() => copyToClipboard(task.seedance!, `${task.id}-seedance`)}
                                     className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-smooth"
                                   >
                                     {copiedId === `${task.id}-seedance` ? (
                                       <>
-                                        <Check className="h-3.5 w-3.5 text-green-400" />
-                                        <span className="text-green-400">已复制</span>
+                                        <Check className="h-3.5 w-3.5 text-green-500" />
+                                        <span className="text-green-500">已复制</span>
                                       </>
                                     ) : (
                                       <>
@@ -687,12 +705,12 @@ export default function Home() {
                                 const allText = `【Sora】\n${task.sora || ''}\n\n【Seedance】\n${task.seedance || ''}`;
                                 copyToClipboard(allText, `${task.id}-all`);
                               }}
-                              className="w-full h-10 bg-white/5 hover:bg-white/10 rounded-xl text-sm font-medium transition-smooth flex items-center justify-center gap-2"
+                              className="w-full h-10 bg-secondary hover:bg-primary/10 rounded-xl text-sm font-medium transition-smooth flex items-center justify-center gap-2"
                             >
                               {copiedId === `${task.id}-all` ? (
                                 <>
-                                  <Check className="h-4 w-4 text-green-400" />
-                                  <span className="text-green-400">已复制全部</span>
+                                  <Check className="h-4 w-4 text-green-500" />
+                                  <span className="text-green-500">已复制全部</span>
                                 </>
                               ) : (
                                 <>
@@ -709,15 +727,15 @@ export default function Home() {
                           <div className="px-4 pb-4 flex items-center justify-between text-xs text-muted-foreground/50">
                             <div className="flex items-center gap-4">
                               <span className="flex items-center gap-1.5">
-                                <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
+                                <span className="w-1.5 h-1.5 rounded-full bg-primary" />
                                 Sora
                               </span>
                               <span className="flex items-center gap-1.5">
-                                <span className="w-1.5 h-1.5 rounded-full bg-purple-400" />
+                                <span className="w-1.5 h-1.5 rounded-full bg-sky-500" />
                                 Seedance
                               </span>
                             </div>
-                            <span className="text-blue-400">展开查看</span>
+                            <span className="text-primary">展开查看</span>
                           </div>
                         )}
                       </div>
@@ -730,7 +748,7 @@ export default function Home() {
         </div>
 
         {/* 底部 */}
-        <footer className={`mt-16 text-center transition-all duration-700 delay-400 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+        <footer className={`mt-12 md:mt-16 text-center transition-all duration-700 delay-400 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
           <p className="text-sm text-muted-foreground/50">
             Powered by Coze Workflow
           </p>

@@ -45,7 +45,7 @@
   --font-sans:
     -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text',
     'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', ui-sans-serif,
-    system-ui, -apple-system, sans-serif;
+    system-ui, sans-serif;
   --font-mono:
     ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono',
     'Courier New', monospace;
@@ -56,71 +56,83 @@
 
 :root {
   --radius: 1rem;
-  --background: #000000;
-  --foreground: #f5f5f7;
-  --card: rgba(28, 28, 30, 0.72);
-  --card-foreground: #f5f5f7;
-  --popover: rgba(28, 28, 30, 0.95);
-  --popover-foreground: #f5f5f7;
-  --primary: #0071e3;
+  
+  /* 长风跨境品牌色 */
+  --navy-blue: #1a3a6b;
+  --sky-blue: #4fa3d1;
+  --light-blue: #a8d8ea;
+  --dark-navy: #0d1f3c;
+  --white: #ffffff;
+  --light-gray: #f5f7fa;
+  --medium-gray: #8b95a5;
+  --dark-gray: #2c3e50;
+  
+  /* 系统变量映射 */
+  --background: #f5f7fa;
+  --foreground: #0d1f3c;
+  --card: rgba(255, 255, 255, 0.9);
+  --card-foreground: #0d1f3c;
+  --popover: #ffffff;
+  --popover-foreground: #0d1f3c;
+  --primary: #1a3a6b;
   --primary-foreground: #ffffff;
-  --secondary: rgba(44, 44, 46, 0.72);
-  --secondary-foreground: #f5f5f7;
-  --muted: rgba(44, 44, 46, 0.48);
-  --muted-foreground: #86868b;
-  --accent: #0071e3;
+  --secondary: rgba(26, 58, 107, 0.08);
+  --secondary-foreground: #1a3a6b;
+  --muted: #f5f7fa;
+  --muted-foreground: #8b95a5;
+  --accent: #4fa3d1;
   --accent-foreground: #ffffff;
-  --destructive: #ff453a;
-  --border: rgba(255, 255, 255, 0.08);
-  --input: rgba(255, 255, 255, 0.05);
-  --ring: #0071e3;
-  --chart-1: #0071e3;
-  --chart-2: #30d158;
-  --chart-3: #ff9f0a;
-  --chart-4: #bf5af2;
-  --chart-5: #ff453a;
-  --sidebar: rgba(28, 28, 30, 0.72);
-  --sidebar-foreground: #f5f5f7;
-  --sidebar-primary: #0071e3;
+  --destructive: #ef4444;
+  --border: rgba(26, 58, 107, 0.1);
+  --input: rgba(26, 58, 107, 0.06);
+  --ring: #4fa3d1;
+  --chart-1: #1a3a6b;
+  --chart-2: #4fa3d1;
+  --chart-3: #a8d8ea;
+  --chart-4: #1a3a6b;
+  --chart-5: #0d1f3c;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #0d1f3c;
+  --sidebar-primary: #1a3a6b;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: rgba(44, 44, 46, 0.72);
-  --sidebar-accent-foreground: #f5f5f7;
-  --sidebar-border: rgba(255, 255, 255, 0.08);
-  --sidebar-ring: #0071e3;
+  --sidebar-accent: rgba(79, 163, 209, 0.1);
+  --sidebar-accent-foreground: #1a3a6b;
+  --sidebar-border: rgba(26, 58, 107, 0.1);
+  --sidebar-ring: #4fa3d1;
 }
 
 .dark {
-  --background: #000000;
-  --foreground: #f5f5f7;
-  --card: rgba(28, 28, 30, 0.72);
-  --card-foreground: #f5f5f7;
-  --popover: rgba(28, 28, 30, 0.95);
-  --popover-foreground: #f5f5f7;
-  --primary: #0071e3;
-  --primary-foreground: #ffffff;
-  --secondary: rgba(44, 44, 46, 0.72);
-  --secondary-foreground: #f5f5f7;
-  --muted: rgba(44, 44, 46, 0.48);
-  --muted-foreground: #86868b;
-  --accent: #0071e3;
-  --accent-foreground: #ffffff;
-  --destructive: #ff453a;
-  --border: rgba(255, 255, 255, 0.08);
+  --background: #0d1f3c;
+  --foreground: #ffffff;
+  --card: rgba(26, 58, 107, 0.4);
+  --card-foreground: #ffffff;
+  --popover: #1a3a6b;
+  --popover-foreground: #ffffff;
+  --primary: #4fa3d1;
+  --primary-foreground: #0d1f3c;
+  --secondary: rgba(79, 163, 209, 0.15);
+  --secondary-foreground: #ffffff;
+  --muted: rgba(79, 163, 209, 0.1);
+  --muted-foreground: #a8d8ea;
+  --accent: #4fa3d1;
+  --accent-foreground: #0d1f3c;
+  --destructive: #ef4444;
+  --border: rgba(255, 255, 255, 0.1);
   --input: rgba(255, 255, 255, 0.05);
-  --ring: #0071e3;
-  --chart-1: #0071e3;
-  --chart-2: #30d158;
-  --chart-3: #ff9f0a;
-  --chart-4: #bf5af2;
-  --chart-5: #ff453a;
-  --sidebar: rgba(28, 28, 30, 0.72);
-  --sidebar-foreground: #f5f5f7;
-  --sidebar-primary: #0071e3;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: rgba(44, 44, 46, 0.72);
-  --sidebar-accent-foreground: #f5f5f7;
-  --sidebar-border: rgba(255, 255, 255, 0.08);
-  --sidebar-ring: #0071e3;
+  --ring: #4fa3d1;
+  --chart-1: #4fa3d1;
+  --chart-2: #a8d8ea;
+  --chart-3: #1a3a6b;
+  --chart-4: #4fa3d1;
+  --chart-5: #a8d8ea;
+  --sidebar: #1a3a6b;
+  --sidebar-foreground: #ffffff;
+  --sidebar-primary: #4fa3d1;
+  --sidebar-primary-foreground: #0d1f3c;
+  --sidebar-accent: rgba(79, 163, 209, 0.15);
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: rgba(255, 255, 255, 0.1);
+  --sidebar-ring: #4fa3d1;
 }
 
 @layer base {
@@ -136,7 +148,7 @@ body {
   @apply font-sans antialiased;
 }
 
-/* 自定义滚动条 - Apple 风格 */
+/* 自定义滚动条 - 品牌色 */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -147,35 +159,52 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(26, 58, 107, 0.2);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.25);
+  background: rgba(26, 58, 107, 0.35);
 }
 
-/* 玻璃态效果 */
+/* 玻璃态效果 - 品牌色 */
 .glass {
-  background: rgba(28, 28, 30, 0.72);
+  background: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
 }
 
-/* 渐变光晕效果 */
-.glow-blue {
+.dark .glass {
+  background: rgba(26, 58, 107, 0.6);
+}
+
+/* 品牌渐变光晕 */
+.glow-brand {
   box-shadow: 
-    0 0 0 1px rgba(0, 113, 227, 0.3),
-    0 0 20px rgba(0, 113, 227, 0.15),
-    0 0 40px rgba(0, 113, 227, 0.1);
+    0 0 0 1px rgba(79, 163, 209, 0.3),
+    0 0 20px rgba(79, 163, 209, 0.2),
+    0 0 40px rgba(79, 163, 209, 0.1);
 }
 
-/* 渐变背景 */
+/* 品牌渐变背景 */
+.bg-gradient-brand {
+  background: linear-gradient(135deg, rgba(26, 58, 107, 0.03) 0%, rgba(79, 163, 209, 0.05) 100%);
+}
+
+.dark .bg-gradient-brand {
+  background: linear-gradient(135deg, rgba(26, 58, 107, 0.3) 0%, rgba(13, 31, 60, 0.5) 100%);
+}
+
+/* 顶部光晕 */
 .bg-gradient-radial {
-  background: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(0, 113, 227, 0.15), transparent);
+  background: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(79, 163, 209, 0.12), transparent);
 }
 
-/* 进入动画 */
+.dark .bg-gradient-radial {
+  background: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(79, 163, 209, 0.15), transparent);
+}
+
+/* 动画 */
 @keyframes fadeInUp {
   from {
     opacity: 0;
@@ -203,25 +232,14 @@ body {
   }
 }
 
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateX(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
-}
-
 @keyframes shimmer {
   0% { background-position: -200% 0; }
   100% { background-position: 200% 0; }
+}
+
+@keyframes wave {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
 }
 
 .animate-fadeInUp {
@@ -236,35 +254,27 @@ body {
   animation: scaleIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-.animate-slideIn {
-  animation: slideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
 .animate-shimmer {
   background: linear-gradient(
     90deg,
-    rgba(255, 255, 255, 0) 0%,
-    rgba(255, 255, 255, 0.05) 50%,
-    rgba(255, 255, 255, 0) 100%
+    rgba(79, 163, 209, 0) 0%,
+    rgba(79, 163, 209, 0.1) 50%,
+    rgba(79, 163, 209, 0) 100%
   );
   background-size: 200% 100%;
   animation: shimmer 2s infinite;
 }
 
-/* 动画延迟 */
+/* 延迟 */
 .delay-100 { animation-delay: 100ms; }
 .delay-200 { animation-delay: 200ms; }
 .delay-300 { animation-delay: 300ms; }
 .delay-400 { animation-delay: 400ms; }
 .delay-500 { animation-delay: 500ms; }
 
-/* 过渡效果 */
+/* 过渡 */
 .transition-smooth {
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.transition-fast {
-  transition: all 0.15s ease-out;
 }
 
 /* 悬浮效果 */
@@ -276,7 +286,7 @@ body {
   transform: translateY(-2px);
 }
 
-/* 按钮涟漪效果 */
+/* 按钮涟漪 */
 .btn-ripple {
   position: relative;
   overflow: hidden;
@@ -289,7 +299,7 @@ body {
   left: 50%;
   width: 0;
   height: 0;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.15);
   border-radius: 50%;
   transform: translate(-50%, -50%);
   transition: width 0.6s, height 0.6s;
@@ -300,14 +310,14 @@ body {
   height: 200%;
 }
 
-/* 输入框聚焦效果 */
+/* 输入框聚焦 */
 .input-glow:focus {
   box-shadow: 
-    0 0 0 3px rgba(0, 113, 227, 0.2),
-    0 0 0 1px rgba(0, 113, 227, 0.4);
+    0 0 0 3px rgba(79, 163, 209, 0.15),
+    0 0 0 1px rgba(79, 163, 209, 0.3);
 }
 
-/* 卡片悬浮效果 */
+/* 卡片悬浮 */
 .card-hover {
   transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -315,11 +325,17 @@ body {
 .card-hover:hover {
   transform: translateY(-4px);
   box-shadow: 
-    0 20px 40px rgba(0, 0, 0, 0.3),
-    0 0 0 1px rgba(255, 255, 255, 0.1);
+    0 20px 40px rgba(26, 58, 107, 0.12),
+    0 0 0 1px rgba(26, 58, 107, 0.08);
 }
 
-/* 图片悬浮效果 */
+.dark .card-hover:hover {
+  box-shadow: 
+    0 20px 40px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(79, 163, 209, 0.2);
+}
+
+/* 图片缩放 */
 .img-zoom {
   transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -330,7 +346,14 @@ body {
 
 /* 文字渐变 */
 .text-gradient {
-  background: linear-gradient(135deg, #ffffff 0%, #86868b 100%);
+  background: linear-gradient(135deg, #1a3a6b 0%, #4fa3d1 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.dark .text-gradient {
+  background: linear-gradient(135deg, #ffffff 0%, #a8d8ea 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -339,6 +362,15 @@ body {
 /* 分隔线 */
 .divider {
   height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(26, 58, 107, 0.1) 50%,
+    transparent 100%
+  );
+}
+
+.dark .divider {
   background: linear-gradient(
     90deg,
     transparent 0%,
@@ -351,10 +383,27 @@ body {
 .skeleton {
   background: linear-gradient(
     90deg,
-    rgba(255, 255, 255, 0.05) 25%,
-    rgba(255, 255, 255, 0.1) 50%,
-    rgba(255, 255, 255, 0.05) 75%
+    rgba(26, 58, 107, 0.05) 25%,
+    rgba(79, 163, 209, 0.1) 50%,
+    rgba(26, 58, 107, 0.05) 75%
   );
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
+}
+
+/* 品牌按钮 */
+.btn-brand {
+  background: linear-gradient(135deg, #1a3a6b 0%, #2a4f8b 100%);
+  color: white;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-brand:hover {
+  background: linear-gradient(135deg, #2a4f8b 0%, #1a3a6b 100%);
+  box-shadow: 0 8px 20px rgba(26, 58, 107, 0.3);
+}
+
+/* 进度条渐变 */
+.progress-brand {
+  background: linear-gradient(90deg, #1a3a6b 0%, #4fa3d1 50%, #a8d8ea 100%);
 }
