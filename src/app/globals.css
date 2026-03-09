@@ -82,7 +82,7 @@
   }
 }
 
-/* 深蓝背景 + 微妙纹理 */
+/* 深蓝背景 */
 .page-bg {
   background: linear-gradient(180deg, #0d1f3c 0%, #0a1628 50%, #0d1f3c 100%);
   position: relative;
@@ -147,45 +147,73 @@
   to { opacity: 1; }
 }
 
-@keyframes slideInLeft {
-  from {
-    opacity: 0;
-    transform: translateX(-30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }
 
-@keyframes slideInRight {
-  from {
-    opacity: 0;
-    transform: translateX(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
-@keyframes float {
+@keyframes bounce-subtle {
   0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
-}
-
-@keyframes pulse-glow {
-  0%, 100% { 
-    box-shadow: 0 0 20px rgba(79, 163, 209, 0.3);
-  }
-  50% { 
-    box-shadow: 0 0 40px rgba(79, 163, 209, 0.5);
-  }
+  50% { transform: translateY(-4px); }
 }
 
 @keyframes shimmer {
   0% { background-position: -200% 0; }
   100% { background-position: 200% 0; }
+}
+
+@keyframes typing {
+  from { width: 0; }
+  to { width: 100%; }
+}
+
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes glow {
+  0%, 100% { 
+    box-shadow: 0 0 20px rgba(79, 163, 209, 0.3),
+                0 0 40px rgba(79, 163, 209, 0.1);
+  }
+  50% { 
+    box-shadow: 0 0 30px rgba(79, 163, 209, 0.5),
+                0 0 60px rgba(79, 163, 209, 0.2);
+  }
+}
+
+@keyframes rotate-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes particle-float {
+  0% {
+    transform: translateY(100%) translateX(0) scale(0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+    transform: translateY(80%) translateX(10px) scale(1);
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-20%) translateX(-10px) scale(0.5);
+    opacity: 0;
+  }
 }
 
 .animate-fadeInUp {
@@ -196,20 +224,30 @@
   animation: fadeIn 0.6s ease-out forwards;
 }
 
-.animate-slideInLeft {
-  animation: slideInLeft 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+.animate-pulse-subtle {
+  animation: pulse 2s ease-in-out infinite;
 }
 
-.animate-slideInRight {
-  animation: slideInRight 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+.animate-spin-slow {
+  animation: spin 3s linear infinite;
+}
+
+.animate-bounce-subtle {
+  animation: bounce-subtle 2s ease-in-out infinite;
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg, transparent, rgba(79, 163, 209, 0.1), transparent);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
 }
 
 .animate-float {
   animation: float 6s ease-in-out infinite;
 }
 
-.animate-pulse-glow {
-  animation: pulse-glow 3s ease-in-out infinite;
+.animate-glow {
+  animation: glow 2s ease-in-out infinite;
 }
 
 /* 卡片样式 */
@@ -259,10 +297,6 @@
 
 .btn-primary:hover::before {
   opacity: 1;
-}
-
-.btn-primary:active {
-  transform: translateY(0);
 }
 
 /* 次级按钮 */
@@ -330,7 +364,7 @@
   border-radius: 14px;
 }
 
-/* 图标容器 - 品牌风格 */
+/* 图标容器 */
 .icon-container {
   display: flex;
   align-items: center;
@@ -341,10 +375,6 @@
 
 .icon-container.primary {
   background: linear-gradient(135deg, rgba(79, 163, 209, 0.1) 0%, rgba(79, 163, 209, 0.05) 100%);
-}
-
-.icon-container.accent {
-  background: linear-gradient(135deg, rgba(26, 58, 107, 0.1) 0%, rgba(26, 58, 107, 0.05) 100%);
 }
 
 .icon-container.warning {
@@ -362,20 +392,6 @@
   border-radius: 999px;
   font-size: 12px;
   font-weight: 500;
-}
-
-/* 分隔线 */
-.divider {
-  height: 1px;
-  background: linear-gradient(90deg, transparent, #e2e8f0, transparent);
-}
-
-/* 渐变文字 */
-.text-gradient {
-  background: linear-gradient(135deg, #4fa3d1 0%, #a8d8ea 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
 }
 
 /* 装饰点 */
@@ -434,11 +450,6 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
-.task-card.processing {
-  border-color: #4fa3d1;
-  background: linear-gradient(135deg, white 0%, rgba(79, 163, 209, 0.02) 100%);
-}
-
 .task-card.completed {
   border-color: #10b981;
 }
@@ -448,9 +459,197 @@
   background: linear-gradient(135deg, white 0%, rgba(239, 68, 68, 0.02) 100%);
 }
 
+/* ========== AI 处理状态样式 ========== */
+
+/* 处理步骤卡片 */
+.processing-step {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 16px;
+  border: 1px solid rgba(79, 163, 209, 0.1);
+  transition: all 0.4s ease;
+}
+
+.processing-step.active {
+  background: rgba(79, 163, 209, 0.08);
+  border-color: rgba(79, 163, 209, 0.3);
+  transform: scale(1.02);
+}
+
+.processing-step.completed {
+  background: rgba(16, 185, 129, 0.05);
+  border-color: rgba(16, 185, 129, 0.2);
+}
+
+/* 步骤图标 */
+.step-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.step-icon.pending {
+  background: rgba(148, 163, 184, 0.1);
+  color: #94a3b8;
+}
+
+.step-icon.active {
+  background: rgba(79, 163, 209, 0.2);
+  color: #4fa3d1;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.step-icon.completed {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+}
+
+/* AI 大脑动画 */
+.ai-brain-container {
+  position: relative;
+  width: 200px;
+  height: 200px;
+  margin: 0 auto;
+}
+
+.ai-brain-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  border-top-color: #4fa3d1;
+  animation: spin 2s linear infinite;
+}
+
+.ai-brain-ring:nth-child(2) {
+  inset: 15px;
+  border-top-color: #a8d8ea;
+  animation-duration: 2.5s;
+  animation-direction: reverse;
+}
+
+.ai-brain-ring:nth-child(3) {
+  inset: 30px;
+  border-top-color: #4fa3d1;
+  animation-duration: 3s;
+}
+
+.ai-brain-core {
+  position: absolute;
+  inset: 45px;
+  background: linear-gradient(135deg, rgba(79, 163, 209, 0.2), rgba(168, 216, 234, 0.1));
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: glow 2s ease-in-out infinite;
+}
+
+/* 粒子效果 */
+.particle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: #4fa3d1;
+  border-radius: 50%;
+  animation: particle-float 3s ease-in-out infinite;
+}
+
+/* 打字机效果 */
+.typing-text {
+  overflow: hidden;
+  white-space: nowrap;
+  border-right: 2px solid #4fa3d1;
+  animation: typing 2s steps(30) infinite, blink 0.5s step-end infinite alternate;
+}
+
+/* 进度环 */
+.progress-ring {
+  transform: rotate(-90deg);
+}
+
+.progress-ring circle {
+  transition: stroke-dashoffset 0.5s ease;
+}
+
 /* 延迟动画 */
 .delay-100 { animation-delay: 100ms; }
 .delay-200 { animation-delay: 200ms; }
 .delay-300 { animation-delay: 300ms; }
 .delay-400 { animation-delay: 400ms; }
 .delay-500 { animation-delay: 500ms; }
+
+/* AI思考状态容器 */
+.ai-processing-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(13, 31, 60, 0.95);
+  backdrop-filter: blur(20px);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.ai-processing-content {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  max-width: 500px;
+  padding: 40px;
+}
+
+/* 闪烁网格背景 */
+.grid-background {
+  position: absolute;
+  inset: 0;
+  background-image: 
+    linear-gradient(rgba(79, 163, 209, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(79, 163, 209, 0.03) 1px, transparent 1px);
+  background-size: 50px 50px;
+  animation: pulse 4s ease-in-out infinite;
+}
+
+/* 光晕效果 */
+.glow-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  animation: float 8s ease-in-out infinite;
+}
+
+.glow-orb-1 {
+  width: 300px;
+  height: 300px;
+  background: rgba(79, 163, 209, 0.15);
+  top: 20%;
+  left: 10%;
+  animation-delay: 0s;
+}
+
+.glow-orb-2 {
+  width: 200px;
+  height: 200px;
+  background: rgba(168, 216, 234, 0.1);
+  bottom: 20%;
+  right: 10%;
+  animation-delay: -2s;
+}
+
+.glow-orb-3 {
+  width: 150px;
+  height: 150px;
+  background: rgba(26, 58, 107, 0.2);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  animation-delay: -4s;
+}

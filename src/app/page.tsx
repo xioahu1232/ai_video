@@ -6,7 +6,7 @@ import {
   Copy, Check, ChevronDown, ChevronUp, Trash2, 
   ImageIcon, Wand2, Star,
   Edit3, X, Clock, Video, Sparkles, Globe,
-  Zap, Brain
+  Zap, Brain, Eye, Lightbulb, PenTool, FileText
 } from 'lucide-react';
 import Image from 'next/image';
 
@@ -40,6 +40,52 @@ const DURATION_PRESETS = [
   { label: '标准', speech: '12', video: '15' },
 ];
 
+// AI处理步骤配置
+const PROCESSING_STEPS = [
+  { 
+    id: 'upload', 
+    label: '上传图片', 
+    subLabel: 'Uploading product image...',
+    icon: Upload,
+    duration: 3000 
+  },
+  { 
+    id: 'analyze', 
+    label: '分析产品特征', 
+    subLabel: 'Analyzing product features...',
+    icon: Eye,
+    duration: 15000 
+  },
+  { 
+    id: 'brainstorm', 
+    label: '构思创意脚本', 
+    subLabel: 'Brainstorming creative script...',
+    icon: Lightbulb,
+    duration: 30000 
+  },
+  { 
+    id: 'generate', 
+    label: '生成视频分镜', 
+    subLabel: 'Generating video storyboard...',
+    icon: PenTool,
+    duration: 40000 
+  },
+  { 
+    id: 'optimize', 
+    label: '优化提示词', 
+    subLabel: 'Optimizing prompts for best results...',
+    icon: Sparkles,
+    duration: 20000 
+  },
+  { 
+    id: 'finalize', 
+    label: '最终整合', 
+    subLabel: 'Finalizing output...',
+    icon: FileText,
+    duration: 2000 
+  },
+];
+
 // 任务状态类型
 type TaskStatus = 'pending' | 'uploading' | 'processing' | 'completed' | 'failed';
 
@@ -65,15 +111,6 @@ const STORAGE_KEYS = {
   TASKS: 'changfeng_video_generator_tasks',
 };
 
-// 加载动画文案
-const LOADING_MESSAGES = [
-  '分析产品特点',
-  '构思创意脚本',
-  '生成视频分镜',
-  '优化提示词',
-  '即将完成',
-];
-
 export default function Home() {
   // 表单状态
   const [coreSellingPoint, setCoreSellingPoint] = useState('');
@@ -87,6 +124,12 @@ export default function Home() {
   // 任务列表状态
   const [tasks, setTasks] = useState<Task[]>([]);
   
+  // AI处理状态
+  const [currentStepIndex, setCurrentStepIndex] = useState(0);
+  const [stepProgress, setStepProgress] = useState(0);
+  const [overallProgress, setOverallProgress] = useState(0);
+  const [dynamicText, setDynamicText] = useState('');
+  
   // 收藏筛选
   const [showStarredOnly, setShowStarredOnly] = useState(false);
   
@@ -97,9 +140,6 @@ export default function Home() {
   
   // 复制状态
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  
-  // 加载动画
-  const [loadingMessageIndex, setLoadingMessageIndex] = useState(0);
   
   // 页面入场动画
   const [mounted, setMounted] = useState(false);
@@ -134,6 +174,29 @@ export default function Home() {
       console.error('保存任务失败:', e);
     }
   }, []);
+
+  // 动态文字效果
+  useEffect(() => {
+    if (!isSubmitting) return;
+    
+    const currentStep = PROCESSING_STEPS[currentStepIndex];
+    if (!currentStep) return;
+    
+    const texts = [
+      currentStep.subLabel,
+      `正在${currentStep.label}...`,
+      'AI智能体工作中...',
+      `处理进度 ${Math.round(stepProgress)}%`,
+    ];
+    
+    let textIndex = 0;
+    const textInterval = setInterval(() => {
+      setDynamicText(texts[textIndex % texts.length]);
+      textIndex++;
+    }, 2000);
+    
+    return () => clearInterval(textInterval);
+  }, [isSubmitting, currentStepIndex, stepProgress]);
 
   // 处理文件选择
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -349,7 +412,9 @@ export default function Home() {
     }
 
     setIsSubmitting(true);
-    setLoadingMessageIndex(0);
+    setCurrentStepIndex(0);
+    setStepProgress(0);
+    setOverallProgress(0);
     
     const newTask: Task = {
       id: Date.now().toString(),
@@ -364,28 +429,56 @@ export default function Home() {
 
     setTasks(prev => [newTask, ...prev]);
 
-    const messageInterval = setInterval(() => {
-      setLoadingMessageIndex(prev => (prev + 1) % LOADING_MESSAGES.length);
-    }, 1800);
+    // 模拟进度动画
+    const progressInterval = setInterval(() => {
+      setOverallProgress(prev => {
+        if (prev >= 95) return prev;
+        return prev + Math.random() * 3;
+      });
+      setStepProgress(prev => {
+        if (prev >= 95) return prev;
+        return prev + Math.random() * 5;
+      });
+    }, 500);
+
+    // 步骤切换动画
+    const totalDuration = PROCESSING_STEPS.reduce((sum, s) => sum + s.duration, 0);
+    let elapsedTime = 0;
+    
+    const stepInterval = setInterval(() => {
+      elapsedTime += 1000;
+      
+      let accumulatedDuration = 0;
+      for (let i = 0; i < PROCESSING_STEPS.length; i++) {
+        accumulatedDuration += PROCESSING_STEPS[i].duration;
+        if (elapsedTime < accumulatedDuration) {
+          setCurrentStepIndex(i);
+          const stepStart = accumulatedDuration - PROCESSING_STEPS[i].duration;
+          const stepProgress = ((elapsedTime - stepStart) / PROCESSING_STEPS[i].duration) * 100;
+          setStepProgress(Math.min(stepProgress, 95));
+          break;
+        }
+      }
+    }, 1000);
 
     try {
-      setTasks(prev => 
-        prev.map(task => 
-          task.id === newTask.id 
-            ? { ...task, status: 'uploading', progress: 15 }
-            : task
-        )
-      );
-
+      // 步骤1：上传
+      setCurrentStepIndex(0);
+      setStepProgress(0);
+      
       const imageUrl = await uploadImage(productImage);
-
+      
       setTasks(prev => 
         prev.map(task => 
           task.id === newTask.id 
-            ? { ...task, imageUrl: imageUrl, status: 'processing', progress: 35 }
+            ? { ...task, imageUrl: imageUrl, status: 'processing' }
             : task
         )
       );
+
+      // 步骤2-6：AI处理
+      setCurrentStepIndex(1);
+      setStepProgress(0);
 
       const result = await generatePrompt(
         imageUrl,
@@ -394,6 +487,13 @@ export default function Home() {
         videoDuration,
         language
       );
+
+      // 完成
+      clearInterval(progressInterval);
+      clearInterval(stepInterval);
+      setCurrentStepIndex(PROCESSING_STEPS.length - 1);
+      setStepProgress(100);
+      setOverallProgress(100);
 
       setTasks(prev => {
         const newTasks = prev.map(task => 
@@ -424,6 +524,9 @@ export default function Home() {
 
     } catch (error) {
       console.error('Submit error:', error);
+      clearInterval(progressInterval);
+      clearInterval(stepInterval);
+      
       setTasks(prev => 
         prev.map(task => 
           task.id === newTask.id 
@@ -436,7 +539,6 @@ export default function Home() {
         )
       );
     } finally {
-      clearInterval(messageInterval);
       setIsSubmitting(false);
     }
   };
@@ -457,12 +559,108 @@ export default function Home() {
       {/* 装饰波浪 */}
       <div className="wave-decoration" />
       
+      {/* AI处理中全屏遮罩 */}
+      {isSubmitting && (
+        <div className="ai-processing-overlay">
+          {/* 背景效果 */}
+          <div className="grid-background" />
+          <div className="glow-orb glow-orb-1" />
+          <div className="glow-orb glow-orb-2" />
+          <div className="glow-orb glow-orb-3" />
+          
+          {/* 主内容 */}
+          <div className="ai-processing-content">
+            {/* AI 大脑动画 */}
+            <div className="ai-brain-container mb-8">
+              <div className="ai-brain-ring" />
+              <div className="ai-brain-ring" />
+              <div className="ai-brain-ring" />
+              <div className="ai-brain-core">
+                <Brain className="w-16 h-16 text-[#4fa3d1] animate-pulse-subtle" />
+              </div>
+            </div>
+            
+            {/* 标题 */}
+            <h2 className="text-2xl font-bold text-white mb-2">
+              AI智能体正在工作
+            </h2>
+            <p className="text-[#4fa3d1] text-lg mb-8 h-7">
+              {dynamicText || '初始化中...'}
+            </p>
+            
+            {/* 总进度 */}
+            <div className="mb-10">
+              <div className="flex justify-between text-sm text-white/60 mb-2">
+                <span>总进度</span>
+                <span>{Math.round(overallProgress)}%</span>
+              </div>
+              <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+                <div 
+                  className="h-full progress-bar transition-all duration-300"
+                  style={{ width: `${overallProgress}%` }}
+                />
+              </div>
+            </div>
+            
+            {/* 步骤列表 */}
+            <div className="space-y-3 max-w-md mx-auto">
+              {PROCESSING_STEPS.map((step, index) => {
+                const Icon = step.icon;
+                const isActive = index === currentStepIndex;
+                const isCompleted = index < currentStepIndex;
+                
+                return (
+                  <div 
+                    key={step.id}
+                    className={`processing-step ${isActive ? 'active' : ''} ${isCompleted ? 'completed' : ''}`}
+                  >
+                    <div className={`step-icon ${isCompleted ? 'completed' : isActive ? 'active' : 'pending'}`}>
+                      {isCompleted ? (
+                        <CheckCircle2 className="w-5 h-5" />
+                      ) : isActive ? (
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                      ) : (
+                        <Icon className="w-5 h-5" />
+                      )}
+                    </div>
+                    
+                    <div className="flex-1 text-left">
+                      <div className={`text-sm font-medium ${isActive || isCompleted ? 'text-white' : 'text-white/40'}`}>
+                        {step.label}
+                      </div>
+                      {isActive && (
+                        <div className="text-xs text-[#4fa3d1]/80 mt-0.5">
+                          {step.subLabel}
+                        </div>
+                      )}
+                    </div>
+                    
+                    {isActive && (
+                      <div className="text-xs text-[#4fa3d1] font-medium">
+                        {Math.round(stepProgress)}%
+                      </div>
+                    )}
+                    {isCompleted && (
+                      <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            
+            {/* 提示文字 */}
+            <p className="text-white/30 text-sm mt-10">
+              正在调用Coze工作流，预计需要1-2分钟
+            </p>
+          </div>
+        </div>
+      )}
+      
       {/* 主内容 */}
       <div className="relative max-w-7xl mx-auto px-6 py-8">
         
         {/* 顶部导航 */}
         <header className={`flex items-center justify-between mb-8 opacity-0 ${mounted ? 'animate-fadeIn' : ''}`}>
-          {/* Logo */}
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 relative">
               <Image
@@ -475,7 +673,6 @@ export default function Home() {
             </div>
           </div>
           
-          {/* 右侧标语 */}
           <div className="hidden md:flex items-center gap-2 text-white/60">
             <Globe className="w-4 h-4" />
             <span className="text-sm">帮助中国商家出海</span>
@@ -502,7 +699,6 @@ export default function Home() {
           
           {/* 左侧：表单卡片 */}
           <div className="card p-8">
-            {/* 卡片标题 */}
             <div className="flex items-center gap-4 mb-8">
               <div className="w-12 h-12 icon-container primary">
                 <Video className="w-6 h-6 text-[#4fa3d1]" />
@@ -658,7 +854,7 @@ export default function Home() {
                 {isSubmitting ? (
                   <>
                     <Loader2 className="w-5 h-5 animate-spin" />
-                    <span>生成中...</span>
+                    <span>AI处理中...</span>
                   </>
                 ) : (
                   <>
@@ -672,7 +868,6 @@ export default function Home() {
 
           {/* 右侧：结果卡片 */}
           <div className="card overflow-hidden flex flex-col">
-            {/* 卡片标题 */}
             <div className="flex items-center justify-between p-8 border-b border-gray-100">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 icon-container warning">
@@ -709,7 +904,6 @@ export default function Home() {
               )}
             </div>
 
-            {/* 内容区 */}
             <div className="flex-1 p-6 overflow-y-auto min-h-[400px] max-h-[600px]">
               {displayedTasks.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center py-12">
@@ -726,14 +920,11 @@ export default function Home() {
                     <div
                       key={task.id}
                       className={`task-card ${
-                        task.status === 'processing' ? 'processing' : 
                         task.status === 'completed' ? 'completed' : 
                         task.status === 'failed' ? 'failed' : ''
                       } overflow-hidden`}
                     >
-                      {/* 任务头部 */}
                       <div className="p-4 flex items-start gap-4">
-                        {/* 产品图片 */}
                         <div className="flex-shrink-0">
                           {task.imagePreview || task.imageUrl ? (
                             <img 
@@ -748,7 +939,6 @@ export default function Home() {
                           )}
                         </div>
 
-                        {/* 任务信息 */}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
                             {task.status === 'completed' && (
@@ -757,30 +947,10 @@ export default function Home() {
                             {task.status === 'failed' && (
                               <XCircle className="w-5 h-5 text-red-500" />
                             )}
-                            {(task.status === 'processing' || task.status === 'uploading') && (
-                              <Loader2 className="w-5 h-5 text-[#4fa3d1] animate-spin" />
-                            )}
                             
                             <span className="text-sm font-semibold text-gray-800">
-                              {task.status === 'processing' 
-                                ? LOADING_MESSAGES[loadingMessageIndex]
-                                : task.status === 'uploading'
-                                ? '上传中'
-                                : task.status === 'completed'
-                                ? '生成完成'
-                                : task.status === 'failed'
-                                ? '生成失败'
-                                : '等待中'
-                              }
+                              {task.status === 'completed' ? '生成完成' : '生成失败'}
                             </span>
-                            
-                            {task.status === 'processing' && (
-                              <span className="flex gap-1 ml-1">
-                                <span className="w-1.5 h-1.5 rounded-full bg-[#4fa3d1] animate-bounce" style={{animationDelay: '0ms'}} />
-                                <span className="w-1.5 h-1.5 rounded-full bg-[#4fa3d1] animate-bounce" style={{animationDelay: '150ms'}} />
-                                <span className="w-1.5 h-1.5 rounded-full bg-[#4fa3d1] animate-bounce" style={{animationDelay: '300ms'}} />
-                              </span>
-                            )}
                           </div>
                           
                           <p className="text-sm text-gray-600 truncate mb-2 font-medium">
@@ -801,7 +971,6 @@ export default function Home() {
                           </div>
                         </div>
 
-                        {/* 操作按钮 */}
                         {task.status === 'completed' && (
                           <div className="flex items-center gap-1">
                             <button
@@ -840,19 +1009,6 @@ export default function Home() {
                         )}
                       </div>
 
-                      {/* 进度条 */}
-                      {(task.status === 'uploading' || task.status === 'processing') && (
-                        <div className="px-4 pb-4">
-                          <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                            <div
-                              className="h-full progress-bar transition-all duration-700"
-                              style={{ width: `${task.progress}%` }}
-                            />
-                          </div>
-                        </div>
-                      )}
-
-                      {/* 错误信息 */}
                       {task.status === 'failed' && task.error && (
                         <div className="px-4 pb-4">
                           <p className="text-sm text-red-500 bg-red-50 rounded-xl px-4 py-3">
@@ -861,10 +1017,8 @@ export default function Home() {
                         </div>
                       )}
 
-                      {/* 提示词结果 */}
                       {task.status === 'completed' && task.expanded && (
                         <div className="px-4 pb-4 space-y-3">
-                          {/* Sora */}
                           {task.sora && (
                             <div className="result-box overflow-hidden">
                               <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-white">
@@ -897,7 +1051,6 @@ export default function Home() {
                             </div>
                           )}
 
-                          {/* Seedance */}
                           {task.seedance && (
                             <div className="result-box overflow-hidden">
                               <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-white">
@@ -930,7 +1083,6 @@ export default function Home() {
                             </div>
                           )}
 
-                          {/* 一键复制全部 */}
                           <button
                             onClick={() => {
                               const allText = `【Sora】\n${task.sora || ''}\n\n【Seedance】\n${task.seedance || ''}`;
@@ -953,7 +1105,6 @@ export default function Home() {
                         </div>
                       )}
 
-                      {/* 收起状态 */}
                       {task.status === 'completed' && !task.expanded && (
                         <div className="px-4 pb-4 flex items-center justify-between text-sm">
                           <div className="flex items-center gap-4 text-gray-400">
@@ -1003,7 +1154,6 @@ export default function Home() {
       {editingTask && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="card w-full max-w-2xl max-h-[85vh] overflow-hidden animate-fadeInUp">
-            {/* 弹窗头部 */}
             <div className="flex items-center justify-between p-6 border-b border-gray-100">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 icon-container primary">
@@ -1022,7 +1172,6 @@ export default function Home() {
               </button>
             </div>
             
-            {/* 编辑内容 */}
             <div className="p-6 space-y-5 overflow-y-auto max-h-[50vh]">
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-gray-700">Sora 提示词</label>
@@ -1045,7 +1194,6 @@ export default function Home() {
               </div>
             </div>
             
-            {/* 弹窗底部 */}
             <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-100 bg-gray-50/50">
               <button
                 onClick={cancelEdit}
