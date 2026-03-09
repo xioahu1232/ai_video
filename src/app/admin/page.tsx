@@ -17,6 +17,11 @@ import {
   Trash2,
   Eye,
   RefreshCw,
+  Activity,
+  Database,
+  HardDrive,
+  AlertTriangle,
+  Download,
 } from 'lucide-react';
 
 // 管理员登录表单
@@ -176,7 +181,7 @@ interface Stats {
 // 管理员仪表盘
 function AdminDashboard({ token, user, onLogout }: { token: string; user: AdminUser; onLogout: () => void }) {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'overview' | 'invites' | 'redemption' | 'users'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'invites' | 'redemption' | 'users' | 'health'>('overview');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [stats, setStats] = useState<Stats | null>(null);
   const [inviteCodes, setInviteCodes] = useState<InviteCode[]>([]);
@@ -324,6 +329,7 @@ function AdminDashboard({ token, user, onLogout }: { token: string; user: AdminU
     { id: 'invites', icon: Gift, label: '邀请码管理' },
     { id: 'redemption', icon: Ticket, label: '兑换码管理' },
     { id: 'users', icon: Users, label: '用户管理' },
+    { id: 'health', icon: Activity, label: '系统健康' },
   ] as const;
 
   return (
@@ -781,6 +787,320 @@ function AdminDashboard({ token, user, onLogout }: { token: string; user: AdminU
                 </table>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* 系统健康监控 */}
+        {activeTab === 'health' && (
+          <HealthMonitor token={token} />
+        )}
+      </div>
+    </div>
+  );
+}
+
+// 健康监控组件
+interface HealthData {
+  status: string;
+  timestamp: string;
+  database: {
+    connected: boolean;
+    tables: Record<string, { count: number; estimatedSize: string }>;
+    storage: {
+      used: string;
+      max: string;
+      usagePercent: string;
+      warning?: string;
+    };
+  };
+  business: {
+    totalBalance: number;
+    totalUsed: number;
+    activeRateLimits: number;
+  };
+  rateLimit: {
+    totalEntries: number;
+    activeEntries: number;
+    topUsers: Array<{ key: string; count: number }>;
+  };
+  recommendations: string[];
+}
+
+function HealthMonitor({ token }: { token: string }) {
+  const [healthData, setHealthData] = useState<HealthData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isBackingUp, setIsBackingUp] = useState(false);
+  const [isCleaningUp, setIsCleaningUp] = useState(false);
+  const [maintStats, setMaintStats] = useState<{
+    success?: boolean;
+    recommendations?: (string | null)[];
+    tasks?: { total: number; olderThan30d: number };
+    invites?: { unused: number };
+    codes?: { unused: number; totalValue: number };
+  } | null>(null);
+
+  const loadHealthData = async () => {
+    setIsLoading(true);
+    try {
+      const res = await fetch('/api/admin/health', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      setHealthData(data);
+    } catch (err) {
+      console.error('Load health data error:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loadMaintStats = async () => {
+    try {
+      const res = await fetch('/api/admin/maintenance', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ action: 'stats' }),
+      });
+      const data = await res.json();
+      setMaintStats(data);
+    } catch (err) {
+      console.error('Load maintenance stats error:', err);
+    }
+  };
+
+  useEffect(() => {
+    loadHealthData();
+    loadMaintStats();
+  }, [token]);
+
+  const handleBackup = async () => {
+    if (!confirm('确定要导出数据备份吗？备份数据将包含所有用户信息。')) return;
+    
+    setIsBackingUp(true);
+    try {
+      const res = await fetch('/api/admin/maintenance', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ action: 'backup' }),
+      });
+      const data = await res.json();
+      
+      if (data.success) {
+        // 创建下载链接
+        const blob = new Blob([JSON.stringify(data.data, null, 2)], { type: 'application/json' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = data.downloadFilename;
+        a.click();
+        window.URL.revokeObjectURL(url);
+        alert(`备份成功！导出了 ${Object.values(data.counts as Record<string, number>).reduce((a, b) => a + b, 0)} 条记录`);
+      }
+    } catch (err) {
+      console.error('Backup error:', err);
+      alert('备份失败');
+    } finally {
+      setIsBackingUp(false);
+    }
+  };
+
+  const handleCleanup = async () => {
+    if (!confirm('确定要清理过期数据吗？将删除超过30天的任务记录和已使用超过90天的邀请码/兑换码。')) return;
+    
+    setIsCleaningUp(true);
+    try {
+      const res = await fetch('/api/admin/maintenance', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ action: 'cleanup', options: { daysToKeep: 30 } }),
+      });
+      const data = await res.json();
+      
+      if (data.success) {
+        alert(`清理完成！共删除 ${data.totalDeleted} 条记录`);
+        loadHealthData();
+        loadMaintStats();
+      }
+    } catch (err) {
+      console.error('Cleanup error:', err);
+      alert('清理失败');
+    } finally {
+      setIsCleaningUp(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="w-8 h-8 text-white animate-spin" />
+      </div>
+    );
+  }
+
+  const storageWarning = healthData?.database?.storage?.warning;
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold text-white">系统健康监控</h2>
+        <button
+          onClick={loadHealthData}
+          className="p-2 hover:bg-white/10 rounded-lg transition-colors text-white/70 hover:text-white"
+        >
+          <RefreshCw className="w-5 h-5" />
+        </button>
+      </div>
+
+      {/* 存储告警 */}
+      {storageWarning && (
+        <div className="bg-orange-500/20 border border-orange-500/30 rounded-2xl p-4 flex items-center gap-3">
+          <AlertTriangle className="w-5 h-5 text-orange-400" />
+          <span className="text-orange-200">{storageWarning}</span>
+        </div>
+      )}
+
+      {/* 快捷操作 */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <button
+          onClick={handleBackup}
+          disabled={isBackingUp}
+          className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/10 hover:bg-white/20 transition-colors text-left group"
+        >
+          <div className="flex items-center gap-3 mb-2">
+            <Download className="w-5 h-5 text-blue-400" />
+            <span className="text-white font-semibold">数据备份</span>
+          </div>
+          <p className="text-white/60 text-sm">导出所有数据为 JSON 文件</p>
+          {isBackingUp && <Loader2 className="w-4 h-4 text-white animate-spin mt-2" />}
+        </button>
+
+        <button
+          onClick={handleCleanup}
+          disabled={isCleaningUp}
+          className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/10 hover:bg-white/20 transition-colors text-left group"
+        >
+          <div className="flex items-center gap-3 mb-2">
+            <Trash2 className="w-5 h-5 text-red-400" />
+            <span className="text-white font-semibold">数据清理</span>
+          </div>
+          <p className="text-white/60 text-sm">清理超过30天的历史记录</p>
+          {isCleaningUp && <Loader2 className="w-4 h-4 text-white animate-spin mt-2" />}
+        </button>
+      </div>
+
+      {/* 数据库状态 */}
+      <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/10">
+        <div className="flex items-center gap-3 mb-4">
+          <Database className="w-5 h-5 text-green-400" />
+          <h3 className="text-lg font-semibold text-white">数据库状态</h3>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          {healthData?.database?.tables && Object.entries(healthData.database.tables).map(([name, info]) => (
+            <div key={name} className="bg-white/5 rounded-xl p-4">
+              <p className="text-white/70 text-sm mb-1">{name}</p>
+              <p className="text-xl font-bold text-white">{info.count} 条</p>
+              <p className="text-white/50 text-xs">{info.estimatedSize}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* 存储使用情况 */}
+        <div className="bg-white/5 rounded-xl p-4">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <HardDrive className="w-4 h-4 text-white/70" />
+              <span className="text-white/70 text-sm">存储使用</span>
+            </div>
+            <span className="text-white font-semibold">
+              {healthData?.database?.storage?.used} / {healthData?.database?.storage?.max}
+            </span>
+          </div>
+          <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+            <div
+              className={`h-full rounded-full transition-all ${
+                parseFloat(healthData?.database?.storage?.usagePercent || '0') > 80
+                  ? 'bg-orange-500'
+                  : 'bg-green-500'
+              }`}
+              style={{ width: healthData?.database?.storage?.usagePercent }}
+            />
+          </div>
+          <p className="text-white/50 text-xs mt-2">
+            使用率：{healthData?.database?.storage?.usagePercent}
+          </p>
+        </div>
+      </div>
+
+      {/* 限流状态 */}
+      <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/10">
+        <div className="flex items-center gap-3 mb-4">
+          <Activity className="w-5 h-5 text-purple-400" />
+          <h3 className="text-lg font-semibold text-white">请求限流状态</h3>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="bg-white/5 rounded-xl p-4">
+            <p className="text-white/70 text-sm mb-1">活跃限流记录</p>
+            <p className="text-xl font-bold text-white">{healthData?.rateLimit?.activeEntries || 0}</p>
+          </div>
+          <div className="bg-white/5 rounded-xl p-4">
+            <p className="text-white/70 text-sm mb-1">总余额（次）</p>
+            <p className="text-xl font-bold text-white">{healthData?.business?.totalBalance || 0}</p>
+          </div>
+          <div className="bg-white/5 rounded-xl p-4">
+            <p className="text-white/70 text-sm mb-1">总使用量（次）</p>
+            <p className="text-xl font-bold text-white">{healthData?.business?.totalUsed || 0}</p>
+          </div>
+        </div>
+
+        {healthData?.rateLimit?.topUsers && healthData.rateLimit.topUsers.length > 0 && (
+          <div className="mt-4">
+            <p className="text-white/70 text-sm mb-2">高频请求用户</p>
+            <div className="space-y-2">
+              {healthData.rateLimit.topUsers.slice(0, 5).map((user, idx) => (
+                <div key={idx} className="flex items-center justify-between bg-white/5 rounded-lg px-3 py-2">
+                  <span className="text-white/70 text-sm">{user.key}</span>
+                  <span className="text-white font-medium">{user.count} 次/分钟</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* 维护建议 */}
+      <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/10">
+        <h3 className="text-lg font-semibold text-white mb-4">系统建议</h3>
+        <ul className="space-y-2">
+          {healthData?.recommendations?.map((rec, idx) => (
+            <li key={idx} className="text-white/70 text-sm flex items-center gap-2">
+              <span className="w-1.5 h-1.5 bg-blue-400 rounded-full" />
+              {rec as string}
+            </li>
+          ))}
+        </ul>
+
+        {maintStats?.recommendations && Array.isArray(maintStats.recommendations) && (
+          <div className="mt-4 pt-4 border-t border-white/10">
+            <p className="text-white/70 text-sm mb-2">优化建议</p>
+            <ul className="space-y-2">
+              {((maintStats.recommendations as string[]) || []).filter((r): r is string => Boolean(r)).map((rec, idx) => (
+                <li key={idx} className="text-orange-300/80 text-sm flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4" />
+                  {rec}
+                </li>
+              ))}
+            </ul>
           </div>
         )}
       </div>
