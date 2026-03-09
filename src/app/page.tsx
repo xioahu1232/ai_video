@@ -20,6 +20,7 @@ import ContactButton from '@/components/ContactButton';
 import Footer from '@/components/Footer';
 import { SmartBlessing } from '@/components/BlessingToast';
 import { TourGuide, TourHelpButton } from '@/components/TourGuide';
+import TikTokSEO from '@/components/TikTokSEO';
 
 // 语言选项
 const LANGUAGES = [
@@ -1768,6 +1769,13 @@ ${'='.repeat(50)}`;
                               </>
                             )}
                           </button>
+                          
+                          {/* SEO优化按钮 */}
+                          <TikTokSEO
+                            prompt={task.sora || task.seedance || ''}
+                            sellingPoint={task.coreSellingPoint}
+                            language={task.language}
+                          />
                           
                           {/* 视频生成快捷链接 */}
                           <div className="flex items-center justify-center gap-4 pt-2">
