@@ -44,14 +44,14 @@ export async function POST(request: NextRequest): Promise<NextResponse<TaskRespo
       );
     }
 
-    // 构建工作流请求参数（根据工作流开始节点定义的参数名称）
-    // 参数名称：yaodian(核心卖点), pic1(产品图片), time(视频时长), koubo(口播时长), yuyan(语言)
+    // 构建工作流请求参数
+    // 尝试去掉 str. 前缀，直接使用变量名
     const workflowParams: Record<string, string> = {
-      yaodian: coreSellingPoint,      // 核心卖点
-      pic1: productImageUrl,          // 产品图片URL
-      time: videoDuration,            // 视频时长
-      koubo: speechDuration,          // 口播时长
-      yuyan: language,                // 语言
+      'yaodian': coreSellingPoint,      // 核心卖点
+      'pic': productImageUrl,           // 产品图片URL
+      'time': videoDuration,            // 视频时长
+      'yuyan': language,                // 语言
+      'koubo': speechDuration,          // 口播时长
     };
 
     console.log('Calling Coze Workflow:', {
@@ -89,12 +89,10 @@ export async function POST(request: NextRequest): Promise<NextResponse<TaskRespo
     }
 
     // 解析工作流返回结果
-    // 返回格式: { code: 0, data: "{\"sora\":\"...\", \"seedance\":\"...\"}" }
     let outputData: Record<string, unknown> = {};
     
     if (result.data) {
       try {
-        // data 可能是 JSON 字符串或对象
         if (typeof result.data === 'string') {
           outputData = JSON.parse(result.data);
         } else {
@@ -119,7 +117,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<TaskRespo
   } catch (error) {
     console.error('Generate Video Error:', error);
     return NextResponse.json(
-      { success: false, error: '服务器内部错误: ' + (error instanceof Error ? error.message : '未知错误') },
+      { success: false, error: '服务器内部错误: ' + (error instanceof Error ? error.message : '未知.message') },
       { status: 500 }
     );
   }
