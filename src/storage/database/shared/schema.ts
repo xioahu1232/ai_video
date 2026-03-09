@@ -18,6 +18,7 @@ export const userBalances = pgTable(
     balance: integer("balance").default(0).notNull(), // 剩余次数
     totalUsed: integer("total_used").default(0).notNull(), // 累计使用次数
     totalPurchased: integer("total_purchased").default(0).notNull(), // 累计购买次数
+    role: varchar("role", { length: 20 }).default("user").notNull(), // 角色：user, admin
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
@@ -25,6 +26,7 @@ export const userBalances = pgTable(
   },
   (table) => [
     index("user_balances_user_id_idx").on(table.userId),
+    index("user_balances_role_idx").on(table.role),
   ]
 );
 

@@ -4,13 +4,41 @@ import { getSupabaseClient } from '@/storage/database/supabase-client';
 // 管理员密钥（生产环境应使用环境变量）
 const ADMIN_SECRET = 'changfeng-admin-2024';
 
+// 验证管理员权限
+async function verifyAdmin(request: NextRequest): Promise<{ valid: boolean; supabase: ReturnType<typeof getSupabaseClient> }> {
+  // 方式1：通过Authorization header验证
+  const authHeader = request.headers.get('Authorization');
+  if (authHeader?.startsWith('Bearer ')) {
+    const token = authHeader.replace('Bearer ', '');
+    const supabase = getSupabaseClient(token);
+    
+    const { data: { user }, error } = await supabase.auth.getUser();
+    if (!error && user) {
+      const { data: userBalance } = await supabase
+        .from('user_balances')
+        .select('role')
+        .eq('user_id', user.id)
+        .single();
+      
+      if (userBalance?.role === 'admin') {
+        return { valid: true, supabase };
+      }
+    }
+  }
+  
+  // 方式2：通过secret参数验证
+  return { valid: false, supabase: getSupabaseClient() };
+}
+
 // 生成兑换码
 export async function POST(request: NextRequest) {
   try {
-    const { secret, amount, count, description, expiresInDays } = await request.json();
+    const body = await request.json();
+    const { secret, amount, count, description, expiresInDays } = body;
 
     // 验证管理员权限
-    if (secret !== ADMIN_SECRET) {
+    const { valid, supabase } = await verifyAdmin(request);
+    if (!valid && secret !== ADMIN_SECRET) {
       return NextResponse.json(
         { error: '无权限' },
         { status: 403 }
@@ -30,8 +58,6 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-
-    const supabase = getSupabaseClient();
 
     // 生成批次ID
     const batchId = crypto.randomUUID();
@@ -98,14 +124,13 @@ export async function GET(request: NextRequest) {
     const batchId = searchParams.get('batchId');
 
     // 验证管理员权限
-    if (secret !== ADMIN_SECRET) {
+    const { valid, supabase } = await verifyAdmin(request);
+    if (!valid && secret !== ADMIN_SECRET) {
       return NextResponse.json(
         { error: '无权限' },
         { status: 403 }
       );
     }
-
-    const supabase = getSupabaseClient();
 
     if (batchId) {
       // 查询特定批次的兑换码
