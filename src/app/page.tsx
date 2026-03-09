@@ -412,6 +412,12 @@ export default function Home() {
       return;
     }
 
+    // 如果有任务正在处理，提示用户
+    if (isSubmitting) {
+      alert('当前有任务正在处理中，请等待完成后再提交新任务');
+      return;
+    }
+
     setIsSubmitting(true);
     setCurrentStepIndex(0);
     setStepProgress(0);
@@ -428,7 +434,24 @@ export default function Home() {
       imagePreview: imagePreview || undefined,
     };
 
+    // 保存当前输入，用于重置表单
+    const currentInput = {
+      coreSellingPoint,
+      imagePreview,
+      productImage,
+    };
+
     setTasks(prev => [newTask, ...prev]);
+
+    // 立即重置表单，允许用户输入新内容
+    setCoreSellingPoint('');
+    setProductImage(null);
+    setImagePreview(null);
+    setSpeechDuration('12');
+    setVideoDuration('15');
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
 
     // 进度同步更新 - 总进度基于步骤进度计算
     const updateProgress = (stepIndex: number, stepProg: number) => {
@@ -507,16 +530,6 @@ export default function Home() {
         return newTasks;
       });
 
-      // 重置表单
-      setCoreSellingPoint('');
-      setProductImage(null);
-      setImagePreview(null);
-      setSpeechDuration('12');
-      setVideoDuration('15');
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-
     } catch (error) {
       console.error('Submit error:', error);
       clearInterval(stepInterval);
@@ -548,107 +561,13 @@ export default function Home() {
     ? tasks.filter(t => t.starred)
     : tasks;
 
+  // 当前正在处理的任务
+  const processingTask = tasks.find(t => t.status === 'uploading' || t.status === 'processing');
+
   return (
     <div className="min-h-screen page-bg relative overflow-hidden">
       {/* 装饰波浪 */}
       <div className="wave-decoration" />
-      
-      {/* AI处理中全屏遮罩 */}
-      {isSubmitting && (
-        <div className="ai-processing-overlay">
-          {/* 背景效果 */}
-          <div className="grid-background" />
-          <div className="glow-orb glow-orb-1" />
-          <div className="glow-orb glow-orb-2" />
-          <div className="glow-orb glow-orb-3" />
-          
-          {/* 主内容 */}
-          <div className="ai-processing-content">
-            {/* AI 大脑动画 */}
-            <div className="ai-brain-container mb-8">
-              <div className="ai-brain-ring" />
-              <div className="ai-brain-ring" />
-              <div className="ai-brain-ring" />
-              <div className="ai-brain-core">
-                <Brain className="w-16 h-16 text-[#4fa3d1] animate-pulse-subtle" />
-              </div>
-            </div>
-            
-            {/* 标题 */}
-            <h2 className="text-2xl font-bold text-[#e8ecf2] mb-2">
-              AI智能体正在工作
-            </h2>
-            <p className="text-[#6aa8c8] text-lg mb-8 h-7">
-              {dynamicText || '初始化中...'}
-            </p>
-            
-            {/* 总进度 */}
-            <div className="mb-10">
-              <div className="flex justify-between text-sm text-[#8ba3bc] mb-2">
-                <span>总进度</span>
-                <span>{Math.round(overallProgress)}%</span>
-              </div>
-              <div className="h-2 bg-[#1a3a5a]/50 rounded-full overflow-hidden">
-                <div 
-                  className="h-full progress-bar transition-all duration-300"
-                  style={{ width: `${overallProgress}%` }}
-                />
-              </div>
-            </div>
-            
-            {/* 步骤列表 */}
-            <div className="space-y-3 max-w-md mx-auto">
-              {PROCESSING_STEPS.map((step, index) => {
-                const Icon = step.icon;
-                const isActive = index === currentStepIndex;
-                const isCompleted = index < currentStepIndex;
-                
-                return (
-                  <div 
-                    key={step.id}
-                    className={`processing-step ${isActive ? 'active' : ''} ${isCompleted ? 'completed' : ''}`}
-                  >
-                    <div className={`step-icon ${isCompleted ? 'completed' : isActive ? 'active' : 'pending'}`}>
-                      {isCompleted ? (
-                        <CheckCircle2 className="w-5 h-5" />
-                      ) : isActive ? (
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                      ) : (
-                        <Icon className="w-5 h-5" />
-                      )}
-                    </div>
-                    
-                    <div className="flex-1 text-left">
-                      <div className={`text-sm font-medium ${isActive || isCompleted ? 'text-[#e8ecf2]' : 'text-[#5a7a9a]'}`}>
-                        {step.label}
-                      </div>
-                      {isActive && (
-                        <div className="text-xs text-[#6aa8c8] mt-0.5">
-                          {step.subLabel}
-                        </div>
-                      )}
-                    </div>
-                    
-                    {isActive && (
-                      <div className="text-xs text-[#6aa8c8] font-medium">
-                        {Math.round(stepProgress)}%
-                      </div>
-                    )}
-                    {isCompleted && (
-                      <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-            
-            {/* 提示文字 */}
-            <p className="text-[#4a6a8a] text-sm mt-10">
-              正在调用Coze工作流，预计需要1-2分钟
-            </p>
-          </div>
-        </div>
-      )}
       
       {/* 白色顶部导航栏 */}
       <header className="bg-white shadow-sm relative z-10">
@@ -842,20 +761,11 @@ export default function Home() {
               {/* 提交按钮 */}
               <button
                 onClick={handleSubmit}
-                disabled={!coreSellingPoint.trim() || !productImage || isSubmitting}
+                disabled={!coreSellingPoint.trim() || !productImage}
                 className="w-full h-16 btn-primary text-lg flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none mt-4"
               >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    <span>AI处理中...</span>
-                  </>
-                ) : (
-                  <>
-                    <span className="font-semibold">生成提示词</span>
-                    <Wand2 className="w-5 h-5" />
-                  </>
-                )}
+                <span className="font-semibold">生成提示词</span>
+                <Wand2 className="w-5 h-5" />
               </button>
             </div>
           </div>
@@ -899,7 +809,90 @@ export default function Home() {
             </div>
 
             <div className="flex-1 p-6 overflow-y-auto min-h-[400px] max-h-[600px]">
-              {displayedTasks.length === 0 ? (
+              {/* 处理中的任务状态面板 */}
+              {processingTask && (
+                <div className="mb-6 p-6 rounded-2xl bg-gradient-to-br from-[#1a3a6b]/5 to-[#4fa3d1]/5 border border-[#4fa3d1]/20">
+                  {/* 头部 */}
+                  <div className="flex items-center gap-4 mb-5">
+                    <div className="w-12 h-12 rounded-xl bg-[#4fa3d1]/10 flex items-center justify-center">
+                      <Brain className="w-6 h-6 text-[#4fa3d1] animate-pulse-subtle" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-base font-semibold text-gray-800">AI智能体工作中</h3>
+                      <p className="text-sm text-[#4fa3d1]">{dynamicText || '初始化中...'}</p>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-2xl font-bold text-[#4fa3d1]">{Math.round(overallProgress)}</span>
+                      <span className="text-sm text-gray-400">%</span>
+                    </div>
+                  </div>
+                  
+                  {/* 总进度条 */}
+                  <div className="h-2 bg-gray-200 rounded-full overflow-hidden mb-5">
+                    <div 
+                      className="h-full progress-bar transition-all duration-300"
+                      style={{ width: `${overallProgress}%` }}
+                    />
+                  </div>
+                  
+                  {/* 步骤列表 */}
+                  <div className="space-y-2">
+                    {PROCESSING_STEPS.map((step, index) => {
+                      const Icon = step.icon;
+                      const isActive = index === currentStepIndex;
+                      const isCompleted = index < currentStepIndex;
+                      
+                      return (
+                        <div 
+                          key={step.id}
+                          className={`flex items-center gap-3 p-3 rounded-xl transition-all ${
+                            isActive ? 'bg-white shadow-sm' : ''
+                          }`}
+                        >
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                            isCompleted ? 'bg-emerald-100 text-emerald-600' :
+                            isActive ? 'bg-[#4fa3d1]/10 text-[#4fa3d1]' :
+                            'bg-gray-100 text-gray-400'
+                          }`}>
+                            {isCompleted ? (
+                              <CheckCircle2 className="w-4 h-4" />
+                            ) : isActive ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <Icon className="w-4 h-4" />
+                            )}
+                          </div>
+                          
+                          <div className="flex-1">
+                            <span className={`text-sm ${
+                              isActive ? 'text-gray-800 font-medium' : 
+                              isCompleted ? 'text-gray-600' : 'text-gray-400'
+                            }`}>
+                              {step.label}
+                            </span>
+                          </div>
+                          
+                          {isActive && (
+                            <span className="text-xs text-[#4fa3d1] font-medium">
+                              {Math.round(stepProgress)}%
+                            </span>
+                          )}
+                          {isCompleted && (
+                            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  
+                  {/* 提示 */}
+                  <p className="text-xs text-gray-400 mt-4 text-center">
+                    正在调用Coze工作流，预计需要1-2分钟
+                  </p>
+                </div>
+              )}
+              
+              {displayedTasks.length === 0 && !processingTask ? (
                 <div className="h-full flex flex-col items-center justify-center py-12">
                   <div className="w-20 h-20 rounded-3xl bg-gray-100 flex items-center justify-center mb-6">
                     <ImageIcon className="w-10 h-10 text-gray-300" />
