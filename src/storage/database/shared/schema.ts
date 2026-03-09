@@ -54,6 +54,32 @@ export const redemptionCodes = pgTable(
   ]
 );
 
+// 邀请码表 - 用于注册验证
+export const inviteCodes = pgTable(
+  "invite_codes",
+  {
+    id: varchar("id", { length: 36 })
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    code: varchar("code", { length: 32 }).notNull().unique(), // 邀请码
+    batchId: varchar("batch_id", { length: 36 }), // 批次ID，便于管理
+    description: text("description"), // 描述
+    isUsed: boolean("is_used").default(false).notNull(), // 是否已使用
+    usedBy: varchar("used_by", { length: 36 }), // 使用者用户ID
+    usedByEmail: varchar("used_by_email", { length: 255 }), // 使用者邮箱
+    usedAt: timestamp("used_at", { withTimezone: true }), // 使用时间
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }), // 过期时间（可选）
+  },
+  (table) => [
+    index("invite_codes_code_idx").on(table.code),
+    index("invite_codes_is_used_idx").on(table.isUsed),
+    index("invite_codes_batch_id_idx").on(table.batchId),
+  ]
+);
+
 // 用户任务表 - 存储用户的历史记录
 export const userTasks = pgTable(
   "user_tasks",

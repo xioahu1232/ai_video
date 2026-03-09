@@ -13,7 +13,7 @@ interface AuthContextType {
   token: string | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  register: (email: string, password: string, name?: string) => Promise<{ success: boolean; error?: string }>;
+  register: (email: string, password: string, name?: string, inviteCode?: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
 }
 
@@ -92,12 +92,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const register = useCallback(async (email: string, password: string, name?: string) => {
+  const register = useCallback(async (email: string, password: string, name?: string, inviteCode?: string) => {
     try {
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, name }),
+        body: JSON.stringify({ email, password, name, inviteCode }),
       });
 
       const data = await res.json();
@@ -110,7 +110,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return login(email, password);
     } catch (error) {
       console.error('Register error:', error);
-      return { success: false, error: '注册失败，请稍后重试' };
+      return { success: false, error: '注册失败，请稀后重试' };
     }
   }, [login]);
 

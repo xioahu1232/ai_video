@@ -3,11 +3,18 @@ import { getSupabaseClient } from '@/storage/database/supabase-client';
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, password, name } = await request.json();
+    const { email, password, name, inviteCode } = await request.json();
 
     if (!email || !password) {
       return NextResponse.json(
         { error: '邮箱和密码为必填项' },
+        { status: 400 }
+      );
+    }
+
+    if (!inviteCode) {
+      return NextResponse.json(
+        { error: '邀请码为必填项' },
         { status: 400 }
       );
     }
@@ -20,6 +27,38 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = getSupabaseClient();
+
+    // 验证邀请码
+    const normalizedInviteCode = inviteCode.trim().toUpperCase();
+    
+    const { data: inviteCodeRecord, error: inviteCodeError } = await supabase
+      .from('invite_codes')
+      .select('*')
+      .eq('code', normalizedInviteCode)
+      .single();
+
+    if (inviteCodeError || !inviteCodeRecord) {
+      return NextResponse.json(
+        { error: '邀请码不存在' },
+        { status: 400 }
+      );
+    }
+
+    // 检查邀请码是否已使用
+    if (inviteCodeRecord.is_used) {
+      return NextResponse.json(
+        { error: '该邀请码已被使用' },
+        { status: 400 }
+      );
+    }
+
+    // 检查邀请码是否过期
+    if (inviteCodeRecord.expires_at && new Date(inviteCodeRecord.expires_at) < new Date()) {
+      return NextResponse.json(
+        { error: '该邀请码已过期' },
+        { status: 400 }
+      );
+    }
 
     // 使用 Supabase Auth 注册用户
     const { data, error } = await supabase.auth.signUp({
@@ -50,6 +89,22 @@ export async function POST(request: NextRequest) {
         { error: '注册失败，请重试' },
         { status: 500 }
       );
+    }
+
+    // 标记邀请码已使用
+    const { error: markInviteCodeError } = await supabase
+      .from('invite_codes')
+      .update({
+        is_used: true,
+        used_by: data.user.id,
+        used_by_email: email,
+        used_at: new Date().toISOString(),
+      })
+      .eq('id', inviteCodeRecord.id);
+
+    if (markInviteCodeError) {
+      console.error('Mark invite code used error:', markInviteCodeError);
+      // 不影响注册流程，但记录错误
     }
 
     // 为新用户创建余额记录，赠送1次免费体验

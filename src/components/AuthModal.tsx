@@ -1,13 +1,13 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, Mail, Lock, User, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { X, Mail, Lock, User, Eye, EyeOff, Loader2, Gift } from 'lucide-react';
 
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
   onLogin: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  onRegister: (email: string, password: string, name?: string) => Promise<{ success: boolean; error?: string }>;
+  onRegister: (email: string, password: string, name?: string, inviteCode?: string) => Promise<{ success: boolean; error?: string }>;
 }
 
 export function AuthModal({ isOpen, onClose, onLogin, onRegister }: AuthModalProps) {
@@ -15,6 +15,7 @@ export function AuthModal({ isOpen, onClose, onLogin, onRegister }: AuthModalPro
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
+  const [inviteCode, setInviteCode] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -31,7 +32,7 @@ export function AuthModal({ isOpen, onClose, onLogin, onRegister }: AuthModalPro
       if (mode === 'login') {
         result = await onLogin(email, password);
       } else {
-        result = await onRegister(email, password, name || undefined);
+        result = await onRegister(email, password, name || undefined, inviteCode || undefined);
       }
 
       if (result.success) {
@@ -39,6 +40,7 @@ export function AuthModal({ isOpen, onClose, onLogin, onRegister }: AuthModalPro
         setEmail('');
         setPassword('');
         setName('');
+        setInviteCode('');
       } else {
         setError(result.error || '操作失败');
       }
@@ -145,6 +147,28 @@ export function AuthModal({ isOpen, onClose, onLogin, onRegister }: AuthModalPro
               </button>
             </div>
           </div>
+
+          {mode === 'register' && (
+            <div className="space-y-2">
+              <label className="text-xs sm:text-sm font-semibold text-gray-700">
+                邀请码 <span className="text-red-400">*</span>
+              </label>
+              <div className="relative">
+                <Gift className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
+                <input
+                  type="text"
+                  value={inviteCode}
+                  onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
+                  placeholder="请输入邀请码（格式：REG-XXXX-XXXX-XXXX）"
+                  required
+                  className="w-full h-11 sm:h-12 pl-11 sm:pl-12 pr-4 input-field text-gray-800 text-sm sm:text-base uppercase"
+                />
+              </div>
+              <p className="text-xs text-gray-500">
+                新用户注册需要有效邀请码，注册成功后可获得1次免费体验额度
+              </p>
+            </div>
+          )}
 
           {error && (
             <div className="p-3 sm:p-4 bg-red-50 rounded-lg sm:rounded-xl text-red-500 text-xs sm:text-sm">
