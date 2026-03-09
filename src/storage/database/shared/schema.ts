@@ -118,61 +118,6 @@ export const userTasks = pgTable(
   ]
 );
 
-// 登录日志表 - 安全审计
-export const loginLogs = pgTable(
-  "login_logs",
-  {
-    id: serial().primaryKey(),
-    userId: varchar("user_id", { length: 36 }), // 关联到 auth.users（成功登录后填充）
-    email: varchar("email", { length: 255 }).notNull(), // 登录邮箱
-    loginType: varchar("login_type", { length: 20 }).notNull(), // 登录类型：user, admin
-    success: boolean("success").default(false).notNull(), // 是否成功
-    ipAddress: varchar("ip_address", { length: 45 }), // IP地址
-    userAgent: text("user_agent"), // 浏览器信息
-    errorMessage: text("error_message"), // 错误信息
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .defaultNow()
-      .notNull(),
-  },
-  (table) => [
-    index("login_logs_email_idx").on(table.email),
-    index("login_logs_success_idx").on(table.success),
-    index("login_logs_created_at_idx").on(table.createdAt),
-    index("login_logs_ip_address_idx").on(table.ipAddress),
-  ]
-);
-
-// 数据埋点事件表 - 用户行为分析
-export const analyticsEvents = pgTable(
-  "analytics_events",
-  {
-    id: serial().primaryKey(),
-    userId: varchar("user_id", { length: 36 }), // 用户ID（匿名事件可为空）
-    sessionId: varchar("session_id", { length: 64 }), // 会话ID
-    eventType: varchar("event_type", { length: 50 }).notNull(), // 事件类型
-    eventName: varchar("event_name", { length: 100 }).notNull(), // 事件名称
-    eventCategory: varchar("event_category", { length: 50 }), // 事件分类
-    eventData: text("event_data"), // 事件详情（JSON格式）
-    pageUrl: varchar("page_url", { length: 500 }), // 页面URL
-    referrer: varchar("referrer", { length: 500 }), // 来源页面
-    userAgent: text("user_agent"), // 浏览器信息
-    ipAddress: varchar("ip_address", { length: 45 }), // IP地址
-    deviceType: varchar("device_type", { length: 20 }), // 设备类型：mobile, tablet, desktop
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .defaultNow()
-      .notNull(),
-  },
-  (table) => [
-    index("analytics_events_user_id_idx").on(table.userId),
-    index("analytics_events_event_type_idx").on(table.eventType),
-    index("analytics_events_event_name_idx").on(table.eventName),
-    index("analytics_events_created_at_idx").on(table.createdAt),
-    index("analytics_events_session_id_idx").on(table.sessionId),
-  ]
-);
-
 // TypeScript 类型
 export type UserTask = typeof userTasks.$inferSelect;
 export type InsertUserTask = typeof userTasks.$inferInsert;
-export type LoginLog = typeof loginLogs.$inferSelect;
-export type AnalyticsEvent = typeof analyticsEvents.$inferSelect;

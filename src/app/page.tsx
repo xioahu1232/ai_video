@@ -7,8 +7,7 @@ import {
   ImageIcon, Wand2, Star,
   Edit3, X, Clock, Video, Sparkles, Globe,
   Zap, Brain, Eye, Lightbulb, PenTool, FileText,
-  LogIn, LogOut, User, Gift, Coins, Shield, Download,
-  HelpCircle
+  LogIn, LogOut, User, Gift, Coins, Shield, Download
 } from 'lucide-react';
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
@@ -19,8 +18,6 @@ import Confetti from '@/components/Confetti';
 import ContactButton from '@/components/ContactButton';
 import Footer from '@/components/Footer';
 import { SmartBlessing } from '@/components/BlessingToast';
-import { OnboardingGuide, HelpButton, resetOnboardingGuide } from '@/components/OnboardingGuide';
-import { useAnalytics, useErrorTracking } from '@/hooks/useAnalytics';
 
 // 语言选项
 const LANGUAGES = [
@@ -122,10 +119,6 @@ interface Task {
 }
 
 export default function Home() {
-  // 数据埋点
-  const analytics = useAnalytics();
-  useErrorTracking(); // 全局错误追踪
-  
   // 认证相关
   const { user, token, isLoading: authLoading, isAdmin, isNewUser, login, register, logout, clearNewUserFlag } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -140,9 +133,6 @@ export default function Home() {
   
   // 小帆帆祝福
   const [showBlessing, setShowBlessing] = useState(false);
-  
-  // 新手引导
-  const [showOnboarding, setShowOnboarding] = useState(false);
   
   // 表单状态
   const [coreSellingPoint, setCoreSellingPoint] = useState('');
@@ -184,23 +174,6 @@ export default function Home() {
   
   // 文件输入引用
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
-  // 页面浏览埋点
-  useEffect(() => {
-    if (mounted) {
-      analytics.trackPageView('home');
-    }
-  }, [mounted, analytics]);
-  
-  // 新手引导触发
-  useEffect(() => {
-    if (mounted && !authLoading) {
-      const hasSeenGuide = localStorage.getItem('onboarding_completed');
-      if (!hasSeenGuide) {
-        setShowOnboarding(true);
-      }
-    }
-  }, [mounted, authLoading]);
   
   // 表单记忆功能：加载用户偏好
   useEffect(() => {
@@ -513,8 +486,6 @@ export default function Home() {
   // 删除任务
   const deleteTask = async (taskId: string) => {
     await deleteTaskFromDB(taskId);
-    // 埋点：删除任务
-    analytics.trackDelete(taskId);
     setTasks(prev => prev.filter(task => task.id !== taskId));
   };
 
@@ -533,9 +504,6 @@ export default function Home() {
     
     const newStarred = !task.starred;
     await updateTaskInDB(taskId, { starred: newStarred });
-    
-    // 埋点：收藏/取消收藏
-    analytics.trackStar(taskId, newStarred);
     
     setTasks(prev => 
       prev.map(task => 
@@ -781,9 +749,6 @@ export default function Home() {
     }, 100);
 
     try {
-      // 埋点：开始生成
-      analytics.trackGenerate(videoDuration, language);
-      
       // 步骤1：上传
       updateProgress(0, 0);
       
@@ -849,20 +814,10 @@ export default function Home() {
 
       // 触发小帆帆祝福
       setShowBlessing(true);
-      
-      // 埋点：生成成功
-      analytics.trackSuccess('video_prompt_generate', {
-        language,
-        duration: videoDuration,
-        hasImage: !!imageUrl,
-      });
 
     } catch (error) {
       console.error('Submit error:', error);
       clearInterval(stepInterval);
-      
-      // 埋点：生成失败
-      analytics.trackError('video_prompt_generate', error instanceof Error ? error : String(error));
       
       setTasks(prev => 
         prev.map(task => 
@@ -1025,9 +980,6 @@ ${'='.repeat(50)}`;
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-    
-    // 埋点：下载
-    analytics.trackDownload(filename, format);
   };
 
   // 当前正在处理的任务
@@ -1950,15 +1902,6 @@ ${'='.repeat(50)}`;
 
       {/* 联系客服悬浮按钮 */}
       <ContactButton />
-
-      {/* 帮助按钮 */}
-      <HelpButton onClick={() => {
-        resetOnboardingGuide();
-        setShowOnboarding(true);
-      }} />
-
-      {/* 新手引导 */}
-      {showOnboarding && <OnboardingGuide />}
 
       {/* 页脚 */}
       <Footer />
