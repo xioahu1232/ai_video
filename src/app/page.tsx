@@ -430,42 +430,38 @@ export default function Home() {
 
     setTasks(prev => [newTask, ...prev]);
 
-    // 模拟进度动画
-    const progressInterval = setInterval(() => {
-      setOverallProgress(prev => {
-        if (prev >= 95) return prev;
-        return prev + Math.random() * 3;
-      });
-      setStepProgress(prev => {
-        if (prev >= 95) return prev;
-        return prev + Math.random() * 5;
-      });
-    }, 500);
+    // 进度同步更新 - 总进度基于步骤进度计算
+    const updateProgress = (stepIndex: number, stepProg: number) => {
+      setCurrentStepIndex(stepIndex);
+      setStepProgress(stepProg);
+      // 总进度 = (已完成步骤数 + 当前步骤进度/100) / 总步骤数 * 100
+      const totalSteps = PROCESSING_STEPS.length;
+      const overallProg = ((stepIndex + stepProg / 100) / totalSteps) * 100;
+      setOverallProgress(Math.min(overallProg, 99));
+    };
 
-    // 步骤切换动画
+    // 步骤切换动画 - 基于实际时间
     const totalDuration = PROCESSING_STEPS.reduce((sum, s) => sum + s.duration, 0);
     let elapsedTime = 0;
     
     const stepInterval = setInterval(() => {
-      elapsedTime += 1000;
+      elapsedTime += 100;
       
       let accumulatedDuration = 0;
       for (let i = 0; i < PROCESSING_STEPS.length; i++) {
         accumulatedDuration += PROCESSING_STEPS[i].duration;
         if (elapsedTime < accumulatedDuration) {
-          setCurrentStepIndex(i);
           const stepStart = accumulatedDuration - PROCESSING_STEPS[i].duration;
-          const stepProgress = ((elapsedTime - stepStart) / PROCESSING_STEPS[i].duration) * 100;
-          setStepProgress(Math.min(stepProgress, 95));
+          const stepProg = Math.min(((elapsedTime - stepStart) / PROCESSING_STEPS[i].duration) * 100, 95);
+          updateProgress(i, stepProg);
           break;
         }
       }
-    }, 1000);
+    }, 100);
 
     try {
       // 步骤1：上传
-      setCurrentStepIndex(0);
-      setStepProgress(0);
+      updateProgress(0, 0);
       
       const imageUrl = await uploadImage(productImage);
       
@@ -478,8 +474,7 @@ export default function Home() {
       );
 
       // 步骤2-6：AI处理
-      setCurrentStepIndex(1);
-      setStepProgress(0);
+      updateProgress(1, 0);
 
       const result = await generatePrompt(
         imageUrl,
@@ -490,7 +485,6 @@ export default function Home() {
       );
 
       // 完成
-      clearInterval(progressInterval);
       clearInterval(stepInterval);
       setCurrentStepIndex(PROCESSING_STEPS.length - 1);
       setStepProgress(100);
@@ -525,7 +519,6 @@ export default function Home() {
 
     } catch (error) {
       console.error('Submit error:', error);
-      clearInterval(progressInterval);
       clearInterval(stepInterval);
       
       setTasks(prev => 
