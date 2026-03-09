@@ -22,7 +22,9 @@ import {
   HardDrive,
   AlertTriangle,
   Download,
+  TrendingUp,
 } from 'lucide-react';
+import AnalyticsPanel from '@/components/AnalyticsPanel';
 
 // 管理员登录表单
 function AdminLogin({ onLogin }: { onLogin: (token: string, user: AdminUser) => void }) {
@@ -181,7 +183,7 @@ interface Stats {
 // 管理员仪表盘
 function AdminDashboard({ token, user, onLogout }: { token: string; user: AdminUser; onLogout: () => void }) {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'overview' | 'invites' | 'redemption' | 'users' | 'health'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'analytics' | 'invites' | 'redemption' | 'users' | 'health'>('analytics');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [stats, setStats] = useState<Stats | null>(null);
   const [inviteCodes, setInviteCodes] = useState<InviteCode[]>([]);
@@ -325,6 +327,7 @@ function AdminDashboard({ token, user, onLogout }: { token: string; user: AdminU
   };
 
   const menuItems = [
+    { id: 'analytics', icon: TrendingUp, label: '数据分析' },
     { id: 'overview', icon: BarChart3, label: '数据概览' },
     { id: 'invites', icon: Gift, label: '邀请码管理' },
     { id: 'redemption', icon: Ticket, label: '兑换码管理' },
@@ -404,6 +407,11 @@ function AdminDashboard({ token, user, onLogout }: { token: string; user: AdminU
 
       {/* 主内容区 */}
       <div className="lg:ml-64 p-4 lg:p-8 pt-16 lg:pt-8">
+        {/* 数据分析面板 */}
+        {activeTab === 'analytics' && (
+          <AnalyticsPanel token={token} />
+        )}
+
         {/* 数据概览 */}
         {activeTab === 'overview' && (
           <div className="space-y-6">

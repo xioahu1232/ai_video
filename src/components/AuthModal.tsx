@@ -165,7 +165,7 @@ export function AuthModal({ isOpen, onClose, onLogin, onRegister }: AuthModalPro
                 />
               </div>
               <p className="text-xs text-gray-500">
-                新用户注册需要有效邀请码，注册成功后可获得1次免费体验额度
+                新用户注册需要有效邀请码，注册成功后可获得 <span className="font-semibold text-[#4fa3d1]">5次</span> 免费体验额度
               </p>
             </div>
           )}
