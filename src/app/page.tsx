@@ -658,11 +658,11 @@ export default function Home() {
       
       {/* 白色顶部导航栏 */}
       <header className="bg-white shadow-sm relative z-10">
-        <div className="max-w-6xl mx-auto px-8 py-5 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-8 py-6 flex items-center justify-between">
           <div className="flex items-center">
-            <div className="w-44 h-20 relative">
+            <div className="w-72 h-32 relative">
               <Image
-                src="https://code.coze.cn/api/sandbox/coze_coding/file/proxy?expire_time=-1&file_path=assets%2F%E9%95%BF%E9%A3%8E%E8%B7%A8%E5%A2%83logo%E6%8F%90%E5%8F%96.png&nonce=53b72a74-c3e7-4c4c-8632-417105b99d47&project_id=7615252896803864582&sign=a7b7df82deb47526062c47ad01bbef2b148a43f5c08de9c3127ab3a27bc61cf9"
+                src="https://code.coze.cn/api/sandbox/coze_coding/file/proxy?expire_time=-1&file_path=assets%2F%E9%95%BF%E9%A3%8E%E8%B7%A8%E5%A2%83logo%E6%8F%90%E5%8F%96.png&nonce=8b8fbdf1-5123-40a3-aa2f-019b159531b9&project_id=7615252896803864582&sign=70c33727e4787358b928d6129b3f425c36c504859f0479478886c5b0a1075964"
                 alt="长风跨境"
                 fill
                 className="object-contain"

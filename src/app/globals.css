@@ -28,8 +28,8 @@
   --radius-xl: calc(var(--radius) + 4px);
   --radius-2xl: calc(var(--radius) + 8px);
   --font-sans:
-    'PingFang SC', -apple-system, BlinkMacSystemFont, 'Microsoft YaHei',
-    'Helvetica Neue', sans-serif;
+    'Noto Sans SC', 'PingFang SC', -apple-system, BlinkMacSystemFont,
+    'Microsoft YaHei', 'Helvetica Neue', sans-serif;
 }
 
 :root {
@@ -79,6 +79,14 @@
   }
   body {
     @apply bg-background text-foreground font-sans antialiased;
+    font-weight: 400;
+    letter-spacing: 0.01em;
+    line-height: 1.7;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.3;
   }
 }
 
