@@ -2,6 +2,25 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
+// 简单的埋点函数（避免循环依赖）
+const trackEvent = async (eventType: string, eventName: string, eventData?: Record<string, any>) => {
+  try {
+    await fetch('/api/analytics', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        eventType,
+        eventName,
+        eventData,
+        sessionId: sessionStorage.getItem('_sid') || '',
+        pageUrl: typeof window !== 'undefined' ? window.location.href : '',
+      }),
+    });
+  } catch (e) {
+    // 埋点失败静默处理
+  }
+};
+
 interface User {
   id: string;
   email: string;
@@ -98,10 +117,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setToken(data.session.access_token);
       setUser(data.user);
       setIsAdmin(data.user?.role === 'admin');
+      
+      // 埋点：登录成功
+      trackEvent('login', 'user_login', { method: 'email' });
 
       return { success: true };
     } catch (error) {
       console.error('Login error:', error);
+      // 埋点：登录失败
+      trackEvent('error', 'login_failed', { error: String(error) });
       return { success: false, error: '登录失败，请稍后重试' };
     }
   }, []);
@@ -120,16 +144,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { success: false, error: data.error || '注册失败' };
       }
 
+      // 埋点：注册成功
+      trackEvent('register', 'user_register');
+      
       // 注册成功后自动登录，并标记为新用户
       setIsNewUser(true);
       return login(email, password);
     } catch (error) {
       console.error('Register error:', error);
+      // 埋点：注册失败
+      trackEvent('error', 'register_failed', { error: String(error) });
       return { success: false, error: '注册失败，请稀后重试' };
     }
   }, [login]);
 
   const logout = useCallback(() => {
+    // 埋点：登出
+    trackEvent('logout', 'user_logout');
+    
     localStorage.removeItem('auth_token');
     localStorage.removeItem('auth_user');
     setToken(null);
