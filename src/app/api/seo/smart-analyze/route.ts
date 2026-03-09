@@ -12,35 +12,32 @@ interface SEOAnalysisRequest {
 // SEO分析扣费金额
 const SEO_ANALYSIS_COST = 0.2;
 
-// 检测文本的主要语言
-function detectTargetLanguage(text: string): { lang: string; market: string; timezone: string } {
-  // 韩文检测（韩文字符是独特的）
-  if (/[가-힣]/.test(text)) {
-    return { lang: 'ko', market: '韩国市场', timezone: '韩国时间 (UTC+9)' };
-  }
+// 根据用户选择的语言代码映射目标市场
+function getTargetMarketFromLanguage(langCode: string): { lang: string; market: string; timezone: string } {
+  const languageMap: Record<string, { lang: string; market: string; timezone: string }> = {
+    'zh': { lang: 'zh', market: '华人市场', timezone: '北京时间 (UTC+8)' },
+    'en': { lang: 'en', market: '欧美市场', timezone: '美东时间 (UTC-5)' },
+    'ja': { lang: 'ja', market: '日本市场', timezone: '日本时间 (UTC+9)' },
+    'ko': { lang: 'ko', market: '韩国市场', timezone: '韩国时间 (UTC+9)' },
+    'es': { lang: 'es', market: '西班牙/拉美市场', timezone: '马德里时间 (UTC+1)' },
+    'pt': { lang: 'pt', market: '巴西/葡萄牙市场', timezone: '巴西利亚时间 (UTC-3)' },
+    'fr': { lang: 'fr', market: '法国/法语区市场', timezone: '巴黎时间 (UTC+1)' },
+    'de': { lang: 'de', market: '德语区市场', timezone: '柏林时间 (UTC+1)' },
+    'it': { lang: 'it', market: '意大利市场', timezone: '罗马时间 (UTC+1)' },
+    'ru': { lang: 'ru', market: '俄语区市场', timezone: '莫斯科时间 (UTC+3)' },
+    'ar': { lang: 'ar', market: '中东市场', timezone: '迪拜时间 (UTC+4)' },
+    'hi': { lang: 'hi', market: '印度市场', timezone: '新德里时间 (UTC+5:30)' },
+    'bn': { lang: 'bn', market: '孟加拉市场', timezone: '达卡时间 (UTC+6)' },
+    'tr': { lang: 'tr', market: '土耳其市场', timezone: '伊斯坦布尔时间 (UTC+3)' },
+    'vi': { lang: 'vi', market: '越南市场', timezone: '河内时间 (UTC+7)' },
+    'th': { lang: 'th', market: '泰国市场', timezone: '曼谷时间 (UTC+7)' },
+    'id': { lang: 'id', market: '印尼市场', timezone: '雅加达时间 (UTC+7)' },
+    'ur': { lang: 'ur', market: '巴基斯坦市场', timezone: '卡拉奇时间 (UTC+5)' },
+    'fa': { lang: 'fa', market: '伊朗市场', timezone: '德黑兰时间 (UTC+3:30)' },
+    'pa': { lang: 'pa', market: '旁遮普市场', timezone: '新德里时间 (UTC+5:30)' },
+  };
   
-  // 日文检测（必须包含假名 - 平假名或片假名）
-  if (/[あ-んア-ン]/.test(text)) {
-    return { lang: 'ja', market: '日本市场', timezone: '日本时间 (UTC+9)' };
-  }
-  
-  // 中文检测（有汉字但没有假名）
-  if (/[\u4e00-\u9fff]/.test(text)) {
-    return { lang: 'zh', market: '华人市场', timezone: '北京时间 (UTC+8)' };
-  }
-  
-  // 阿拉伯语检测
-  if (/[\u0600-\u06ff]/.test(text)) {
-    return { lang: 'ar', market: '中东市场', timezone: '中东时间 (UTC+3)' };
-  }
-  
-  // 西班牙语特殊字符检测
-  if (/[áéíóúüñ¿¡]/i.test(text)) {
-    return { lang: 'es', market: '西班牙/拉美市场', timezone: '马德里时间 (UTC+1)' };
-  }
-  
-  // 默认英语
-  return { lang: 'en', market: '欧美市场', timezone: '美东时间 (UTC-5)' };
+  return languageMap[langCode] || { lang: 'en', market: '欧美市场', timezone: '美东时间 (UTC-5)' };
 }
 
 export async function POST(request: NextRequest) {
@@ -103,8 +100,8 @@ export async function POST(request: NextRequest) {
     
     const content = prompt || sellingPoint;
     
-    // 智能检测目标语言和市场
-    const targetInfo = detectTargetLanguage(content);
+    // 根据用户选择的语言确定目标市场
+    const targetInfo = getTargetMarketFromLanguage(language || 'zh');
     const targetLang = targetInfo.lang;
     const targetMarket = targetInfo.market;
     
