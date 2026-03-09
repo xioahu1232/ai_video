@@ -156,13 +156,13 @@ export default function AnalyticsPanel({ token }: AnalyticsPanelProps) {
     : '0';
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* 标题栏 */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-white">数据分析面板</h2>
+          <h2 className="text-xl sm:text-2xl font-bold text-white">数据分析面板</h2>
           {lastUpdate && (
-            <p className="text-white/50 text-sm mt-1">
+            <p className="text-white/50 text-xs sm:text-sm mt-0.5 sm:mt-1">
               最后更新：{lastUpdate.toLocaleTimeString('zh-CN')}
             </p>
           )}
@@ -170,25 +170,25 @@ export default function AnalyticsPanel({ token }: AnalyticsPanelProps) {
         <button
           onClick={loadData}
           disabled={isLoading}
-          className="p-2 hover:bg-white/10 rounded-lg transition-colors text-white/70 hover:text-white"
+          className="p-1.5 sm:p-2 hover:bg-white/10 rounded-lg transition-colors text-white/70 hover:text-white"
         >
-          <RefreshCw className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`w-4 h-4 sm:w-5 sm:h-5 ${isLoading ? 'animate-spin' : ''}`} />
         </button>
       </div>
 
       {/* 核心指标卡片 - 今日数据 */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <MetricCard
           title="今日生成"
           value={data.overview.today.tasks}
-          suffix="个视频"
+          suffix="个"
           icon={Video}
           color="blue"
           change={taskChange}
           changeLabel="vs 昨日"
         />
         <MetricCard
-          title="今日活跃用户"
+          title="今日活跃"
           value={data.overview.today.users}
           suffix="人"
           icon={Users}
@@ -197,14 +197,14 @@ export default function AnalyticsPanel({ token }: AnalyticsPanelProps) {
           changeLabel="vs 昨日"
         />
         <MetricCard
-          title="今日成功率"
+          title="成功率"
           value={data.overview.today.successRate}
           suffix="%"
           icon={CheckCircle}
           color="purple"
         />
         <MetricCard
-          title="人均生成"
+          title="人均"
           value={data.overview.today.avgTasksPerUser}
           suffix="个"
           icon={BarChart3}
@@ -213,114 +213,114 @@ export default function AnalyticsPanel({ token }: AnalyticsPanelProps) {
       </div>
 
       {/* 对比数据 */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white/5 rounded-2xl p-5 border border-white/10">
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-white/70 text-sm">昨日数据</span>
-            <Calendar className="w-4 h-4 text-white/50" />
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+        <div className="bg-white/5 rounded-xl sm:rounded-2xl p-4 sm:p-5 border border-white/10">
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <span className="text-white/70 text-xs sm:text-sm">昨日数据</span>
+            <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white/50" />
           </div>
-          <div className="space-y-3">
+          <div className="space-y-2 sm:space-y-3">
             <div className="flex justify-between">
-              <span className="text-white/60 text-sm">生成量</span>
-              <span className="text-white font-semibold">{data.overview.yesterday.tasks} 个</span>
+              <span className="text-white/60 text-xs sm:text-sm">生成量</span>
+              <span className="text-white font-semibold text-sm sm:text-base">{data.overview.yesterday.tasks} 个</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-white/60 text-sm">活跃用户</span>
-              <span className="text-white font-semibold">{data.overview.yesterday.users} 人</span>
+              <span className="text-white/60 text-xs sm:text-sm">活跃用户</span>
+              <span className="text-white font-semibold text-sm sm:text-base">{data.overview.yesterday.users} 人</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-white/60 text-sm">成功率</span>
-              <span className="text-white font-semibold">{data.overview.yesterday.successRate}%</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white/5 rounded-2xl p-5 border border-white/10">
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-white/70 text-sm">本周数据</span>
-            <TrendingUp className="w-4 h-4 text-white/50" />
-          </div>
-          <div className="space-y-3">
-            <div className="flex justify-between">
-              <span className="text-white/60 text-sm">生成量</span>
-              <span className="text-white font-semibold">{data.overview.thisWeek.tasks} 个</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-white/60 text-sm">活跃用户</span>
-              <span className="text-white font-semibold">{data.overview.thisWeek.users} 人</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-white/60 text-sm">成功率</span>
-              <span className="text-white font-semibold">{data.overview.thisWeek.successRate}%</span>
+              <span className="text-white/60 text-xs sm:text-sm">成功率</span>
+              <span className="text-white font-semibold text-sm sm:text-base">{data.overview.yesterday.successRate}%</span>
             </div>
           </div>
         </div>
 
-        <div className="bg-white/5 rounded-2xl p-5 border border-white/10">
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-white/70 text-sm">本月数据</span>
-            <Activity className="w-4 h-4 text-white/50" />
+        <div className="bg-white/5 rounded-xl sm:rounded-2xl p-4 sm:p-5 border border-white/10">
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <span className="text-white/70 text-xs sm:text-sm">本周数据</span>
+            <TrendingUp className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white/50" />
           </div>
-          <div className="space-y-3">
+          <div className="space-y-2 sm:space-y-3">
             <div className="flex justify-between">
-              <span className="text-white/60 text-sm">生成量</span>
-              <span className="text-white font-semibold">{data.overview.thisMonth.tasks} 个</span>
+              <span className="text-white/60 text-xs sm:text-sm">生成量</span>
+              <span className="text-white font-semibold text-sm sm:text-base">{data.overview.thisWeek.tasks} 个</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-white/60 text-sm">活跃用户</span>
-              <span className="text-white font-semibold">{data.overview.thisMonth.users} 人</span>
+              <span className="text-white/60 text-xs sm:text-sm">活跃用户</span>
+              <span className="text-white font-semibold text-sm sm:text-base">{data.overview.thisWeek.users} 人</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-white/60 text-sm">成功率</span>
-              <span className="text-white font-semibold">{data.overview.thisMonth.successRate}%</span>
+              <span className="text-white/60 text-xs sm:text-sm">成功率</span>
+              <span className="text-white font-semibold text-sm sm:text-base">{data.overview.thisWeek.successRate}%</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white/5 rounded-xl sm:rounded-2xl p-4 sm:p-5 border border-white/10">
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <span className="text-white/70 text-xs sm:text-sm">本月数据</span>
+            <Activity className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white/50" />
+          </div>
+          <div className="space-y-2 sm:space-y-3">
+            <div className="flex justify-between">
+              <span className="text-white/60 text-xs sm:text-sm">生成量</span>
+              <span className="text-white font-semibold text-sm sm:text-base">{data.overview.thisMonth.tasks} 个</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-white/60 text-xs sm:text-sm">活跃用户</span>
+              <span className="text-white font-semibold text-sm sm:text-base">{data.overview.thisMonth.users} 人</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-white/60 text-xs sm:text-sm">成功率</span>
+              <span className="text-white font-semibold text-sm sm:text-base">{data.overview.thisMonth.successRate}%</span>
             </div>
           </div>
         </div>
       </div>
 
       {/* 实时状态 & 小时分布 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* 实时状态 */}
-        <div className="bg-gradient-to-br from-[#4fa3d1]/20 to-[#1a3a6b]/20 rounded-2xl p-6 border border-[#4fa3d1]/30">
-          <div className="flex items-center gap-2 mb-4">
-            <Zap className="w-5 h-5 text-[#4fa3d1]" />
-            <h3 className="text-lg font-semibold text-white">实时状态</h3>
+        <div className="bg-gradient-to-br from-[#4fa3d1]/20 to-[#1a3a6b]/20 rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-[#4fa3d1]/30">
+          <div className="flex items-center gap-2 mb-3 sm:mb-4">
+            <Zap className="w-4 h-4 sm:w-5 sm:h-5 text-[#4fa3d1]" />
+            <h3 className="text-base sm:text-lg font-semibold text-white">实时状态</h3>
             <span className="ml-auto flex items-center gap-1 text-xs text-emerald-400">
-              <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
+              <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-emerald-400 rounded-full animate-pulse" />
               在线
             </span>
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-black/20 rounded-xl p-4">
-              <p className="text-white/60 text-xs mb-1">最近1小时</p>
-              <p className="text-2xl font-bold text-white">{data.realtime.lastHourTasks}</p>
+          <div className="grid grid-cols-2 gap-2 sm:gap-4">
+            <div className="bg-black/20 rounded-lg sm:rounded-xl p-3 sm:p-4">
+              <p className="text-white/60 text-xs mb-0.5 sm:mb-1">最近1小时</p>
+              <p className="text-xl sm:text-2xl font-bold text-white">{data.realtime.lastHourTasks}</p>
               <p className="text-white/50 text-xs">个任务</p>
             </div>
-            <div className="bg-black/20 rounded-xl p-4">
-              <p className="text-white/60 text-xs mb-1">活跃用户</p>
-              <p className="text-2xl font-bold text-white">{data.realtime.activeUsers}</p>
+            <div className="bg-black/20 rounded-lg sm:rounded-xl p-3 sm:p-4">
+              <p className="text-white/60 text-xs mb-0.5 sm:mb-1">活跃用户</p>
+              <p className="text-xl sm:text-2xl font-bold text-white">{data.realtime.activeUsers}</p>
               <p className="text-white/50 text-xs">人在线</p>
             </div>
-            <div className="bg-black/20 rounded-xl p-4">
-              <p className="text-white/60 text-xs mb-1">等待中</p>
-              <p className="text-2xl font-bold text-amber-400">{data.realtime.pendingTasks}</p>
+            <div className="bg-black/20 rounded-lg sm:rounded-xl p-3 sm:p-4">
+              <p className="text-white/60 text-xs mb-0.5 sm:mb-1">等待中</p>
+              <p className="text-xl sm:text-2xl font-bold text-amber-400">{data.realtime.pendingTasks}</p>
               <p className="text-white/50 text-xs">个任务</p>
             </div>
-            <div className="bg-black/20 rounded-xl p-4">
-              <p className="text-white/60 text-xs mb-1">处理中</p>
-              <p className="text-2xl font-bold text-blue-400">{data.realtime.processingTasks}</p>
+            <div className="bg-black/20 rounded-lg sm:rounded-xl p-3 sm:p-4">
+              <p className="text-white/60 text-xs mb-0.5 sm:mb-1">处理中</p>
+              <p className="text-xl sm:text-2xl font-bold text-blue-400">{data.realtime.processingTasks}</p>
               <p className="text-white/50 text-xs">个任务</p>
             </div>
           </div>
         </div>
 
         {/* 今日小时分布 */}
-        <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
-          <div className="flex items-center gap-2 mb-4">
-            <Clock className="w-5 h-5 text-white/70" />
-            <h3 className="text-lg font-semibold text-white">今日时段分布</h3>
+        <div className="bg-white/5 rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-white/10">
+          <div className="flex items-center gap-2 mb-3 sm:mb-4">
+            <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-white/70" />
+            <h3 className="text-base sm:text-lg font-semibold text-white">今日时段分布</h3>
           </div>
-          <div className="h-40 flex items-end gap-1">
+          <div className="h-32 sm:h-40 flex items-end gap-0.5 sm:gap-1">
             {data.trends.hourly.map((item) => {
               const maxCount = Math.max(...data.trends.hourly.map(h => h.count), 1);
               const height = (item.count / maxCount) * 100;
@@ -342,7 +342,7 @@ export default function AnalyticsPanel({ token }: AnalyticsPanelProps) {
                     title={`${item.hour}:00 - ${item.count}个任务`}
                   />
                   {item.hour % 6 === 0 && (
-                    <span className="text-white/40 text-xs mt-1">{item.hour}:00</span>
+                    <span className="text-white/40 text-[10px] sm:text-xs mt-0.5 sm:mt-1">{item.hour}:00</span>
                   )}
                 </div>
               );
@@ -352,20 +352,20 @@ export default function AnalyticsPanel({ token }: AnalyticsPanelProps) {
       </div>
 
       {/* 用户排行 & 错误统计 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* 用户排行 */}
-        <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
-          <div className="flex items-center gap-2 mb-4">
-            <Users className="w-5 h-5 text-white/70" />
-            <h3 className="text-lg font-semibold text-white">用户排行榜 TOP 10</h3>
+        <div className="bg-white/5 rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-white/10">
+          <div className="flex items-center gap-2 mb-3 sm:mb-4">
+            <Users className="w-4 h-4 sm:w-5 sm:h-5 text-white/70" />
+            <h3 className="text-base sm:text-lg font-semibold text-white">用户排行榜 TOP 10</h3>
           </div>
-          <div className="space-y-2">
+          <div className="space-y-1.5 sm:space-y-2">
             {data.topUsers.slice(0, 10).map((user, index) => (
               <div
                 key={user.userId}
-                className="flex items-center gap-3 p-3 bg-black/20 rounded-xl hover:bg-black/30 transition-colors"
+                className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 bg-black/20 rounded-lg sm:rounded-xl hover:bg-black/30 transition-colors"
               >
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                <div className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold ${
                   index === 0 ? 'bg-yellow-500/30 text-yellow-400' :
                   index === 1 ? 'bg-gray-400/30 text-gray-300' :
                   index === 2 ? 'bg-orange-500/30 text-orange-400' :
@@ -374,16 +374,16 @@ export default function AnalyticsPanel({ token }: AnalyticsPanelProps) {
                   {index + 1}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-white text-sm font-medium truncate">
+                  <p className="text-white text-xs sm:text-sm font-medium truncate">
                     {user.userName || user.userEmail || '未知用户'}
                   </p>
-                  <p className="text-white/50 text-xs">
+                  <p className="text-white/50 text-[10px] sm:text-xs">
                     今日 {user.todayTasks} 个 · 成功率 {user.successRate}%
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="text-white font-semibold">{user.totalTasks}</p>
-                  <p className="text-white/50 text-xs">总任务</p>
+                  <p className="text-white font-semibold text-sm sm:text-base">{user.totalTasks}</p>
+                  <p className="text-white/50 text-[10px] sm:text-xs">总任务</p>
                 </div>
               </div>
             ))}
@@ -391,13 +391,13 @@ export default function AnalyticsPanel({ token }: AnalyticsPanelProps) {
         </div>
 
         {/* 错误统计 */}
-        <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
-          <div className="flex items-center gap-2 mb-4">
-            <AlertTriangle className="w-5 h-5 text-red-400" />
-            <h3 className="text-lg font-semibold text-white">错误统计 TOP 5</h3>
+        <div className="bg-white/5 rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-white/10">
+          <div className="flex items-center gap-2 mb-3 sm:mb-4">
+            <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-red-400" />
+            <h3 className="text-base sm:text-lg font-semibold text-white">错误统计 TOP 5</h3>
           </div>
           {data.errors.length === 0 ? (
-            <div className="text-center py-8">
+            <div className="text-center py-6 sm:py-8">
               <CheckCircle className="w-12 h-12 text-emerald-400 mx-auto mb-2" />
               <p className="text-emerald-400">太棒了！没有错误记录</p>
             </div>
@@ -527,26 +527,26 @@ function MetricCard({
   const isPositiveChange = change && parseFloat(change) >= 0;
 
   return (
-    <div className={`bg-gradient-to-br ${colorClasses[color].split(' ').slice(0, 2).join(' ')} rounded-2xl p-5 border ${colorClasses[color].split(' ')[2]}`}>
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-white/70 text-sm">{title}</span>
-        <Icon className={`w-5 h-5 ${colorClasses[color].split(' ')[3]}`} />
+    <div className={`bg-gradient-to-br ${colorClasses[color].split(' ').slice(0, 2).join(' ')} rounded-xl sm:rounded-2xl p-3 sm:p-5 border ${colorClasses[color].split(' ')[2]}`}>
+      <div className="flex items-center justify-between mb-2 sm:mb-3">
+        <span className="text-white/70 text-xs sm:text-sm">{title}</span>
+        <Icon className={`w-4 h-4 sm:w-5 sm:h-5 ${colorClasses[color].split(' ')[3]}`} />
       </div>
-      <div className="flex items-end gap-2">
-        <span className="text-3xl font-bold text-white">{value}</span>
-        {suffix && <span className="text-white/60 text-sm mb-1">{suffix}</span>}
+      <div className="flex items-end gap-1 sm:gap-2">
+        <span className="text-xl sm:text-3xl font-bold text-white">{value}</span>
+        {suffix && <span className="text-white/60 text-xs sm:text-sm mb-0.5 sm:mb-1">{suffix}</span>}
       </div>
       {change && (
-        <div className="mt-2 flex items-center gap-1">
+        <div className="mt-1.5 sm:mt-2 flex items-center gap-0.5 sm:gap-1">
           {isPositiveChange ? (
-            <ArrowUpRight className="w-4 h-4 text-emerald-400" />
+            <ArrowUpRight className="w-3 h-3 sm:w-4 sm:h-4 text-emerald-400" />
           ) : (
-            <ArrowDownRight className="w-4 h-4 text-red-400" />
+            <ArrowDownRight className="w-3 h-3 sm:w-4 sm:h-4 text-red-400" />
           )}
-          <span className={`text-sm ${isPositiveChange ? 'text-emerald-400' : 'text-red-400'}`}>
+          <span className={`text-[10px] sm:text-sm ${isPositiveChange ? 'text-emerald-400' : 'text-red-400'}`}>
             {isPositiveChange ? '+' : ''}{change}%
           </span>
-          {changeLabel && <span className="text-white/40 text-xs">{changeLabel}</span>}
+          {changeLabel && <span className="text-white/40 text-[10px] sm:text-xs">{changeLabel}</span>}
         </div>
       )}
     </div>
