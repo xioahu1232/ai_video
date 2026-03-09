@@ -38,6 +38,7 @@ const LANGUAGES = [
 const DURATION_PRESETS = [
   { label: '短视频', speech: '8', video: '10' },
   { label: '标准', speech: '12', video: '15' },
+  { label: '长视频', speech: '22', video: '25' },
 ];
 
 // AI处理步骤配置
