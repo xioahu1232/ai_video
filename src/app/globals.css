@@ -37,12 +37,21 @@
 :root {
   --radius: 0.75rem;
   
-  /* 长风跨境品牌色 */
+  /* 长风跨境品牌色 - 柔和版 */
   --navy-blue: #1a3a6b;
+  --navy-light: #2a4a7b;
   --sky-blue: #4fa3d1;
   --light-blue: #a8d8ea;
-  --dark-navy: #0d1f3c;
+  --dark-navy: #0f1a2e;
+  --deep-navy: #0a1220;
+  
+  /* 柔和的白色系 */
   --white: #ffffff;
+  --warm-white: #fafbfc;
+  --soft-white: #f5f7fa;
+  --cream: #f8f9fb;
+  
+  /* 灰色系 */
   --gray-50: #f8fafc;
   --gray-100: #f1f5f9;
   --gray-200: #e2e8f0;
@@ -54,13 +63,13 @@
   --gray-800: #1e293b;
   --gray-900: #0f172a;
   
-  /* 系统变量 */
-  --background: #0d1f3c;
-  --foreground: #ffffff;
-  --card: #ffffff;
-  --card-foreground: #1e293b;
-  --popover: #ffffff;
-  --popover-foreground: #1e293b;
+  /* 系统变量 - 降低对比度 */
+  --background: #0f1a2e;
+  --foreground: #e8ecf2;
+  --card: #fafbfc;
+  --card-foreground: #2d3748;
+  --popover: #fafbfc;
+  --popover-foreground: #2d3748;
   --primary: #4fa3d1;
   --primary-foreground: #ffffff;
   --secondary: #f1f5f9;
@@ -71,7 +80,7 @@
   --accent-foreground: #ffffff;
   --destructive: #ef4444;
   --border: #e2e8f0;
-  --input: #f1f5f9;
+  --input: #f8fafc;
   --ring: #4fa3d1;
 }
 
@@ -94,7 +103,7 @@
 
 /* 深蓝背景 */
 .page-bg {
-  background: linear-gradient(180deg, #0d1f3c 0%, #0a1628 50%, #0d1f3c 100%);
+  background: linear-gradient(135deg, #0f1a2e 0%, #152238 50%, #0f1a2e 100%);
   position: relative;
 }
 
@@ -102,10 +111,16 @@
   content: '';
   position: absolute;
   inset: 0;
+  /* 高级几何底纹 */
   background-image: 
-    radial-gradient(circle at 20% 20%, rgba(79, 163, 209, 0.08) 0%, transparent 50%),
-    radial-gradient(circle at 80% 80%, rgba(26, 58, 107, 0.15) 0%, transparent 50%),
-    radial-gradient(circle at 50% 50%, rgba(79, 163, 209, 0.03) 0%, transparent 70%);
+    /* 细微网格 */
+    linear-gradient(rgba(79, 163, 209, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(79, 163, 209, 0.02) 1px, transparent 1px),
+    /* 渐变光晕 */
+    radial-gradient(ellipse 80% 50% at 20% 20%, rgba(79, 163, 209, 0.06) 0%, transparent 50%),
+    radial-gradient(ellipse 60% 40% at 80% 80%, rgba(26, 58, 107, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse 50% 30% at 50% 50%, rgba(79, 163, 209, 0.03) 0%, transparent 60%);
+  background-size: 60px 60px, 60px 60px, 100% 100%, 100% 100%, 100% 100%;
   pointer-events: none;
 }
 
@@ -116,7 +131,7 @@
   left: 0;
   right: 0;
   height: 120px;
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 120'%3E%3Cpath fill='%234fa3d1' fill-opacity='0.05' d='M0,64L48,69.3C96,75,192,85,288,80C384,75,480,53,576,48C672,43,768,53,864,64C960,75,1056,85,1152,80C1248,75,1344,53,1392,42.7L1440,32L1440,120L1392,120C1344,120,1248,120,1152,120C1056,120,960,120,864,120C768,120,672,120,576,120C480,120,384,120,288,120C192,120,96,120,48,120L0,120Z'%3E%3C/path%3E%3C/svg%3E") no-repeat bottom center;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 120'%3E%3Cpath fill='%234fa3d1' fill-opacity='0.03' d='M0,64L48,69.3C96,75,192,85,288,80C384,75,480,53,576,48C672,43,768,53,864,64C960,75,1056,85,1152,80C1248,75,1344,53,1392,42.7L1440,32L1440,120L1392,120C1344,120,1248,120,1152,120C1056,120,960,120,864,120C768,120,672,120,576,120C480,120,384,120,288,120C192,120,96,120,48,120L0,120Z'%3E%3C/path%3E%3C/svg%3E") no-repeat bottom center;
   background-size: cover;
   pointer-events: none;
 }
@@ -262,19 +277,19 @@
 
 /* 卡片样式 */
 .card {
-  background: white;
+  background: linear-gradient(180deg, #fafbfc 0%, #f5f7fa 100%);
   border-radius: 24px;
   box-shadow: 
-    0 4px 6px -1px rgba(0, 0, 0, 0.05),
-    0 10px 40px -10px rgba(0, 0, 0, 0.1),
+    0 4px 6px -1px rgba(0, 0, 0, 0.03),
+    0 10px 40px -10px rgba(0, 0, 0, 0.06),
     0 0 0 1px rgba(0, 0, 0, 0.02);
   transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .card:hover {
   box-shadow: 
-    0 8px 12px -2px rgba(0, 0, 0, 0.08),
-    0 20px 60px -15px rgba(0, 0, 0, 0.15),
+    0 8px 12px -2px rgba(0, 0, 0, 0.05),
+    0 20px 60px -15px rgba(0, 0, 0, 0.1),
     0 0 0 1px rgba(0, 0, 0, 0.03);
   transform: translateY(-2px);
 }
@@ -329,18 +344,19 @@
   background: #f8fafc;
   border: 1.5px solid #e2e8f0;
   border-radius: 14px;
-  color: #1e293b;
+  color: #2d3748;
   transition: all 0.2s ease;
 }
 
 .input-field:hover {
   border-color: #cbd5e1;
+  background: #ffffff;
 }
 
 .input-field:focus {
-  background: white;
+  background: #ffffff;
   border-color: #4fa3d1;
-  box-shadow: 0 0 0 4px rgba(79, 163, 209, 0.1);
+  box-shadow: 0 0 0 4px rgba(79, 163, 209, 0.08);
   outline: none;
 }
 
@@ -358,7 +374,7 @@
 
 .upload-area:hover {
   border-color: #4fa3d1;
-  background: linear-gradient(135deg, rgba(79, 163, 209, 0.05) 0%, rgba(79, 163, 209, 0.02) 100%);
+  background: linear-gradient(135deg, rgba(79, 163, 209, 0.03) 0%, rgba(79, 163, 209, 0.01) 100%);
 }
 
 /* 进度条 */
@@ -384,11 +400,11 @@
 }
 
 .icon-container.primary {
-  background: linear-gradient(135deg, rgba(79, 163, 209, 0.1) 0%, rgba(79, 163, 209, 0.05) 100%);
+  background: linear-gradient(135deg, rgba(79, 163, 209, 0.08) 0%, rgba(79, 163, 209, 0.04) 100%);
 }
 
 .icon-container.warning {
-  background: linear-gradient(135deg, rgba(251, 191, 36, 0.1) 0%, rgba(251, 191, 36, 0.05) 100%);
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.08) 0%, rgba(251, 191, 36, 0.04) 100%);
 }
 
 /* 标签 */
@@ -449,7 +465,7 @@
 
 /* 任务卡片 */
 .task-card {
-  background: white;
+  background: linear-gradient(180deg, #fafbfc 0%, #f5f7fa 100%);
   border: 1px solid #e2e8f0;
   border-radius: 18px;
   transition: all 0.3s ease;
@@ -457,16 +473,16 @@
 
 .task-card:hover {
   border-color: #cbd5e1;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
 }
 
 .task-card.completed {
-  border-color: #10b981;
+  border-color: #86efac;
 }
 
 .task-card.failed {
-  border-color: #f87171;
-  background: linear-gradient(135deg, white 0%, rgba(239, 68, 68, 0.02) 100%);
+  border-color: #fca5a5;
+  background: linear-gradient(135deg, #fafbfc 0%, rgba(239, 68, 68, 0.02) 100%);
 }
 
 /* ========== AI 处理状态样式 ========== */
@@ -477,21 +493,21 @@
   align-items: center;
   gap: 16px;
   padding: 16px 20px;
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(255, 255, 255, 0.02);
   border-radius: 16px;
-  border: 1px solid rgba(79, 163, 209, 0.1);
+  border: 1px solid rgba(79, 163, 209, 0.08);
   transition: all 0.4s ease;
 }
 
 .processing-step.active {
-  background: rgba(79, 163, 209, 0.08);
-  border-color: rgba(79, 163, 209, 0.3);
+  background: rgba(79, 163, 209, 0.06);
+  border-color: rgba(79, 163, 209, 0.2);
   transform: scale(1.02);
 }
 
 .processing-step.completed {
-  background: rgba(16, 185, 129, 0.05);
-  border-color: rgba(16, 185, 129, 0.2);
+  background: rgba(16, 185, 129, 0.04);
+  border-color: rgba(16, 185, 129, 0.15);
 }
 
 /* 步骤图标 */
@@ -506,18 +522,18 @@
 }
 
 .step-icon.pending {
-  background: rgba(148, 163, 184, 0.1);
-  color: #94a3b8;
+  background: rgba(139, 163, 188, 0.1);
+  color: #8ba3bc;
 }
 
 .step-icon.active {
-  background: rgba(79, 163, 209, 0.2);
+  background: rgba(79, 163, 209, 0.15);
   color: #4fa3d1;
   animation: pulse 1.5s ease-in-out infinite;
 }
 
 .step-icon.completed {
-  background: rgba(16, 185, 129, 0.15);
+  background: rgba(16, 185, 129, 0.12);
   color: #10b981;
 }
 
@@ -600,7 +616,7 @@
 .ai-processing-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(13, 31, 60, 0.95);
+  background: rgba(15, 26, 46, 0.97);
   backdrop-filter: blur(20px);
   z-index: 100;
   display: flex;
@@ -622,8 +638,8 @@
   position: absolute;
   inset: 0;
   background-image: 
-    linear-gradient(rgba(79, 163, 209, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(79, 163, 209, 0.03) 1px, transparent 1px);
+    linear-gradient(rgba(79, 163, 209, 0.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(79, 163, 209, 0.015) 1px, transparent 1px);
   background-size: 50px 50px;
   animation: pulse 4s ease-in-out infinite;
 }
@@ -632,14 +648,14 @@
 .glow-orb {
   position: absolute;
   border-radius: 50%;
-  filter: blur(60px);
+  filter: blur(80px);
   animation: float 8s ease-in-out infinite;
 }
 
 .glow-orb-1 {
   width: 300px;
   height: 300px;
-  background: rgba(79, 163, 209, 0.15);
+  background: rgba(79, 163, 209, 0.1);
   top: 20%;
   left: 10%;
   animation-delay: 0s;
@@ -648,7 +664,7 @@
 .glow-orb-2 {
   width: 200px;
   height: 200px;
-  background: rgba(168, 216, 234, 0.1);
+  background: rgba(168, 216, 234, 0.08);
   bottom: 20%;
   right: 10%;
   animation-delay: -2s;
@@ -657,7 +673,7 @@
 .glow-orb-3 {
   width: 150px;
   height: 150px;
-  background: rgba(26, 58, 107, 0.2);
+  background: rgba(26, 58, 107, 0.12);
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);

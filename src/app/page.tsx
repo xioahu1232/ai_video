@@ -582,20 +582,20 @@ export default function Home() {
             </div>
             
             {/* 标题 */}
-            <h2 className="text-2xl font-bold text-white mb-2">
+            <h2 className="text-2xl font-bold text-[#e8ecf2] mb-2">
               AI智能体正在工作
             </h2>
-            <p className="text-[#4fa3d1] text-lg mb-8 h-7">
+            <p className="text-[#6aa8c8] text-lg mb-8 h-7">
               {dynamicText || '初始化中...'}
             </p>
             
             {/* 总进度 */}
             <div className="mb-10">
-              <div className="flex justify-between text-sm text-white/60 mb-2">
+              <div className="flex justify-between text-sm text-[#8ba3bc] mb-2">
                 <span>总进度</span>
                 <span>{Math.round(overallProgress)}%</span>
               </div>
-              <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+              <div className="h-2 bg-[#1a3a5a]/50 rounded-full overflow-hidden">
                 <div 
                   className="h-full progress-bar transition-all duration-300"
                   style={{ width: `${overallProgress}%` }}
@@ -626,18 +626,18 @@ export default function Home() {
                     </div>
                     
                     <div className="flex-1 text-left">
-                      <div className={`text-sm font-medium ${isActive || isCompleted ? 'text-white' : 'text-white/40'}`}>
+                      <div className={`text-sm font-medium ${isActive || isCompleted ? 'text-[#e8ecf2]' : 'text-[#5a7a9a]'}`}>
                         {step.label}
                       </div>
                       {isActive && (
-                        <div className="text-xs text-[#4fa3d1]/80 mt-0.5">
+                        <div className="text-xs text-[#6aa8c8] mt-0.5">
                           {step.subLabel}
                         </div>
                       )}
                     </div>
                     
                     {isActive && (
-                      <div className="text-xs text-[#4fa3d1] font-medium">
+                      <div className="text-xs text-[#6aa8c8] font-medium">
                         {Math.round(stepProgress)}%
                       </div>
                     )}
@@ -650,7 +650,7 @@ export default function Home() {
             </div>
             
             {/* 提示文字 */}
-            <p className="text-white/30 text-sm mt-10">
+            <p className="text-[#4a6a8a] text-sm mt-10">
               正在调用Coze工作流，预计需要1-2分钟
             </p>
           </div>
@@ -686,12 +686,11 @@ export default function Home() {
         
         {/* 标题区 */}
         <div className={`text-center mb-16 opacity-0 ${mounted ? 'animate-fadeInUp delay-100' : ''}`}>
-
           
-          <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 tracking-tight">
+          <h1 className="text-4xl md:text-5xl font-bold text-[#e8ecf2] mb-4 tracking-tight">
             长风跨境Prompt智能体
           </h1>
-          <p className="text-lg text-white/50 max-w-xl mx-auto leading-relaxed">
+          <p className="text-lg text-[#8ba3bc] max-w-xl mx-auto leading-relaxed">
             填写产品信息，调用多个AI智能体协作撰写
           </p>
         </div>
@@ -1138,15 +1137,15 @@ export default function Home() {
 
         {/* 底部 */}
         <footer className={`mt-20 text-center opacity-0 ${mounted ? 'animate-fadeIn delay-400' : ''}`}>
-          <div className="inline-flex items-center gap-3 text-white/30 mb-5">
-            <div className="h-px w-16 bg-white/10" />
+          <div className="inline-flex items-center gap-3 text-[#4a6a8a] mb-5">
+            <div className="h-px w-16 bg-[#2a4a6a]/30" />
             <Sparkles className="w-5 h-5" />
-            <div className="h-px w-16 bg-white/10" />
+            <div className="h-px w-16 bg-[#2a4a6a]/30" />
           </div>
-          <p className="text-base text-white/40 mb-2">
+          <p className="text-base text-[#6a8aaa] mb-2">
             帮助中国商家出海 | Helping Chinese Merchants Go Global
           </p>
-          <p className="text-sm text-white/20">
+          <p className="text-sm text-[#4a6a8a]">
             Powered by Coze Workflow
           </p>
         </footer>
