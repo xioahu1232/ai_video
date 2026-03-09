@@ -659,10 +659,11 @@ export default function Home() {
       {/* 主内容 */}
       <div className="relative max-w-7xl mx-auto px-6 py-8">
         
-        {/* 顶部导航 */}
-        <header className={`flex items-center justify-between mb-8 opacity-0 ${mounted ? 'animate-fadeIn' : ''}`}>
+      {/* 白色顶部导航栏 */}
+      <header className="bg-white border-b border-gray-100">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 relative">
+            <div className="w-28 h-14 relative">
               <Image
                 src="https://code.coze.cn/api/sandbox/coze_coding/file/proxy?expire_time=-1&file_path=assets%2F%E9%95%BF%E9%A3%8E%E8%B7%A8%E5%A2%83logo%E6%8F%90%E5%8F%96.png&nonce=53b72a74-c3e7-4c4c-8632-417105b99d47&project_id=7615252896803864582&sign=a7b7df82deb47526062c47ad01bbef2b148a43f5c08de9c3127ab3a27bc61cf9"
                 alt="长风跨境"
@@ -673,11 +674,12 @@ export default function Home() {
             </div>
           </div>
           
-          <div className="hidden md:flex items-center gap-2 text-white/60">
+          <div className="hidden md:flex items-center gap-2 text-gray-500">
             <Globe className="w-4 h-4" />
-            <span className="text-sm">帮助中国商家出海</span>
+            <span className="text-sm font-medium">帮助中国商家出海</span>
           </div>
-        </header>
+        </div>
+      </header>
 
         {/* 标题区 */}
         <div className={`text-center mb-12 opacity-0 ${mounted ? 'animate-fadeInUp delay-100' : ''}`}>
