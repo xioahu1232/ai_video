@@ -681,16 +681,13 @@ export default function Home() {
 
         {/* 标题区 */}
         <div className={`text-center mb-12 opacity-0 ${mounted ? 'animate-fadeInUp delay-100' : ''}`}>
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 mb-6">
-            <Brain className="w-4 h-4 text-[#4fa3d1]" />
-            <span className="text-sm text-[#4fa3d1] font-medium">AI Powered</span>
-          </div>
+
           
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 tracking-tight">
-            AI视频提示词生成器
+            长风跨境Prompt智能体
           </h1>
           <p className="text-lg text-white/50 max-w-xl mx-auto leading-relaxed">
-            智能生成视频脚本，助力跨境营销内容创作
+            填写产品信息，调用多个AI智能体协作撰写
           </p>
         </div>
 
