@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { Video, Clock, Upload, Loader2, CheckCircle2, XCircle, Copy, Check, Sparkles, FileText, ChevronDown, ChevronUp, Trash2 } from 'lucide-react';
+import { Video, Clock, Upload, Loader2, CheckCircle2, XCircle, Copy, Check, Sparkles, FileText, ChevronDown, ChevronUp, Trash2, ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -41,6 +41,8 @@ interface Task {
   seedance?: string;
   error?: string;
   expanded?: boolean;
+  imageUrl?: string;      // 图片URL（上传后的）
+  imagePreview?: string;  // 本地预览URL
 }
 
 // 加载动画文案
@@ -56,6 +58,7 @@ export default function Home() {
   // 表单状态
   const [coreSellingPoint, setCoreSellingPoint] = useState('');
   const [productImage, setProductImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [speechDuration, setSpeechDuration] = useState('12');
   const [videoDuration, setVideoDuration] = useState('15');
   const [language, setLanguage] = useState('es');
@@ -78,6 +81,9 @@ export default function Home() {
     const file = e.target.files?.[0];
     if (file) {
       setProductImage(file);
+      // 创建本地预览URL
+      const previewUrl = URL.createObjectURL(file);
+      setImagePreview(previewUrl);
     }
   };
 
@@ -168,7 +174,7 @@ export default function Home() {
     setIsSubmitting(true);
     setLoadingMessageIndex(0);
     
-    // 创建新任务
+    // 创建新任务，保存本地预览图片
     const newTask: Task = {
       id: Date.now().toString(),
       status: 'uploading',
@@ -177,6 +183,7 @@ export default function Home() {
       createdAt: new Date(),
       progress: 0,
       expanded: true,
+      imagePreview: imagePreview || undefined,
     };
 
     setTasks(prev => [newTask, ...prev]);
@@ -198,6 +205,15 @@ export default function Home() {
 
       const imageUrl = await uploadImage(productImage);
       console.log('Image uploaded:', imageUrl);
+
+      // 更新任务的图片URL
+      setTasks(prev => 
+        prev.map(task => 
+          task.id === newTask.id 
+            ? { ...task, imageUrl: imageUrl }
+            : task
+        )
+      );
 
       // 步骤2：调用工作流
       setTasks(prev => 
@@ -235,6 +251,7 @@ export default function Home() {
       // 重置表单
       setCoreSellingPoint('');
       setProductImage(null);
+      setImagePreview(null);
       setSpeechDuration('12');
       setVideoDuration('15');
       if (fileInputRef.current) {
@@ -335,6 +352,16 @@ export default function Home() {
                     {productImage ? productImage.name : '未选择任何文件'}
                   </span>
                 </div>
+                {/* 图片预览 */}
+                {imagePreview && (
+                  <div className="mt-2 relative inline-block">
+                    <img 
+                      src={imagePreview} 
+                      alt="产品预览" 
+                      className="h-20 w-20 object-cover rounded-lg border border-border"
+                    />
+                  </div>
+                )}
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -450,88 +477,110 @@ export default function Home() {
                           : 'bg-secondary/30 border border-border'
                       }`}
                     >
-                      {/* 任务头部 */}
-                      <div className="p-4 flex items-start justify-between gap-3">
-                        <div className="flex items-start gap-3 flex-1 min-w-0">
-                          {/* 状态图标 */}
-                          <div className={`mt-0.5 flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
-                            task.status === 'completed' 
-                              ? 'bg-green-500/20' 
-                              : task.status === 'failed'
-                              ? 'bg-red-500/20'
-                              : task.status === 'processing'
-                              ? 'bg-blue-500/20'
-                              : 'bg-yellow-500/20'
-                          }`}>
-                            {task.status === 'completed' && <CheckCircle2 className="h-4 w-4 text-green-500" />}
-                            {task.status === 'failed' && <XCircle className="h-4 w-4 text-red-500" />}
-                            {task.status === 'processing' && <Loader2 className="h-4 w-4 text-blue-500 animate-spin" />}
-                            {task.status === 'uploading' && <Upload className="h-4 w-4 text-yellow-500 animate-pulse" />}
-                            {task.status === 'pending' && <Clock className="h-4 w-4 text-yellow-500" />}
-                          </div>
-                          
-                          {/* 任务信息 */}
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="text-sm font-medium truncate">
-                                {task.status === 'processing' 
-                                  ? LOADING_MESSAGES[loadingMessageIndex]
-                                  : task.status === 'uploading'
-                                  ? '正在上传图片...'
-                                  : task.status === 'completed'
-                                  ? '生成完成'
-                                  : task.status === 'failed'
-                                  ? '生成失败'
-                                  : '等待中'
-                                }
-                              </span>
-                              {task.status === 'processing' && (
-                                <span className="inline-flex gap-1">
-                                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-bounce" style={{animationDelay: '0ms'}} />
-                                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-bounce" style={{animationDelay: '150ms'}} />
-                                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-bounce" style={{animationDelay: '300ms'}} />
+                      {/* 任务头部 - 带图片 */}
+                      <div className="p-4 flex items-start gap-3">
+                        {/* 产品图片缩略图 */}
+                        <div className="flex-shrink-0">
+                          {task.imagePreview || task.imageUrl ? (
+                            <img 
+                              src={task.imagePreview || task.imageUrl} 
+                              alt="产品" 
+                              className="w-16 h-16 object-cover rounded-lg border border-border/50"
+                            />
+                          ) : (
+                            <div className="w-16 h-16 rounded-lg bg-secondary/50 border border-border/50 flex items-center justify-center">
+                              <ImageIcon className="h-6 w-6 text-muted-foreground/50" />
+                            </div>
+                          )}
+                        </div>
+
+                        {/* 任务信息 */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1">
+                              {/* 状态行 */}
+                              <div className="flex items-center gap-2 mb-1">
+                                {/* 状态图标 */}
+                                <div className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center ${
+                                  task.status === 'completed' 
+                                    ? 'bg-green-500/20' 
+                                    : task.status === 'failed'
+                                    ? 'bg-red-500/20'
+                                    : task.status === 'processing'
+                                    ? 'bg-blue-500/20'
+                                    : 'bg-yellow-500/20'
+                                }`}>
+                                  {task.status === 'completed' && <CheckCircle2 className="h-3 w-3 text-green-500" />}
+                                  {task.status === 'failed' && <XCircle className="h-3 w-3 text-red-500" />}
+                                  {task.status === 'processing' && <Loader2 className="h-3 w-3 text-blue-500 animate-spin" />}
+                                  {task.status === 'uploading' && <Upload className="h-3 w-3 text-yellow-500 animate-pulse" />}
+                                  {task.status === 'pending' && <Clock className="h-3 w-3 text-yellow-500" />}
+                                </div>
+                                
+                                <span className="text-sm font-medium truncate">
+                                  {task.status === 'processing' 
+                                    ? LOADING_MESSAGES[loadingMessageIndex]
+                                    : task.status === 'uploading'
+                                    ? '正在上传图片...'
+                                    : task.status === 'completed'
+                                    ? '生成完成'
+                                    : task.status === 'failed'
+                                    ? '生成失败'
+                                    : '等待中'
+                                  }
                                 </span>
-                              )}
+                                {task.status === 'processing' && (
+                                  <span className="inline-flex gap-1">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-bounce" style={{animationDelay: '0ms'}} />
+                                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-bounce" style={{animationDelay: '150ms'}} />
+                                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-bounce" style={{animationDelay: '300ms'}} />
+                                  </span>
+                                )}
+                              </div>
+                              
+                              {/* 核心卖点 */}
+                              <p className="text-xs text-muted-foreground truncate mb-1.5">
+                                {task.coreSellingPoint}
+                              </p>
+                              
+                              {/* 标签 */}
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-muted-foreground bg-secondary/50 px-2 py-0.5 rounded">
+                                  {getLanguageName(task.language)}
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                  {task.createdAt.toLocaleTimeString()}
+                                </span>
+                              </div>
                             </div>
-                            <p className="text-xs text-muted-foreground truncate">
-                              {task.coreSellingPoint}
-                            </p>
-                            <div className="flex items-center gap-2 mt-1">
-                              <span className="text-xs text-muted-foreground bg-secondary/50 px-2 py-0.5 rounded">
-                                {getLanguageName(task.language)}
-                              </span>
-                              <span className="text-xs text-muted-foreground">
-                                {task.createdAt.toLocaleTimeString()}
-                              </span>
-                            </div>
+                            
+                            {/* 操作按钮 */}
+                            {task.status === 'completed' && (
+                              <div className="flex items-center gap-1 flex-shrink-0">
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-7 w-7 p-0"
+                                  onClick={() => toggleExpand(task.id)}
+                                >
+                                  {task.expanded ? (
+                                    <ChevronUp className="h-4 w-4" />
+                                  ) : (
+                                    <ChevronDown className="h-4 w-4" />
+                                  )}
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-7 w-7 p-0 hover:text-red-400"
+                                  onClick={() => deleteTask(task.id)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            )}
                           </div>
                         </div>
-                        
-                        {/* 操作按钮 */}
-                        {task.status === 'completed' && (
-                          <div className="flex items-center gap-1">
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="h-8 w-8 p-0"
-                              onClick={() => toggleExpand(task.id)}
-                            >
-                              {task.expanded ? (
-                                <ChevronUp className="h-4 w-4" />
-                              ) : (
-                                <ChevronDown className="h-4 w-4" />
-                              )}
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="h-8 w-8 p-0 hover:text-red-400"
-                              onClick={() => deleteTask(task.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        )}
                       </div>
 
                       {/* 进度条 */}
@@ -653,7 +702,7 @@ export default function Home() {
                         </div>
                       )}
 
-                      {/* 收起状态的完成提示词预览 */}
+                      {/* 收起状态的提示词预览 */}
                       {task.status === 'completed' && !task.expanded && (
                         <div className="px-4 pb-4 flex items-center gap-4 text-xs text-muted-foreground">
                           <span className="flex items-center gap-1">
