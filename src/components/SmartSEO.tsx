@@ -32,10 +32,9 @@ interface SmartSEOData {
   targetMarket?: string;
   detectedLanguage?: string;
   category: string;
-  analysis?: {
-    titleScore: number;
-    titleIssues: string[];
-    titleOptimizations: string[];
+  titleSuggestions?: {
+    principles: string[];
+    examples: string[];
   };
   hashtags?: {
     recommended: Array<{ tag: string; reason: string; expectedReach: string }>;
@@ -216,8 +215,8 @@ export default function SmartSEO({ prompt, sellingPoint, language, onCopy }: Sma
               </Card>
             )}
 
-            {/* 标题分析 */}
-            {data.analysis && (
+            {/* 标题撰写建议 */}
+            {data.titleSuggestions && (
               <Card className="border-[#4fa3d1]/20">
                 <CardHeader 
                   className="cursor-pointer"
@@ -226,40 +225,38 @@ export default function SmartSEO({ prompt, sellingPoint, language, onCopy }: Sma
                   <div className="flex items-center justify-between">
                     <CardTitle className="flex items-center gap-2 text-[#1a3a6b]">
                       <FileText className="w-5 h-5 text-[#4fa3d1]" />
-                      标题分析
+                      标题撰写建议
                     </CardTitle>
-                    <div className="flex items-center gap-2">
-                      <Badge className={getScoreBadge(data.analysis.titleScore).className}>
-                        {data.analysis.titleScore}分
-                      </Badge>
-                      {expandedSections.title ? 
-                        <ChevronUp className="w-5 h-5 text-gray-400" /> : 
-                        <ChevronDown className="w-5 h-5 text-gray-400" />
-                      }
-                    </div>
+                    {expandedSections.title ? 
+                      <ChevronUp className="w-5 h-5 text-gray-400" /> : 
+                      <ChevronDown className="w-5 h-5 text-gray-400" />
+                    }
                   </div>
                 </CardHeader>
                 {expandedSections.title && (
                   <CardContent className="space-y-3">
-                    {data.analysis.titleIssues.length > 0 && (
-                      <div className="space-y-1">
-                        <p className="text-sm font-medium text-red-600">⚠️ 问题：</p>
-                        <ul className="text-sm text-gray-600 list-disc list-inside">
-                          {data.analysis.titleIssues.map((issue, idx) => (
-                            <li key={idx}>{issue}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
+                    {/* 撰写原则 */}
                     <div className="space-y-2">
-                      <p className="text-sm font-medium text-[#1a3a6b]">✨ 优化版本：</p>
-                      {data.analysis.titleOptimizations.map((version, idx) => (
+                      <p className="text-sm font-medium text-[#1a3a6b]">📌 撰写原则：</p>
+                      <ul className="text-sm text-gray-600 space-y-1">
+                        {data.titleSuggestions.principles.map((principle, idx) => (
+                          <li key={idx} className="flex items-start gap-2">
+                            <span className="text-[#4fa3d1]">•</span>
+                            <span>{principle}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    {/* 推荐标题示例 */}
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium text-[#1a3a6b]">✨ 推荐标题示例：</p>
+                      {data.titleSuggestions.examples.map((example, idx) => (
                         <div
                           key={idx}
                           className="bg-gray-50 p-3 rounded-lg text-sm cursor-pointer hover:bg-gray-100 transition-colors flex items-start justify-between gap-2"
-                          onClick={() => handleCopy(version, `title-${idx}`)}
+                          onClick={() => handleCopy(example, `title-${idx}`)}
                         >
-                          <span>{version}</span>
+                          <span>{example}</span>
                           {copied === `title-${idx}` ? 
                             <Check className="w-4 h-4 text-green-500 flex-shrink-0" /> : 
                             <Copy className="w-4 h-4 text-gray-400 flex-shrink-0" />
