@@ -1,6 +1,9 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 
+/* Google Fonts - Noto Sans SC */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap');
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
@@ -27,8 +30,7 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
   --radius-2xl: calc(var(--radius) + 8px);
-  --font-sans:
-    'Noto Sans SC', 'PingFang SC', -apple-system, BlinkMacSystemFont,
+  --font-sans: 'Noto Sans SC', 'PingFang SC', -apple-system, BlinkMacSystemFont,
     'Microsoft YaHei', 'Helvetica Neue', sans-serif;
 }
 
