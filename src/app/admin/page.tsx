@@ -527,12 +527,39 @@ function AdminDashboard({ token, user, onLogout }: { token: string; user: AdminU
             <div className="bg-white/10 backdrop-blur-sm rounded-2xl border border-white/10 overflow-hidden">
               <div className="p-4 border-b border-white/10 flex items-center justify-between">
                 <h3 className="text-lg font-semibold text-white">邀请码列表</h3>
-                <button
-                  onClick={loadInviteCodes}
-                  className="p-2 hover:bg-white/10 rounded-lg transition-colors text-white/70 hover:text-white"
-                >
-                  <RefreshCw className="w-4 h-4" />
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={async () => {
+                      if (!confirm('确定要删除所有已使用的邀请码吗？此操作不可恢复。')) return;
+                      try {
+                        const res = await fetch('/api/admin/invites/used', {
+                          method: 'DELETE',
+                          headers: { Authorization: `Bearer ${token}` },
+                        });
+                        const data = await res.json();
+                        if (data.success) {
+                          alert(data.message);
+                          loadInviteCodes();
+                        } else {
+                          alert(data.error || '删除失败');
+                        }
+                      } catch (err) {
+                        console.error('Delete used invite codes error:', err);
+                        alert('删除失败');
+                      }
+                    }}
+                    className="px-3 py-1.5 bg-red-500/20 text-red-400 rounded-lg text-sm hover:bg-red-500/30 transition-colors flex items-center gap-1.5"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    删除已使用
+                  </button>
+                  <button
+                    onClick={loadInviteCodes}
+                    className="p-2 hover:bg-white/10 rounded-lg transition-colors text-white/70 hover:text-white"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full">
@@ -668,12 +695,39 @@ function AdminDashboard({ token, user, onLogout }: { token: string; user: AdminU
             <div className="bg-white/10 backdrop-blur-sm rounded-2xl border border-white/10 overflow-hidden">
               <div className="p-4 border-b border-white/10 flex items-center justify-between">
                 <h3 className="text-lg font-semibold text-white">兑换码列表</h3>
-                <button
-                  onClick={loadRedemptionCodes}
-                  className="p-2 hover:bg-white/10 rounded-lg transition-colors text-white/70 hover:text-white"
-                >
-                  <RefreshCw className="w-4 h-4" />
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={async () => {
+                      if (!confirm('确定要删除所有已使用的兑换码吗？此操作不可恢复。')) return;
+                      try {
+                        const res = await fetch('/api/admin/codes/used', {
+                          method: 'DELETE',
+                          headers: { Authorization: `Bearer ${token}` },
+                        });
+                        const data = await res.json();
+                        if (data.success) {
+                          alert(data.message);
+                          loadRedemptionCodes();
+                        } else {
+                          alert(data.error || '删除失败');
+                        }
+                      } catch (err) {
+                        console.error('Delete used redemption codes error:', err);
+                        alert('删除失败');
+                      }
+                    }}
+                    className="px-3 py-1.5 bg-red-500/20 text-red-400 rounded-lg text-sm hover:bg-red-500/30 transition-colors flex items-center gap-1.5"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    删除已使用
+                  </button>
+                  <button
+                    onClick={loadRedemptionCodes}
+                    className="p-2 hover:bg-white/10 rounded-lg transition-colors text-white/70 hover:text-white"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full">
