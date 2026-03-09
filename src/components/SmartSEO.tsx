@@ -62,10 +62,12 @@ interface SmartSEOProps {
   prompt: string;
   sellingPoint: string;
   language: string;
+  token?: string;
   onCopy?: (text: string, type: string) => void;
+  onBalanceUpdate?: (newBalance: number) => void;
 }
 
-export default function SmartSEO({ prompt, sellingPoint, language, onCopy }: SmartSEOProps) {
+export default function SmartSEO({ prompt, sellingPoint, language, token, onCopy, onBalanceUpdate }: SmartSEOProps) {
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<SmartSEOData | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -85,13 +87,21 @@ export default function SmartSEO({ prompt, sellingPoint, language, onCopy }: Sma
   const handleAnalyze = async () => {
     if (!prompt && !sellingPoint) return;
     
+    if (!token) {
+      setError('请先登录');
+      return;
+    }
+    
     setLoading(true);
     setError(null);
     
     try {
       const response = await fetch('/api/seo/smart-analyze', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
         body: JSON.stringify({ prompt, sellingPoint, language }),
       });
       
@@ -99,8 +109,16 @@ export default function SmartSEO({ prompt, sellingPoint, language, onCopy }: Sma
       
       if (result.success) {
         setData(result.data);
+        // 更新余额
+        if (result.balance !== undefined && onBalanceUpdate) {
+          onBalanceUpdate(result.balance);
+        }
       } else {
         setError(result.error || '分析失败');
+        // 如果返回了余额信息，也更新一下
+        if (result.balance !== undefined && onBalanceUpdate) {
+          onBalanceUpdate(result.balance);
+        }
       }
     } catch (err) {
       setError('网络错误，请稍后重试');

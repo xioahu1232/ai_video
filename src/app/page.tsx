@@ -1775,6 +1775,8 @@ ${'='.repeat(50)}`;
                             prompt={task.sora || task.seedance || ''}
                             sellingPoint={task.coreSellingPoint}
                             language={task.language}
+                            token={token || undefined}
+                            onBalanceUpdate={setBalance}
                           />
                           
                           {/* 视频生成快捷链接 */}
