@@ -47,8 +47,6 @@ const LANGUAGES = [
 const DURATION_PRESETS = [
   { label: '短视频', speech: '8', video: '10' },
   { label: '标准', speech: '12', video: '15' },
-  { label: '中长', speech: '20', video: '30' },
-  { label: '长视频', speech: '30', video: '60' },
 ];
 
 // 任务状态类型
