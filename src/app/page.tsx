@@ -13,6 +13,8 @@ import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 import { AuthModal } from '@/components/AuthModal';
 import { RedeemModal } from '@/components/RedeemModal';
+import WelcomeModal from '@/components/WelcomeModal';
+import Confetti from '@/components/Confetti';
 
 // 语言选项
 const LANGUAGES = [
@@ -114,12 +116,16 @@ interface Task {
 
 export default function Home() {
   // 认证相关
-  const { user, token, isLoading: authLoading, isAdmin, login, register, logout } = useAuth();
+  const { user, token, isLoading: authLoading, isAdmin, isNewUser, login, register, logout, clearNewUserFlag } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
   
   // 余额相关
   const [balance, setBalance] = useState(0);
   const [showRedeemModal, setShowRedeemModal] = useState(false);
+  
+  // 欢迎弹窗和礼花
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
+  const [showRedeemConfetti, setShowRedeemConfetti] = useState(false);
   
   // 表单状态
   const [coreSellingPoint, setCoreSellingPoint] = useState('');
@@ -218,11 +224,18 @@ export default function Home() {
     if (token && user) {
       loadTasksFromDB();
       loadBalance();
+      
+      // 如果是新用户，显示欢迎弹窗
+      if (isNewUser) {
+        setTimeout(() => {
+          setShowWelcomeModal(true);
+        }, 500);
+      }
     } else {
       setTasks([]);
       setBalance(0);
     }
-  }, [token, user, loadTasksFromDB, loadBalance]);
+  }, [token, user, loadTasksFromDB, loadBalance, isNewUser]);
 
   // 保存任务到数据库
   const saveTaskToDB = useCallback(async (task: Task) => {
@@ -1455,10 +1468,31 @@ export default function Home() {
           onClose={() => setShowRedeemModal(false)}
           onSuccess={(amount) => {
             setBalance(prev => prev + amount);
+            // 触发礼花动效
+            setShowRedeemConfetti(true);
           }}
           token={token}
         />
       )}
+
+      {/* 欢迎弹窗 - 新用户首次登录 */}
+      <WelcomeModal
+        isOpen={showWelcomeModal}
+        onClose={() => {
+          setShowWelcomeModal(false);
+          clearNewUserFlag();
+        }}
+        userName={user?.name || user?.email?.split('@')[0] || '新用户'}
+        freeCredits={5}
+      />
+
+      {/* 兑换成功礼花 */}
+      <Confetti
+        isActive={showRedeemConfetti}
+        duration={3000}
+        particleCount={120}
+        onComplete={() => setShowRedeemConfetti(false)}
+      />
     </div>
   );
 }

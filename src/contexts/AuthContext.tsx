@@ -14,9 +14,11 @@ interface AuthContextType {
   token: string | null;
   isLoading: boolean;
   isAdmin: boolean; // 是否是管理员
+  isNewUser: boolean; // 是否是新注册用户（首次登录）
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   register: (email: string, password: string, name?: string, inviteCode?: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
+  clearNewUserFlag: () => void; // 清除新用户标记
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -26,6 +28,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isNewUser, setIsNewUser] = useState(false);
 
   // 从 localStorage 恢复登录状态
   useEffect(() => {
@@ -117,7 +120,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { success: false, error: data.error || '注册失败' };
       }
 
-      // 注册成功后自动登录
+      // 注册成功后自动登录，并标记为新用户
+      setIsNewUser(true);
       return login(email, password);
     } catch (error) {
       console.error('Register error:', error);
@@ -131,10 +135,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setToken(null);
     setUser(null);
     setIsAdmin(false);
+    setIsNewUser(false);
+  }, []);
+
+  const clearNewUserFlag = useCallback(() => {
+    setIsNewUser(false);
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, isAdmin, login, register, logout }}>
+    <AuthContext.Provider value={{ user, token, isLoading, isAdmin, isNewUser, login, register, logout, clearNewUserFlag }}>
       {children}
     </AuthContext.Provider>
   );
