@@ -59,35 +59,35 @@ const PROCESSING_STEPS = [
     label: '分析产品特征', 
     subLabel: 'Analyzing product features...',
     icon: Eye,
-    duration: 15000 
+    duration: 30000 
   },
   { 
     id: 'brainstorm', 
     label: '构思创意脚本', 
     subLabel: 'Brainstorming creative script...',
     icon: Lightbulb,
-    duration: 30000 
+    duration: 60000 
   },
   { 
     id: 'generate', 
     label: '生成视频分镜', 
     subLabel: 'Generating video storyboard...',
     icon: PenTool,
-    duration: 40000 
+    duration: 90000 
   },
   { 
     id: 'optimize', 
     label: '优化提示词', 
     subLabel: 'Optimizing prompts for best results...',
     icon: Sparkles,
-    duration: 20000 
+    duration: 45000 
   },
   { 
     id: 'finalize', 
     label: '最终整合', 
     subLabel: 'Finalizing output...',
     icon: FileText,
-    duration: 2000 
+    duration: 12000 
   },
 ];
 
@@ -488,7 +488,8 @@ export default function Home() {
     lang: string
   ): Promise<{ sora?: string; seedance?: string; balance?: number }> => {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 180000);
+    // 增加超时时间到 5 分钟，Coze 工作流可能需要较长时间
+    const timeoutId = setTimeout(() => controller.abort(), 300000);
 
     try {
       const response = await fetch('/api/generate-video', {
@@ -528,7 +529,7 @@ export default function Home() {
       clearTimeout(timeoutId);
       
       if (error instanceof Error && error.name === 'AbortError') {
-        throw new Error('请求超时，工作流处理时间过长，请稍后重试');
+        throw new Error('AI 工作流处理超时（超过5分钟），请检查产品图片和卖点描述是否正确，或稍后重试');
       }
       
       if (error instanceof TypeError && error.message === 'Failed to fetch') {
@@ -990,6 +991,11 @@ export default function Home() {
                   <Wand2 className="w-4 h-4 sm:w-5 sm:h-5" />
                 </button>
               )}
+              
+              {/* 等待时间提示 */}
+              <p className="text-xs text-gray-400 text-center mt-3">
+                AI生成需要约1-4分钟，请耐心等待
+              </p>
             </div>
           </div>
 
