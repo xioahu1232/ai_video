@@ -115,6 +115,7 @@ interface Task {
   imagePreview?: string;
   starred?: boolean;
   videoDuration?: string;
+  expiresAt?: string; // 过期时间（未收藏的记录48小时后过期）
 }
 
 export default function Home() {
@@ -193,6 +194,7 @@ export default function Home() {
           starred: t.starred as boolean,
           imageUrl: t.image_url as string | undefined,
           videoDuration: t.video_duration as string | undefined,
+          expiresAt: t.expires_at as string | undefined,
         }));
         setTasks(formattedTasks);
       }
@@ -1044,6 +1046,7 @@ export default function Home() {
                   <h2 className="text-lg sm:text-xl md:text-2xl font-semibold text-gray-800">生成结果</h2>
                   <p className="text-xs sm:text-sm text-gray-500 mt-0.5 sm:mt-1">
                     {displayedTasks.length > 0 ? `共 ${displayedTasks.length} 条记录` : '暂无记录'}
+                    <span className="text-orange-500 ml-2">未收藏记录48小时后自动删除</span>
                   </p>
                 </div>
               </div>
@@ -1218,6 +1221,20 @@ export default function Home() {
                               hour: '2-digit', 
                               minute: '2-digit' 
                             })}</span>
+                            {/* 显示过期时间提示 */}
+                            {!task.starred && task.expiresAt && (
+                              <span className="text-orange-500 flex items-center gap-1">
+                                <Clock className="w-3 h-3" />
+                                {(() => {
+                                  const expiresDate = new Date(task.expiresAt);
+                                  const now = new Date();
+                                  const hoursLeft = Math.max(0, Math.floor((expiresDate.getTime() - now.getTime()) / (1000 * 60 * 60)));
+                                  if (hoursLeft < 1) return '即将过期';
+                                  if (hoursLeft < 24) return `${hoursLeft}小时后过期`;
+                                  return `${Math.floor(hoursLeft / 24)}天后过期`;
+                                })()}
+                              </span>
+                            )}
                           </div>
                         </div>
 

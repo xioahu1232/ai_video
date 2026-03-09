@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseClient } from '@/storage/database/supabase-client';
 
 // 更新任务
+// 规则：
+// - 收藏时：取消过期时间（永久保存）
+// - 取消收藏时：设置48小时后过期
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -34,9 +37,20 @@ export async function PATCH(
     const updateData: Record<string, unknown> = {};
     if (body.sora !== undefined) updateData.sora = body.sora;
     if (body.seedance !== undefined) updateData.seedance = body.seedance;
-    if (body.starred !== undefined) updateData.starred = body.starred;
     if (body.status !== undefined) updateData.status = body.status;
     if (body.error !== undefined) updateData.error = body.error;
+    
+    // 收藏状态变化时，同步更新过期时间
+    if (body.starred !== undefined) {
+      updateData.starred = body.starred;
+      if (body.starred === true) {
+        // 收藏时：取消过期时间，永久保存
+        updateData.expires_at = null;
+      } else {
+        // 取消收藏时：设置48小时后过期
+        updateData.expires_at = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
+      }
+    }
 
     if (Object.keys(updateData).length === 0) {
       return NextResponse.json(

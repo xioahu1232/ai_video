@@ -108,10 +108,13 @@ export async function POST(request: NextRequest) {
     }
 
     // 为新用户创建余额记录，赠送5次免费体验
+    // 同时保存用户邮箱和姓名，便于管理后台显示
     const { error: balanceError } = await supabase
       .from('user_balances')
       .insert({
         user_id: data.user.id,
+        email: email,
+        name: name || email.split('@')[0],
         balance: 5, // 赠送5次免费体验
         total_used: 0,
         total_purchased: 5, // 记录为赠送

@@ -304,23 +304,26 @@ export async function GET(request: NextRequest) {
         }
       });
       
-      // 获取用户邮箱
+      // 从 user_balances 表获取用户邮箱和姓名
       const userIds = Object.keys(userMap);
-      const { data: userDetails } = await supabase.auth.admin.listUsers();
+      const { data: userDetails } = await supabase
+        .from('user_balances')
+        .select('user_id, email, name')
+        .in('user_id', userIds);
       
       const userEmailMap: Record<string, { email: string; name: string }> = {};
-      userDetails?.users?.forEach(u => {
-        userEmailMap[u.id] = {
+      userDetails?.forEach(u => {
+        userEmailMap[u.user_id] = {
           email: u.email || '',
-          name: u.user_metadata?.name || u.email?.split('@')[0] || '',
+          name: u.name || '',
         };
       });
       
       return Object.entries(userMap)
         .map(([userId, data]) => ({
           userId,
-          userEmail: userEmailMap[userId]?.email,
-          userName: userEmailMap[userId]?.name,
+          userEmail: userEmailMap[userId]?.email || undefined,
+          userName: userEmailMap[userId]?.name || undefined,
           totalTasks: data.total,
           todayTasks: data.today,
           successRate: data.total > 0 ? Math.round((data.success / data.total) * 100) : 0,

@@ -15,6 +15,8 @@ export const userBalances = pgTable(
       .primaryKey()
       .default(sql`gen_random_uuid()`),
     userId: varchar("user_id", { length: 36 }).notNull().unique(), // 关联到 auth.users
+    email: varchar("email", { length: 255 }), // 用户邮箱（便于管理后台显示）
+    name: varchar("name", { length: 100 }), // 用户名（便于管理后台显示）
     balance: integer("balance").default(0).notNull(), // 剩余次数
     totalUsed: integer("total_used").default(0).notNull(), // 累计使用次数
     totalPurchased: integer("total_purchased").default(0).notNull(), // 累计购买次数
@@ -83,6 +85,9 @@ export const inviteCodes = pgTable(
 );
 
 // 用户任务表 - 存储用户的历史记录
+// 规则：
+// - 未收藏的记录：48小时后自动过期删除
+// - 已收藏的记录：永久保存，不会过期
 export const userTasks = pgTable(
   "user_tasks",
   {
@@ -98,7 +103,8 @@ export const userTasks = pgTable(
     seedance: text("seedance"),
     status: varchar("status", { length: 20 }).default("pending").notNull(),
     error: text("error"),
-    starred: boolean("starred").default(false).notNull(),
+    starred: boolean("starred").default(false).notNull(), // 收藏状态：收藏后永久保存
+    expiresAt: timestamp("expires_at", { withTimezone: true }), // 过期时间：未收藏48小时后过期，收藏后为null
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
@@ -107,6 +113,8 @@ export const userTasks = pgTable(
   (table) => [
     index("user_tasks_user_id_idx").on(table.userId),
     index("user_tasks_created_at_idx").on(table.createdAt),
+    index("user_tasks_expires_at_idx").on(table.expiresAt),
+    index("user_tasks_starred_idx").on(table.starred),
   ]
 );
 

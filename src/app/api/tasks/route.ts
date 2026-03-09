@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseClient } from '@/storage/database/supabase-client';
 
 // 获取用户的所有任务
+// 规则：
+// - 只返回未过期的任务（expires_at > now 或 expires_at IS NULL）
+// - 过期任务由定时任务清理
 export async function GET(request: NextRequest) {
   try {
     const authHeader = request.headers.get('authorization');
@@ -24,11 +27,15 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // 获取用户的任务列表
+    // 获取用户的任务列表 - 只返回未过期的任务
+    // 过期条件：expires_at IS NOT NULL AND expires_at < now
+    // 未过期条件：expires_at IS NULL OR expires_at >= now
+    const now = new Date().toISOString();
     const { data: tasks, error } = await supabase
       .from('user_tasks')
       .select('*')
       .eq('user_id', user.id)
+      .or(`expires_at.is.null,expires_at.gte.${now}`)
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -53,6 +60,9 @@ export async function GET(request: NextRequest) {
 }
 
 // 创建新任务
+// 规则：
+// - 新创建的任务默认设置48小时后过期
+// - 如果 starred=true，则不设置过期时间（永久保存）
 export async function POST(request: NextRequest) {
   try {
     const authHeader = request.headers.get('authorization');
@@ -76,7 +86,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { coreSellingPoint, imageUrl, videoDuration, language, sora, seedance, status, error: taskError } = body;
+    const { coreSellingPoint, imageUrl, videoDuration, language, sora, seedance, status, error: taskError, starred } = body;
 
     if (!coreSellingPoint || !language) {
       return NextResponse.json(
@@ -84,6 +94,10 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    // 计算过期时间：未收藏的48小时后过期，收藏的不过期
+    const isStarred = starred || false;
+    const expiresAt = isStarred ? null : new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
 
     // 创建任务
     const { data: task, error } = await supabase
@@ -98,6 +112,8 @@ export async function POST(request: NextRequest) {
         seedance,
         status: status || 'pending',
         error: taskError,
+        starred: isStarred,
+        expires_at: expiresAt,
       })
       .select()
       .single();
