@@ -13,7 +13,6 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import {
-  TrendingUp,
   Hash,
   Clock,
   FileText,
@@ -24,7 +23,6 @@ import {
   ChevronDown,
   ChevronUp,
   Sparkles,
-  Zap,
   Loader2,
   AlertCircle,
 } from 'lucide-react';
@@ -49,11 +47,6 @@ interface SmartSEOData {
     best: string[];
     timezone: string;
     reason: string;
-  };
-  contentStrategy?: {
-    hook: string;
-    storytelling: string;
-    cta: string;
   };
   competitionAnalysis?: {
     level: string;
@@ -81,7 +74,6 @@ export default function SmartSEO({ prompt, sellingPoint, language, onCopy }: Sma
     hashtags: true,
     description: true,
     posting: true,
-    strategy: true,
     competition: true,
   });
 
@@ -153,7 +145,7 @@ export default function SmartSEO({ prompt, sellingPoint, language, onCopy }: Sma
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-[#1a3a6b]">
             <Sparkles className="w-5 h-5 text-[#4fa3d1]" />
-            TikTok AI SEO 分析
+            TikTok SEO 分析
             <Badge className="bg-[#4fa3d1]/20 text-[#4fa3d1] text-xs">智能分析</Badge>
           </DialogTitle>
         </DialogHeader>
@@ -198,9 +190,6 @@ export default function SmartSEO({ prompt, sellingPoint, language, onCopy }: Sma
                   </div>
                 </div>
                 <Progress value={data.overallScore} className="h-2" />
-                <p className="text-xs text-gray-400 mt-2 text-right">
-                  基于实时TikTok数据智能分析
-                </p>
               </CardContent>
             </Card>
 
@@ -208,11 +197,9 @@ export default function SmartSEO({ prompt, sellingPoint, language, onCopy }: Sma
             {data.rawAnalysis && (
               <Card className="border-[#4fa3d1]/20">
                 <CardContent className="pt-6">
-                  <div className="prose prose-sm max-w-none">
-                    <pre className="whitespace-pre-wrap text-sm text-gray-700 bg-gray-50 p-4 rounded-lg">
-                      {data.rawAnalysis}
-                    </pre>
-                  </div>
+                  <pre className="whitespace-pre-wrap text-sm text-gray-700 bg-gray-50 p-4 rounded-lg">
+                    {data.rawAnalysis}
+                  </pre>
                 </CardContent>
               </Card>
             )}
@@ -308,7 +295,7 @@ export default function SmartSEO({ prompt, sellingPoint, language, onCopy }: Sma
                               className="cursor-pointer hover:bg-[#4fa3d1] hover:text-white transition-colors"
                               onClick={() => handleCopy(tag.tag, `hashtag-${idx}`)}
                             >
-                              {tag.tag}
+                              #{tag.tag}
                             </Badge>
                             <span className="text-xs text-gray-500">{tag.expectedReach}</span>
                           </div>
@@ -321,7 +308,7 @@ export default function SmartSEO({ prompt, sellingPoint, language, onCopy }: Sma
                       size="sm"
                       className="w-full"
                       onClick={() => handleCopy(
-                        data.hashtags!.recommended.map(t => t.tag).join(' '),
+                        data.hashtags!.recommended.map(t => `#${t.tag}`).join(' '),
                         'all-hashtags'
                       )}
                     >
@@ -411,45 +398,6 @@ export default function SmartSEO({ prompt, sellingPoint, language, onCopy }: Sma
               </Card>
             )}
 
-            {/* 内容策略 */}
-            {data.contentStrategy && (
-              <Card className="border-[#4fa3d1]/20">
-                <CardHeader 
-                  className="cursor-pointer"
-                  onClick={() => toggleSection('strategy')}
-                >
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="flex items-center gap-2 text-[#1a3a6b]">
-                      <Zap className="w-5 h-5 text-[#4fa3d1]" />
-                      内容策略
-                    </CardTitle>
-                    {expandedSections.strategy ? 
-                      <ChevronUp className="w-5 h-5 text-gray-400" /> : 
-                      <ChevronDown className="w-5 h-5 text-gray-400" />
-                    }
-                  </div>
-                </CardHeader>
-                {expandedSections.strategy && (
-                  <CardContent className="space-y-3">
-                    <div className="space-y-2">
-                      <div className="bg-gradient-to-r from-[#1a3a6b]/5 to-[#4fa3d1]/5 p-3 rounded-lg">
-                        <p className="text-sm font-medium text-[#1a3a6b]">🎯 开场钩子</p>
-                        <p className="text-sm text-gray-600 mt-1">{data.contentStrategy.hook}</p>
-                      </div>
-                      <div className="bg-gradient-to-r from-[#1a3a6b]/5 to-[#4fa3d1]/5 p-3 rounded-lg">
-                        <p className="text-sm font-medium text-[#1a3a6b]">📖 叙事结构</p>
-                        <p className="text-sm text-gray-600 mt-1">{data.contentStrategy.storytelling}</p>
-                      </div>
-                      <div className="bg-gradient-to-r from-[#1a3a6b]/5 to-[#4fa3d1]/5 p-3 rounded-lg">
-                        <p className="text-sm font-medium text-[#1a3a6b]">📢 行动号召</p>
-                        <p className="text-sm text-gray-600 mt-1">{data.contentStrategy.cta}</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                )}
-              </Card>
-            )}
-
             {/* 竞争分析 */}
             {data.competitionAnalysis && (
               <Card className="border-[#4fa3d1]/20">
@@ -479,29 +427,33 @@ export default function SmartSEO({ prompt, sellingPoint, language, onCopy }: Sma
                         {data.competitionAnalysis.level}
                       </Badge>
                     </div>
-                    <div className="space-y-2">
-                      <p className="text-sm font-medium text-green-600">✅ 机会点：</p>
-                      <ul className="text-sm text-gray-600 list-disc list-inside">
-                        {data.competitionAnalysis.opportunities.map((opp, idx) => (
-                          <li key={idx}>{opp}</li>
-                        ))}
-                      </ul>
-                    </div>
-                    <div className="space-y-2">
-                      <p className="text-sm font-medium text-orange-600">⚠️ 注意事项：</p>
-                      <ul className="text-sm text-gray-600 list-disc list-inside">
-                        {data.competitionAnalysis.warnings.map((warn, idx) => (
-                          <li key={idx}>{warn}</li>
-                        ))}
-                      </ul>
-                    </div>
+                    {data.competitionAnalysis.opportunities.length > 0 && (
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium text-green-600">✅ 机会点：</p>
+                        <ul className="text-sm text-gray-600 list-disc list-inside">
+                          {data.competitionAnalysis.opportunities.map((opp, idx) => (
+                            <li key={idx}>{opp}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {data.competitionAnalysis.warnings.length > 0 && (
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium text-orange-600">⚠️ 注意事项：</p>
+                        <ul className="text-sm text-gray-600 list-disc list-inside">
+                          {data.competitionAnalysis.warnings.map((warn, idx) => (
+                            <li key={idx}>{warn}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                   </CardContent>
                 )}
               </Card>
             )}
 
             {/* 行动清单 */}
-            {data.actionItems && (
+            {data.actionItems && data.actionItems.length > 0 && (
               <Card className="bg-gradient-to-r from-[#1a3a6b] to-[#4fa3d1] text-white">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-white">

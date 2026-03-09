@@ -8,10 +8,9 @@ import {
   Edit3, X, Clock, Video, Sparkles, Globe,
   Zap, Brain, Eye, Lightbulb, PenTool, FileText,
   LogIn, LogOut, User, Gift, Coins, Shield, Download,
-  ExternalLink, TrendingUp, BarChart3
+  ExternalLink
 } from 'lucide-react';
 import Image from 'next/image';
-import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { AuthModal } from '@/components/AuthModal';
 import { RedeemModal } from '@/components/RedeemModal';
@@ -1089,16 +1088,6 @@ ${'='.repeat(50)}`;
           <p className="text-base sm:text-lg text-[#8ba3bc] max-w-xl mx-auto leading-relaxed px-4">
             填写产品信息，调用多个AI智能体协作撰写
           </p>
-          
-          {/* TikTok市场分析快捷入口 */}
-          <Link 
-            href="/tiktok-market" 
-            className="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-gradient-to-r from-[#4fa3d1] to-[#1a3a6b] text-white rounded-full text-sm font-medium hover:opacity-90 transition-opacity"
-          >
-            <TrendingUp className="w-4 h-4" />
-            <span>TikTok市场分析</span>
-            <span className="text-xs opacity-75">· AI实时洞察</span>
-          </Link>
         </div>
 
         {/* 主内容区 - 左右分栏 */}

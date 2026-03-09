@@ -11,7 +11,7 @@ interface SEOAnalysisRequest {
 export async function POST(request: NextRequest) {
   try {
     const body: SEOAnalysisRequest = await request.json();
-    const { prompt, sellingPoint, language = 'zh', imageUrl } = body;
+    const { prompt, sellingPoint, language = 'zh' } = body;
     
     if (!prompt && !sellingPoint) {
       return NextResponse.json({
@@ -26,84 +26,64 @@ export async function POST(request: NextRequest) {
     const llmClient = new LLMClient(config, customHeaders);
     
     const content = prompt || sellingPoint;
-    const today = new Date().toISOString().split('T')[0];
     
-    // 1. 搜索TikTok相关热门内容和趋势
-    const searchQueries = [
-      `TikTok viral video ${sellingPoint.split(',')[0]} trending hashtags`,
-      `TikTok successful ${sellingPoint.split(',')[0]} marketing strategy 2024`,
-      `TikTok SEO best practices ${language === 'zh' ? '中文' : 'English'} 2024`,
-    ];
+    // 1. 搜索TikTok相关热门内容
+    const mainKeyword = sellingPoint.split(/[,，、]/)[0] || content.slice(0, 20);
     
-    const searchResults = await Promise.all(
-      searchQueries.map(query => 
-        searchClient.advancedSearch(query, {
-          count: 5,
-          timeRange: '1m',
-          needSummary: true,
-        })
-      )
-    );
+    const searchResults = await Promise.all([
+      searchClient.webSearch(`TikTok ${mainKeyword} trending hashtags viral`, 8, true),
+      searchClient.webSearch(`TikTok ${mainKeyword} marketing successful case`, 5, true),
+    ]);
     
     const searchSummaries = searchResults.map(r => r.summary).filter(Boolean).join('\n\n');
     const searchItems = searchResults.flatMap(r => r.web_items || []);
     
-    // 2. 搜索热门标签
-    const hashtagSearch = await searchClient.webSearch(
-      `TikTok trending hashtags ${today} viral`,
-      10,
-      true
-    );
-    
-    // 3. 使用LLM进行深度分析
-    const systemPrompt = `你是一位资深的TikTok SEO专家，拥有丰富的短视频营销经验。
+    // 2. 使用LLM进行深度分析
+    const systemPrompt = `你是一位资深的TikTok SEO专家，专门服务中国跨境卖家。
 
-你的任务是分析用户的产品提示词，结合最新的TikTok趋势数据，提供专业的SEO优化建议。
+你的任务是分析用户的产品提示词，提供专业的SEO优化建议。
 
-你需要输出严格的JSON格式：
+【重要】输出规则：
+1. 所有分析和建议必须用中文
+2. 标签可以是英文（因为TikTok标签本就是英文），但标签的推荐理由必须用中文
+3. 不要输出contentStrategy字段
+4. 给出具体可执行的建议，避免空泛套话
+
+你需要输出严格的JSON格式（不要包含contentStrategy）：
 {
   "overallScore": 0-100的分数,
-  "category": "产品类别",
+  "category": "产品类别（中文）",
   "analysis": {
     "titleScore": 0-100,
     "titleIssues": ["问题1", "问题2"],
-    "titleOptimizations": ["优化版本1", "优化版本2", "优化版本3"]
+    "titleOptimizations": ["优化标题1", "优化标题2", "优化标题3"]
   },
   "hashtags": {
     "recommended": [
-      {"tag": "标签名", "reason": "推荐理由", "expectedReach": "预计触达人数"}
+      {"tag": "英文标签", "reason": "中文推荐理由", "expectedReach": "预计触达人数"}
     ],
-    "strategy": "标签策略说明"
+    "strategy": "中文标签策略说明"
   },
   "description": {
-    "optimized": "优化后的描述",
-    "tips": ["技巧1", "技巧2"]
+    "optimized": "中文优化描述",
+    "tips": ["中文技巧1", "中文技巧2"]
   },
   "postingTime": {
     "best": ["时间1", "时间2"],
     "timezone": "时区",
-    "reason": "推荐理由"
-  },
-  "contentStrategy": {
-    "hook": "开场钩子建议",
-    "storytelling": "叙事结构建议",
-    "cta": "行动号召建议"
+    "reason": "中文推荐理由"
   },
   "competitionAnalysis": {
-    "level": "竞争激烈程度",
-    "opportunities": ["机会1", "机会2"],
-    "warnings": ["注意事项1", "注意事项2"]
+    "level": "高/中/低",
+    "opportunities": ["中文机会1", "中文机会2"],
+    "warnings": ["中文注意事项1"]
   },
-  "actionItems": ["行动项1", "行动项2", "行动项3", "行动项4", "行动项5"]
+  "actionItems": ["中文行动项1", "中文行动项2", "中文行动项3"]
 }
 
-重要原则：
-1. 基于真实搜索数据进行分析，不要编造
-2. 给出具体可执行的建议，避免空泛的套话
-3. 考虑TikTok算法机制和用户行为
-4. 用${language === 'zh' ? '中文' : 'English'}回复`;
+记住：主体内容必须中文，标签可以是英文但理由要中文！`;
 
-    const userPrompt = `请分析以下TikTok视频内容，提供专业的SEO优化建议：
+    const userPrompt = `请分析以下TikTok视频内容，提供SEO优化建议：
 
 【产品提示词】
 ${content}
@@ -111,22 +91,10 @@ ${content}
 【核心卖点】
 ${sellingPoint}
 
-【目标语言】
-${language === 'zh' ? '中文' : 'English'}
+【搜索到的相关数据】
+${searchSummaries || '暂无相关数据'}
 
-【今日TikTok趋势数据】
-${searchSummaries}
-
-【热门标签搜索结果】
-${hashtagSearch.summary || '暂无数据'}
-
-【相关成功案例】
-${searchItems.slice(0, 5).map(item => `
-- ${item.title}
-  ${item.snippet}
-`).join('\n')}
-
-请基于以上数据，提供详细的SEO优化分析报告。`;
+请基于以上信息，用中文提供详细的SEO优化分析报告。`;
 
     const llmResponse = await llmClient.invoke(
       [
@@ -135,7 +103,7 @@ ${searchItems.slice(0, 5).map(item => `
       ],
       { 
         temperature: 0.4, 
-        model: 'doubao-seed-2-0-lite-260215'  // 使用更强大的模型
+        model: 'doubao-seed-2-0-lite-260215'
       }
     );
     
@@ -145,6 +113,10 @@ ${searchItems.slice(0, 5).map(item => `
       const jsonMatch = llmResponse.content.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         analysisData = JSON.parse(jsonMatch[0]);
+        // 删除contentStrategy字段（如果存在）
+        if (analysisData.contentStrategy) {
+          delete analysisData.contentStrategy;
+        }
       } else {
         throw new Error('无法解析JSON');
       }
@@ -161,11 +133,6 @@ ${searchItems.slice(0, 5).map(item => `
     return NextResponse.json({
       success: true,
       data: analysisData,
-      meta: {
-        analyzedAt: new Date().toISOString(),
-        searchResultsCount: searchItems.length,
-        model: 'doubao-seed-2-0-lite-260215',
-      },
     });
     
   } catch (error) {
