@@ -7,7 +7,8 @@ import {
   ImageIcon, Wand2, Star,
   Edit3, X, Clock, Video, Sparkles, Globe,
   Zap, Brain, Eye, Lightbulb, PenTool, FileText,
-  LogIn, LogOut, User, Gift, Coins, Shield, Download
+  LogIn, LogOut, User, Gift, Coins, Shield, Download,
+  ExternalLink
 } from 'lucide-react';
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
@@ -18,6 +19,7 @@ import Confetti from '@/components/Confetti';
 import ContactButton from '@/components/ContactButton';
 import Footer from '@/components/Footer';
 import { SmartBlessing } from '@/components/BlessingToast';
+import { TourGuide, TourHelpButton } from '@/components/TourGuide';
 
 // 语言选项
 const LANGUAGES = [
@@ -1011,6 +1013,7 @@ ${'='.repeat(50)}`;
             {user ? (
               <>
                 {/* 余额显示 */}
+                <div data-tour="balance" className="flex items-center gap-2">
                 <button
                   onClick={() => setShowRedeemModal(true)}
                   className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-gradient-to-r from-[#4fa3d1]/10 to-[#1a3a6b]/10 rounded-lg sm:rounded-xl border border-[#4fa3d1]/20 hover:border-[#4fa3d1]/40 transition-colors"
@@ -1027,6 +1030,7 @@ ${'='.repeat(50)}`;
                   <Gift className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   <span className="hidden sm:inline">兑换</span>
                 </button>
+                </div>
                 
                 <div className="hidden sm:flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-gray-100 rounded-lg sm:rounded-xl">
                   <User className="w-4 h-4 text-gray-500" />
@@ -1102,7 +1106,7 @@ ${'='.repeat(50)}`;
 
             <div className="space-y-5 sm:space-y-6 md:space-y-7">
               {/* 核心卖点 */}
-              <div className="space-y-2 sm:space-y-3">
+              <div data-tour="selling-point" className="space-y-2 sm:space-y-3">
                 <label className="text-sm font-semibold text-gray-700">
                   核心卖点 <span className="text-red-400">*</span>
                 </label>
@@ -1116,7 +1120,7 @@ ${'='.repeat(50)}`;
               </div>
 
               {/* 产品图片 */}
-              <div className="space-y-2 sm:space-y-3">
+              <div data-tour="product-image" className="space-y-2 sm:space-y-3">
                 <label className="text-sm font-semibold text-gray-700">
                   产品图片 <span className="text-red-400">*</span>
                 </label>
@@ -1164,7 +1168,7 @@ ${'='.repeat(50)}`;
               </div>
 
               {/* 时长预设 */}
-              <div className="space-y-2 sm:space-y-3 md:space-y-4">
+              <div data-tour="duration" className="space-y-2 sm:space-y-3 md:space-y-4">
                 <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
                   <Clock className="w-4 h-4" />
                   时长预设
@@ -1216,7 +1220,7 @@ ${'='.repeat(50)}`;
               </div>
 
               {/* 语言选择 */}
-              <div className="space-y-2 sm:space-y-3">
+              <div data-tour="language" className="space-y-2 sm:space-y-3">
                 <label className="text-sm font-semibold text-gray-700">
                   语言 <span className="text-red-400">*</span>
                 </label>
@@ -1237,6 +1241,7 @@ ${'='.repeat(50)}`;
               </div>
 
               {/* 提交按钮 */}
+              <div data-tour="submit">
               {user && balance <= 0 ? (
                 <div className="space-y-3">
                   <div className="flex items-center gap-2 p-3 sm:p-4 bg-red-50 rounded-lg sm:rounded-xl text-red-500 text-xs sm:text-sm">
@@ -1262,6 +1267,7 @@ ${'='.repeat(50)}`;
                   <Wand2 className="w-4 h-4 sm:w-5 sm:h-5" />
                 </button>
               )}
+              </div>
               
               {/* 等待时间提示 */}
               <p className="text-xs text-gray-400 text-center mt-3">
@@ -1271,7 +1277,7 @@ ${'='.repeat(50)}`;
           </div>
 
           {/* 右侧：结果卡片 */}
-          <div className="card overflow-hidden flex flex-col">
+          <div data-tour="history" className="card overflow-hidden flex flex-col">
             <div className="p-4 sm:p-6 md:p-8 border-b border-gray-100">
               {/* 标题行 */}
               <div className="flex items-center justify-between mb-4">
@@ -1664,22 +1670,33 @@ ${'='.repeat(50)}`;
                                   <div className="decoration-dot primary" />
                                   <span className="text-xs sm:text-sm font-semibold text-[#1a3a6b]">Sora</span>
                                 </div>
-                                <button
-                                  onClick={() => copyToClipboard(task.sora!, `${task.id}-sora`)}
-                                  className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-gray-500 hover:text-[#4fa3d1] transition-colors"
-                                >
-                                  {copiedId === `${task.id}-sora` ? (
-                                    <>
-                                      <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-500" />
-                                      <span className="text-emerald-500">已复制</span>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Copy className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                                      <span>复制</span>
-                                    </>
-                                  )}
-                                </button>
+                                <div className="flex items-center gap-2 sm:gap-3">
+                                  <a
+                                    href="https://video.yijiarj.cn/index/sora2/index.html"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center gap-1 text-xs sm:text-sm text-[#4fa3d1] hover:text-[#1a3a6b] transition-colors"
+                                  >
+                                    <span>去生成</span>
+                                    <ExternalLink className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                  </a>
+                                  <button
+                                    onClick={() => copyToClipboard(task.sora!, `${task.id}-sora`)}
+                                    className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-gray-500 hover:text-[#4fa3d1] transition-colors"
+                                  >
+                                    {copiedId === `${task.id}-sora` ? (
+                                      <>
+                                        <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-500" />
+                                        <span className="text-emerald-500">已复制</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Copy className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                        <span>复制</span>
+                                      </>
+                                    )}
+                                  </button>
+                                </div>
                               </div>
                               <div className="p-3 sm:p-4 max-h-32 sm:max-h-40 overflow-y-auto">
                                 <p className="text-xs sm:text-sm text-gray-600 whitespace-pre-wrap leading-relaxed">
@@ -1696,22 +1713,33 @@ ${'='.repeat(50)}`;
                                   <div className="decoration-dot secondary" />
                                   <span className="text-xs sm:text-sm font-semibold text-[#4fa3d1]">Seedance</span>
                                 </div>
-                                <button
-                                  onClick={() => copyToClipboard(task.seedance!, `${task.id}-seedance`)}
-                                  className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-gray-500 hover:text-[#4fa3d1] transition-colors"
-                                >
-                                  {copiedId === `${task.id}-seedance` ? (
-                                    <>
-                                      <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-500" />
-                                      <span className="text-emerald-500">已复制</span>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Copy className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                                      <span>复制</span>
-                                    </>
-                                  )}
-                                </button>
+                                <div className="flex items-center gap-2 sm:gap-3">
+                                  <a
+                                    href="https://jimeng.jianying.com/"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center gap-1 text-xs sm:text-sm text-[#4fa3d1] hover:text-[#1a3a6b] transition-colors"
+                                  >
+                                    <span>去生成</span>
+                                    <ExternalLink className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                  </a>
+                                  <button
+                                    onClick={() => copyToClipboard(task.seedance!, `${task.id}-seedance`)}
+                                    className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-gray-500 hover:text-[#4fa3d1] transition-colors"
+                                  >
+                                    {copiedId === `${task.id}-seedance` ? (
+                                      <>
+                                        <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-500" />
+                                        <span className="text-emerald-500">已复制</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Copy className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                        <span>复制</span>
+                                      </>
+                                    )}
+                                  </button>
+                                </div>
                               </div>
                               <div className="p-3 sm:p-4 max-h-32 sm:max-h-40 overflow-y-auto">
                                 <p className="text-xs sm:text-sm text-gray-600 whitespace-pre-wrap leading-relaxed">
@@ -1740,6 +1768,31 @@ ${'='.repeat(50)}`;
                               </>
                             )}
                           </button>
+                          
+                          {/* 视频生成快捷链接 */}
+                          <div className="flex items-center justify-center gap-4 pt-2">
+                            <a
+                              href="https://video.yijiarj.cn/index/sora2/index.html"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-1.5 text-xs text-[#1a3a6b] hover:text-[#4fa3d1] transition-colors"
+                            >
+                              <Video className="w-3.5 h-3.5" />
+                              <span>Sora生成</span>
+                              <ExternalLink className="w-3 h-3" />
+                            </a>
+                            <span className="text-gray-300">|</span>
+                            <a
+                              href="https://jimeng.jianying.com/"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-1.5 text-xs text-[#4fa3d1] hover:text-[#1a3a6b] transition-colors"
+                            >
+                              <Video className="w-3.5 h-3.5" />
+                              <span>即梦生成</span>
+                              <ExternalLink className="w-3 h-3" />
+                            </a>
+                          </div>
                         </div>
                       )}
 
@@ -1900,8 +1953,14 @@ ${'='.repeat(50)}`;
         autoCloseDelay={5000}
       />
 
+      {/* 新手引导 */}
+      <TourGuide />
+      
       {/* 联系客服悬浮按钮 */}
       <ContactButton />
+
+      {/* 新手引导帮助按钮 */}
+      <TourHelpButton />
 
       {/* 页脚 */}
       <Footer />
