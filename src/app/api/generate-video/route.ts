@@ -4,12 +4,9 @@ import { NextRequest, NextResponse } from 'next/server';
 const WORKFLOW_ID = '7601074566710444095';
 const COZE_API_URL = 'https://api.coze.cn/v1/workflow/run';
 
-// API Key 从环境变量获取（需要在 .env.local 中配置）
-// COZE_API_KEY=你的API密钥
-
 interface GenerateVideoRequest {
   coreSellingPoint: string;
-  productImageUrl: string; // 图片URL（需要先上传到对象存储）
+  productImageUrl: string;
   speechDuration: string;
   videoDuration: string;
   language: string;
@@ -18,9 +15,11 @@ interface GenerateVideoRequest {
 interface TaskResponse {
   success: boolean;
   taskId?: string;
-  videoUrl?: string;
-  prompt?: string;
+  sora?: string;
+  seedance?: string;
+  debugUrl?: string;
   error?: string;
+  rawResponse?: unknown;
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse<TaskResponse>> {
@@ -40,21 +39,19 @@ export async function POST(request: NextRequest): Promise<NextResponse<TaskRespo
     const apiKey = process.env.COZE_API_KEY;
     if (!apiKey) {
       return NextResponse.json(
-        { success: false, error: 'API Key 未配置，请联系管理员' },
+        { success: false, error: 'API Key 未配置，请在 .env.local 中配置 COZE_API_KEY' },
         { status: 500 }
       );
     }
 
-    // 构建工作流请求参数
-    // TODO: 根据实际工作流参数名称调整
-    const workflowParams = {
-      // 根据你的工作流开始节点定义的参数名称修改
-      // 例如：
-      // core_selling_point: coreSellingPoint,
-      // image_url: productImageUrl,
-      // speech_duration: speechDuration,
-      // video_duration: videoDuration,
-      // language: language,
+    // 构建工作流请求参数（根据工作流开始节点定义的参数名称）
+    // 参数名称：yaodian(核心卖点), pic1(产品图片), time(视频时长), koubo(口播时长), yuyan(语言)
+    const workflowParams: Record<string, string> = {
+      yaodian: coreSellingPoint,      // 核心卖点
+      pic1: productImageUrl,          // 产品图片URL
+      time: videoDuration,            // 视频时长
+      koubo: speechDuration,          // 口播时长
+      yuyan: language,                // 语言
     };
 
     console.log('Calling Coze Workflow:', {
@@ -75,31 +72,54 @@ export async function POST(request: NextRequest): Promise<NextResponse<TaskRespo
       }),
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Coze API Error:', errorText);
-      return NextResponse.json(
-        { success: false, error: `工作流调用失败: ${response.status}` },
-        { status: 500 }
-      );
+    const result = await response.json();
+    console.log('Coze Workflow Result:', JSON.stringify(result, null, 2));
+
+    // 检查 API 返回状态
+    if (result.code !== 0) {
+      const errorMsg = result.msg || '工作流调用失败';
+      console.error('Coze API Error:', result);
+      
+      return NextResponse.json({
+        success: false,
+        error: errorMsg,
+        debugUrl: result.debug_url,
+        rawResponse: result,
+      });
     }
 
-    const result = await response.json();
-    console.log('Coze Workflow Result:', result);
-
     // 解析工作流返回结果
-    // TODO: 根据实际工作流输出参数名称调整
+    // 返回格式: { code: 0, data: "{\"sora\":\"...\", \"seedance\":\"...\"}" }
+    let outputData: Record<string, unknown> = {};
+    
+    if (result.data) {
+      try {
+        // data 可能是 JSON 字符串或对象
+        if (typeof result.data === 'string') {
+          outputData = JSON.parse(result.data);
+        } else {
+          outputData = result.data;
+        }
+      } catch (parseError) {
+        console.error('Failed to parse result.data:', parseError);
+        outputData = { raw: result.data };
+      }
+    }
+
+    console.log('Parsed output:', outputData);
+
     return NextResponse.json({
       success: true,
-      taskId: result.data?.id || Date.now().toString(),
-      videoUrl: result.data?.output?.video_url || result.data?.video_url,
-      prompt: result.data?.output?.prompt || result.data?.prompt,
+      taskId: result.execute_id || Date.now().toString(),
+      sora: outputData.sora as string | undefined,
+      seedance: outputData.seedance as string | undefined,
+      debugUrl: result.debug_url,
     });
 
   } catch (error) {
     console.error('Generate Video Error:', error);
     return NextResponse.json(
-      { success: false, error: '服务器内部错误' },
+      { success: false, error: '服务器内部错误: ' + (error instanceof Error ? error.message : '未知错误') },
       { status: 500 }
     );
   }

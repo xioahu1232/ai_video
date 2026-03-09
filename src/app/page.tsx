@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { Video, Clock, Upload, Loader2, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
+import { Video, Clock, Upload, Loader2, CheckCircle2, XCircle, Copy, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -37,8 +37,8 @@ interface Task {
   language: string;
   createdAt: Date;
   progress?: number;
-  videoUrl?: string;
-  prompt?: string;
+  sora?: string;
+  seedance?: string;
   error?: string;
 }
 
@@ -54,6 +54,9 @@ export default function Home() {
   // 任务列表状态
   const [tasks, setTasks] = useState<Task[]>([]);
   
+  // 复制状态
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  
   // 文件输入引用
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -62,6 +65,17 @@ export default function Home() {
     const file = e.target.files?.[0];
     if (file) {
       setProductImage(file);
+    }
+  };
+
+  // 复制文本到剪贴板
+  const copyToClipboard = async (text: string, taskId: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedId(taskId);
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch (err) {
+      console.error('复制失败:', err);
     }
   };
 
@@ -84,14 +98,14 @@ export default function Home() {
     return data.url;
   };
 
-  // 调用工作流生成视频
-  const generateVideo = async (
+  // 调用工作流生成视频提示词
+  const generatePrompt = async (
     imageUrl: string,
     sellingPoint: string,
     speechDur: string,
     videoDur: string,
     lang: string
-  ): Promise<{ videoUrl?: string; prompt?: string }> => {
+  ): Promise<{ sora?: string; seedance?: string }> => {
     const response = await fetch('/api/generate-video', {
       method: 'POST',
       headers: {
@@ -109,12 +123,12 @@ export default function Home() {
     const data = await response.json();
     
     if (!data.success) {
-      throw new Error(data.error || '视频生成失败');
+      throw new Error(data.error || '提示词生成失败');
     }
 
     return {
-      videoUrl: data.videoUrl,
-      prompt: data.prompt,
+      sora: data.sora,
+      seedance: data.seedance,
     };
   };
 
@@ -143,7 +157,7 @@ export default function Home() {
       setTasks(prev => 
         prev.map(task => 
           task.id === newTask.id 
-            ? { ...task, status: 'uploading', progress: 10 }
+            ? { ...task, status: 'uploading', progress: 20 }
             : task
         )
       );
@@ -155,19 +169,19 @@ export default function Home() {
       setTasks(prev => 
         prev.map(task => 
           task.id === newTask.id 
-            ? { ...task, status: 'processing', progress: 30 }
+            ? { ...task, status: 'processing', progress: 50 }
             : task
         )
       );
 
-      const result = await generateVideo(
+      const result = await generatePrompt(
         imageUrl,
         coreSellingPoint,
         speechDuration,
         videoDuration,
         language
       );
-      console.log('Video generated:', result);
+      console.log('Prompts generated:', result);
 
       // 完成
       setTasks(prev => 
@@ -177,8 +191,8 @@ export default function Home() {
                 ...task, 
                 status: 'completed', 
                 progress: 100, 
-                videoUrl: result.videoUrl,
-                prompt: result.prompt,
+                sora: result.sora,
+                seedance: result.seedance,
               }
             : task
         )
@@ -235,7 +249,7 @@ export default function Home() {
       case 'uploading':
         return '上传图片中';
       case 'processing':
-        return '生成视频中';
+        return '生成提示词中';
       case 'completed':
         return '已完成';
       case 'failed':
@@ -263,26 +277,8 @@ export default function Home() {
             </span>
           </div>
           <p className="text-muted-foreground text-sm">
-            通过AI技术快速生成高质量视频内容，助力您的营销推广
+            通过AI技术快速生成高质量视频提示词，助力您的营销推广
           </p>
-        </div>
-
-        {/* 配置提示 */}
-        <div className="mb-6 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
-          <div className="flex items-start gap-3">
-            <AlertCircle className="h-5 w-5 text-yellow-500 flex-shrink-0 mt-0.5" />
-            <div className="text-sm">
-              <p className="text-yellow-200 font-medium mb-1">需要配置后端参数</p>
-              <p className="text-muted-foreground">
-                请提供以下信息完成集成：
-              </p>
-              <ul className="text-muted-foreground mt-2 space-y-1 list-disc list-inside">
-                <li>Coze API Key（在个人设置 → API访问令牌中创建）</li>
-                <li>工作流输入参数名称（在工作流开始节点查看）</li>
-                <li>工作流输出参数名称（在工作流结束节点查看）</li>
-              </ul>
-            </div>
-          </div>
         </div>
 
         {/* 双卡片布局 */}
@@ -292,7 +288,7 @@ export default function Home() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg">
                 <Video className="h-5 w-5 text-blue-500" />
-                生成视频
+                生成提示词
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-5">
@@ -402,7 +398,7 @@ export default function Home() {
                 className="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 glow-blue transition-all"
               >
                 <Video className="h-4 w-4 mr-2" />
-                {isSubmitting ? '生成中...' : '生成视频'}
+                {isSubmitting ? '生成中...' : '生成提示词'}
               </Button>
             </CardContent>
           </Card>
@@ -428,13 +424,13 @@ export default function Home() {
                   <p className="text-xs">提交表单后任务将显示在这里</p>
                 </div>
               ) : (
-                <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
+                <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2">
                   {tasks.map((task) => (
                     <div
                       key={task.id}
-                      className="p-3 bg-secondary/50 border border-border rounded-lg"
+                      className="p-4 bg-secondary/50 border border-border rounded-lg"
                     >
-                      <div className="flex items-start justify-between mb-2">
+                      <div className="flex items-start justify-between mb-3">
                         <div className="flex items-center gap-2">
                           {getStatusIcon(task.status)}
                           <span className="text-sm font-medium">
@@ -445,13 +441,13 @@ export default function Home() {
                           {task.createdAt.toLocaleTimeString()}
                         </span>
                       </div>
-                      <p className="text-sm text-muted-foreground truncate mb-2">
+                      <p className="text-sm text-muted-foreground truncate mb-3">
                         {task.coreSellingPoint}
                       </p>
                       
                       {/* 进度条 */}
                       {(task.status === 'uploading' || task.status === 'processing') && (
-                        <div className="w-full bg-secondary rounded-full h-1.5 mb-2">
+                        <div className="w-full bg-secondary rounded-full h-1.5 mb-3">
                           <div
                             className="bg-blue-500 h-1.5 rounded-full transition-all duration-300"
                             style={{ width: `${task.progress}%` }}
@@ -461,26 +457,60 @@ export default function Home() {
 
                       {/* 错误信息 */}
                       {task.status === 'failed' && task.error && (
-                        <p className="text-xs text-red-400 mb-2">{task.error}</p>
+                        <p className="text-xs text-red-400 mb-3">{task.error}</p>
                       )}
 
                       {/* 生成的提示词 */}
-                      {task.status === 'completed' && task.prompt && (
-                        <div className="mb-2 p-2 bg-secondary rounded text-xs text-muted-foreground">
-                          <p className="font-medium text-foreground mb-1">生成的提示词：</p>
-                          <p className="line-clamp-3">{task.prompt}</p>
-                        </div>
-                      )}
+                      {task.status === 'completed' && (
+                        <div className="space-y-3">
+                          {/* Sora 提示词 */}
+                          {task.sora && (
+                            <div className="bg-secondary rounded-lg p-3">
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="text-xs font-medium text-blue-400">Sora 提示词</span>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-6 px-2"
+                                  onClick={() => copyToClipboard(task.sora!, `${task.id}-sora`)}
+                                >
+                                  {copiedId === `${task.id}-sora` ? (
+                                    <Check className="h-3 w-3 text-green-500" />
+                                  ) : (
+                                    <Copy className="h-3 w-3 text-muted-foreground" />
+                                  )}
+                                </Button>
+                              </div>
+                              <p className="text-xs text-muted-foreground whitespace-pre-wrap break-words">
+                                {task.sora}
+                              </p>
+                            </div>
+                          )}
 
-                      {/* 查看视频按钮 */}
-                      {task.status === 'completed' && task.videoUrl && (
-                        <Button
-                          size="sm"
-                          className="mt-2 bg-blue-600 hover:bg-blue-700"
-                          onClick={() => window.open(task.videoUrl, '_blank')}
-                        >
-                          查看视频
-                        </Button>
+                          {/* Seedance 提示词 */}
+                          {task.seedance && (
+                            <div className="bg-secondary rounded-lg p-3">
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="text-xs font-medium text-purple-400">Seedance 提示词</span>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-6 px-2"
+                                  onClick={() => copyToClipboard(task.seedance!, `${task.id}-seedance`)}
+                                >
+                                  {copiedId === `${task.id}-seedance` ? (
+                                    <Check className="h-3 w-3 text-green-500" />
+                                  ) : (
+                                    <Copy className="h-3 w-3 text-muted-foreground" />
+                                  )}
+                                </Button>
+                              </div>
+                              <p className="text-xs text-muted-foreground whitespace-pre-wrap break-words">
+                                {task.seedance}
+                              </p>
+                            </div>
+                          )}
+                        </div>
                       )}
                     </div>
                   ))}
