@@ -24,12 +24,20 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // 查询用户角色
+    const { data: userBalance } = await supabase
+      .from('user_balances')
+      .select('role')
+      .eq('user_id', user.id)
+      .single();
+
     return NextResponse.json({
       success: true,
       user: {
         id: user.id,
         email: user.email,
         name: user.user_metadata?.name || user.email?.split('@')[0],
+        role: userBalance?.role || 'user',
       },
     });
   } catch (error) {

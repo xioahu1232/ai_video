@@ -40,12 +40,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // 查询用户角色
+    const { data: userBalance } = await supabase
+      .from('user_balances')
+      .select('role')
+      .eq('user_id', data.user.id)
+      .single();
+
+    const role = userBalance?.role || 'user';
+
     return NextResponse.json({
       success: true,
       user: {
         id: data.user.id,
         email: data.user.email,
         name: data.user.user_metadata?.name || email.split('@')[0],
+        role,
       },
       session: {
         access_token: data.session.access_token,

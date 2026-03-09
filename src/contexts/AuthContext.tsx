@@ -6,12 +6,14 @@ interface User {
   id: string;
   email: string;
   name: string;
+  role?: string; // 用户角色：user, admin
 }
 
 interface AuthContextType {
   user: User | null;
   token: string | null;
   isLoading: boolean;
+  isAdmin: boolean; // 是否是管理员
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   register: (email: string, password: string, name?: string, inviteCode?: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
@@ -23,6 +25,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   // 从 localStorage 恢复登录状态
   useEffect(() => {
@@ -34,6 +37,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const userData = JSON.parse(savedUser);
         setToken(savedToken);
         setUser(userData);
+        setIsAdmin(userData.role === 'admin');
 
         // 验证 token 是否有效
         fetch('/api/auth/me', {
@@ -47,6 +51,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               localStorage.removeItem('auth_user');
               setToken(null);
               setUser(null);
+              setIsAdmin(false);
+            } else if (data.user?.role) {
+              // 更新角色信息
+              setUser(prev => prev ? { ...prev, role: data.user.role } : null);
+              setIsAdmin(data.user.role === 'admin');
             }
           })
           .catch(() => {
@@ -59,6 +68,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         localStorage.removeItem('auth_token');
         localStorage.removeItem('auth_user');
         setIsLoading(false);
+        setIsAdmin(false);
       }
     } else {
       setIsLoading(false);
@@ -84,6 +94,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem('auth_user', JSON.stringify(data.user));
       setToken(data.session.access_token);
       setUser(data.user);
+      setIsAdmin(data.user?.role === 'admin');
 
       return { success: true };
     } catch (error) {
@@ -119,10 +130,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem('auth_user');
     setToken(null);
     setUser(null);
+    setIsAdmin(false);
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, token, isLoading, isAdmin, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );

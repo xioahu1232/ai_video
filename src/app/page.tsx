@@ -7,7 +7,7 @@ import {
   ImageIcon, Wand2, Star,
   Edit3, X, Clock, Video, Sparkles, Globe,
   Zap, Brain, Eye, Lightbulb, PenTool, FileText,
-  LogIn, LogOut, User, Gift, Coins
+  LogIn, LogOut, User, Gift, Coins, Shield
 } from 'lucide-react';
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
@@ -114,7 +114,7 @@ interface Task {
 
 export default function Home() {
   // 认证相关
-  const { user, token, isLoading: authLoading, login, register, logout } = useAuth();
+  const { user, token, isLoading: authLoading, isAdmin, login, register, logout } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
   
   // 余额相关
@@ -773,6 +773,18 @@ export default function Home() {
                   <User className="w-4 h-4 text-gray-500" />
                   <span className="text-xs sm:text-sm text-gray-700 font-medium">{user.name}</span>
                 </div>
+                
+                {/* 管理员入口 */}
+                {isAdmin && (
+                  <a
+                    href="/admin"
+                    className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium bg-gradient-to-r from-purple-500 to-indigo-600 text-white hover:opacity-90 transition-opacity"
+                  >
+                    <Shield className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                    <span className="hidden sm:inline">管理后台</span>
+                  </a>
+                )}
+                
                 <button
                   onClick={logout}
                   className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium bg-gray-100 hover:bg-red-50 hover:text-red-500 text-gray-600 transition-colors"
