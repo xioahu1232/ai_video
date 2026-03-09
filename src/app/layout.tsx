@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Inspector } from 'react-dev-inspector';
 import './globals.css';
+import { AuthProvider } from '@/contexts/AuthContext';
 
 export const metadata: Metadata = {
   title: {
@@ -30,8 +31,10 @@ export default function RootLayout({
   return (
     <html lang="zh-CN" className="dark">
       <body className={`antialiased font-sans`}>
-        {isDev && <Inspector />}
-        {children}
+        <AuthProvider>
+          {isDev && <Inspector />}
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );

@@ -6,9 +6,12 @@ import {
   Copy, Check, ChevronDown, ChevronUp, Trash2, 
   ImageIcon, Wand2, Star,
   Edit3, X, Clock, Video, Sparkles, Globe,
-  Zap, Brain, Eye, Lightbulb, PenTool, FileText
+  Zap, Brain, Eye, Lightbulb, PenTool, FileText,
+  LogIn, LogOut, User
 } from 'lucide-react';
 import Image from 'next/image';
+import { useAuth } from '@/contexts/AuthContext';
+import { AuthModal } from '@/components/AuthModal';
 
 // 语言选项
 const LANGUAGES = [
@@ -105,14 +108,14 @@ interface Task {
   imageUrl?: string;
   imagePreview?: string;
   starred?: boolean;
+  videoDuration?: string;
 }
 
-// localStorage 键名
-const STORAGE_KEYS = {
-  TASKS: 'changfeng_video_generator_tasks',
-};
-
 export default function Home() {
+  // 认证相关
+  const { user, token, isLoading: authLoading, login, register, logout } = useAuth();
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  
   // 表单状态
   const [coreSellingPoint, setCoreSellingPoint] = useState('');
   const [productImage, setProductImage] = useState<File | null>(null);
@@ -148,32 +151,133 @@ export default function Home() {
   // 文件输入引用
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // 初始化：加载本地存储数据
-  useEffect(() => {
-    setMounted(true);
+  // 从数据库加载任务
+  const loadTasksFromDB = useCallback(async () => {
+    if (!token) return;
     
     try {
-      const savedTasks = localStorage.getItem(STORAGE_KEYS.TASKS);
-      if (savedTasks) {
-        const parsed = JSON.parse(savedTasks);
-        const completedTasks = parsed.filter((t: Task) => t.status === 'completed');
-        setTasks(completedTasks);
+      const res = await fetch('/api/tasks', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      
+      const data = await res.json();
+      
+      if (data.success && data.tasks) {
+        const formattedTasks: Task[] = data.tasks.map((t: Record<string, unknown>) => ({
+          id: t.id as string,
+          status: t.status as TaskStatus,
+          coreSellingPoint: t.core_selling_point as string,
+          language: t.language as string,
+          createdAt: t.created_at as string,
+          sora: t.sora as string | undefined,
+          seedance: t.seedance as string | undefined,
+          error: t.error as string | undefined,
+          expanded: false,
+          starred: t.starred as boolean,
+          imageUrl: t.image_url as string | undefined,
+          videoDuration: t.video_duration as string | undefined,
+        }));
+        setTasks(formattedTasks);
       }
-    } catch (e) {
-      console.error('加载任务历史失败:', e);
+    } catch (error) {
+      console.error('加载任务失败:', error);
     }
+  }, [token]);
+
+  // 初始化：加载任务
+  useEffect(() => {
+    setMounted(true);
   }, []);
 
-  // 保存任务到 localStorage
-  const saveTasksToStorage = useCallback((newTasks: Task[]) => {
-    try {
-      const completedTasks = newTasks
-        .filter(t => t.status === 'completed')
-        .slice(0, 50);
-      localStorage.setItem(STORAGE_KEYS.TASKS, JSON.stringify(completedTasks));
-    } catch (e) {
-      console.error('保存任务失败:', e);
+  // 登录状态变化时加载任务
+  useEffect(() => {
+    if (token && user) {
+      loadTasksFromDB();
+    } else {
+      setTasks([]);
     }
+  }, [token, user, loadTasksFromDB]);
+
+  // 保存任务到数据库
+  const saveTaskToDB = useCallback(async (task: Task) => {
+    if (!token) return;
+    
+    try {
+      const res = await fetch('/api/tasks', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          coreSellingPoint: task.coreSellingPoint,
+          imageUrl: task.imageUrl,
+          videoDuration: task.videoDuration,
+          language: task.language,
+          sora: task.sora,
+          seedance: task.seedance,
+          status: task.status,
+          error: task.error,
+        }),
+      });
+      
+      const data = await res.json();
+      return data.success ? data.task : null;
+    } catch (error) {
+      console.error('保存任务失败:', error);
+      return null;
+    }
+  }, [token]);
+
+  // 更新任务到数据库
+  const updateTaskInDB = useCallback(async (taskId: string, updates: Partial<Task>) => {
+    if (!token) return;
+    
+    try {
+      await fetch(`/api/tasks/${taskId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(updates),
+      });
+    } catch (error) {
+      console.error('更新任务失败:', error);
+    }
+  }, [token]);
+
+  // 删除任务从数据库
+  const deleteTaskFromDB = useCallback(async (taskId: string) => {
+    if (!token) return;
+    
+    try {
+      await fetch(`/api/tasks/${taskId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    } catch (error) {
+      console.error('删除任务失败:', error);
+    }
+  }, [token]);
+
+  // 清空所有任务从数据库
+  const clearAllTasksFromDB = useCallback(async () => {
+    if (!token) return;
+    
+    try {
+      await fetch('/api/tasks', {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    } catch (error) {
+      console.error('清空任务失败:', error);
+    }
+  }, [token]);
+
+  // 删除旧的 saveTasksToStorage 函数并替换为空函数（兼容旧代码）
+  const saveTasksToStorage = useCallback(() => {
+    // 不再使用localStorage，数据保存在数据库中
   }, []);
 
   // 动态文字效果
@@ -236,31 +340,32 @@ export default function Home() {
   };
 
   // 删除任务
-  const deleteTask = (taskId: string) => {
-    setTasks(prev => {
-      const newTasks = prev.filter(task => task.id !== taskId);
-      saveTasksToStorage(newTasks);
-      return newTasks;
-    });
+  const deleteTask = async (taskId: string) => {
+    await deleteTaskFromDB(taskId);
+    setTasks(prev => prev.filter(task => task.id !== taskId));
   };
 
   // 清空所有历史
-  const clearAllHistory = () => {
+  const clearAllHistory = async () => {
     if (confirm('确定要清空所有历史记录吗？')) {
+      await clearAllTasksFromDB();
       setTasks([]);
-      localStorage.removeItem(STORAGE_KEYS.TASKS);
     }
   };
 
   // 切换收藏状态
-  const toggleStar = (taskId: string) => {
-    setTasks(prev => {
-      const newTasks = prev.map(task => 
-        task.id === taskId ? { ...task, starred: !task.starred } : task
-      );
-      saveTasksToStorage(newTasks);
-      return newTasks;
-    });
+  const toggleStar = async (taskId: string) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+    
+    const newStarred = !task.starred;
+    await updateTaskInDB(taskId, { starred: newStarred });
+    
+    setTasks(prev => 
+      prev.map(task => 
+        task.id === taskId ? { ...task, starred: newStarred } : task
+      )
+    );
   };
 
   // 切换展开状态
@@ -280,18 +385,18 @@ export default function Home() {
   };
 
   // 保存编辑
-  const saveEdit = () => {
+  const saveEdit = async () => {
     if (!editingTask) return;
     
-    setTasks(prev => {
-      const newTasks = prev.map(task => 
+    await updateTaskInDB(editingTask.id, { sora: editSora, seedance: editSeedance });
+    
+    setTasks(prev => 
+      prev.map(task => 
         task.id === editingTask.id 
           ? { ...task, sora: editSora, seedance: editSeedance } 
           : task
-      );
-      saveTasksToStorage(newTasks);
-      return newTasks;
-    });
+      )
+    );
     
     setEditingTask(null);
     setEditSora('');
@@ -412,6 +517,12 @@ export default function Home() {
       return;
     }
 
+    // 检查是否登录
+    if (!user || !token) {
+      setShowAuthModal(true);
+      return;
+    }
+
     // 如果有任务正在处理，提示用户
     if (isSubmitting) {
       alert('当前有任务正在处理中，请等待完成后再提交新任务');
@@ -513,21 +624,30 @@ export default function Home() {
       setStepProgress(100);
       setOverallProgress(100);
 
+      // 更新任务状态并保存到数据库
+      const completedTask = {
+        ...newTask,
+        status: 'completed' as TaskStatus,
+        progress: 100,
+        sora: result.sora,
+        seedance: result.seedance,
+        imageUrl: imageUrl,
+      };
+
+      // 保存到数据库
+      const savedTask = await saveTaskToDB(completedTask);
+
       setTasks(prev => {
-        const newTasks = prev.map(task => 
-          task.id === newTask.id 
-            ? { 
-                ...task, 
-                status: 'completed' as TaskStatus, 
-                progress: 100, 
-                sora: result.sora,
-                seedance: result.seedance,
-                imageUrl: imageUrl,
-              }
-            : task
+        if (savedTask) {
+          return prev.map(task => 
+            task.id === newTask.id 
+              ? { ...completedTask, id: savedTask.id }
+              : task
+          );
+        }
+        return prev.map(task => 
+          task.id === newTask.id ? completedTask : task
         );
-        saveTasksToStorage(newTasks);
-        return newTasks;
       });
 
     } catch (error) {
@@ -586,9 +706,36 @@ export default function Home() {
             </div>
           </div>
           
-          <div className="hidden md:flex items-center gap-2 text-gray-500">
-            <Globe className="w-5 h-5" />
-            <span className="text-sm font-medium">帮助中国商家出海</span>
+          <div className="flex items-center gap-3 sm:gap-4">
+            {user ? (
+              <>
+                <div className="hidden sm:flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-gray-100 rounded-lg sm:rounded-xl">
+                  <User className="w-4 h-4 text-gray-500" />
+                  <span className="text-xs sm:text-sm text-gray-700 font-medium">{user.name}</span>
+                </div>
+                <button
+                  onClick={logout}
+                  className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium bg-gray-100 hover:bg-red-50 hover:text-red-500 text-gray-600 transition-colors"
+                >
+                  <LogOut className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  <span className="hidden sm:inline">退出</span>
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={() => setShowAuthModal(true)}
+                  className="flex items-center gap-1.5 sm:gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium bg-[#4fa3d1] hover:bg-[#3d8ab8] text-white transition-colors"
+                >
+                  <LogIn className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  登录
+                </button>
+                <div className="hidden md:flex items-center gap-2 text-gray-500">
+                  <Globe className="w-5 h-5" />
+                  <span className="text-sm font-medium">帮助中国商家出海</span>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </header>
@@ -1198,6 +1345,14 @@ export default function Home() {
           </div>
         </div>
       )}
+
+      {/* 登录/注册弹窗 */}
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        onLogin={login}
+        onRegister={register}
+      />
     </div>
   );
 }
