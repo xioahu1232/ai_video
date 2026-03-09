@@ -7,7 +7,7 @@ import {
   ImageIcon, Wand2, Star,
   Edit3, X, Clock, Video, Sparkles, Globe,
   Zap, Brain, Eye, Lightbulb, PenTool, FileText,
-  LogIn, LogOut, User, Gift, Coins, Shield
+  LogIn, LogOut, User, Gift, Coins, Shield, Download
 } from 'lucide-react';
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
@@ -152,8 +152,14 @@ export default function Home() {
   const [overallProgress, setOverallProgress] = useState(0);
   const [dynamicText, setDynamicText] = useState('');
   
-  // 收藏筛选
+  // 搜索筛选状态
   const [showStarredOnly, setShowStarredOnly] = useState(false);
+  const [searchKeyword, setSearchKeyword] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'completed' | 'failed'>('all');
+  
+  // 批量操作状态
+  const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set());
+  const [isSelectMode, setIsSelectMode] = useState(false);
   
   // 编辑状态
   const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -168,6 +174,27 @@ export default function Home() {
   
   // 文件输入引用
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // 表单记忆功能：加载用户偏好
+  useEffect(() => {
+    const savedPrefs = localStorage.getItem('user_form_prefs');
+    if (savedPrefs) {
+      try {
+        const prefs = JSON.parse(savedPrefs);
+        if (prefs.language) setLanguage(prefs.language);
+        if (prefs.speechDuration) setSpeechDuration(prefs.speechDuration);
+        if (prefs.videoDuration) setVideoDuration(prefs.videoDuration);
+      } catch (e) {
+        console.error('Failed to load user preferences:', e);
+      }
+    }
+  }, []);
+  
+  // 表单记忆功能：保存用户偏好
+  const saveUserPrefs = useCallback(() => {
+    const prefs = { language, speechDuration, videoDuration };
+    localStorage.setItem('user_form_prefs', JSON.stringify(prefs));
+  }, [language, speechDuration, videoDuration]);
 
   // 从数据库加载任务
   const loadTasksFromDB = useCallback(async () => {
@@ -351,12 +378,82 @@ export default function Home() {
   }, [isSubmitting, currentStepIndex, stepProgress]);
 
   // 处理文件选择
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // 图片压缩函数
+  const compressImage = async (file: File, maxWidth: number = 1920, quality: number = 0.8): Promise<File> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new window.Image();
+        img.onload = () => {
+          // 如果图片尺寸小于最大宽度，不需要压缩
+          if (img.width <= maxWidth && file.size <= 1024 * 1024) {
+            resolve(file);
+            return;
+          }
+          
+          // 计算新尺寸
+          let newWidth = img.width;
+          let newHeight = img.height;
+          if (img.width > maxWidth) {
+            newWidth = maxWidth;
+            newHeight = (img.height * maxWidth) / img.width;
+          }
+          
+          // 创建 canvas 压缩
+          const canvas = document.createElement('canvas');
+          canvas.width = newWidth;
+          canvas.height = newHeight;
+          const ctx = canvas.getContext('2d');
+          
+          if (!ctx) {
+            resolve(file); // 压缩失败，返回原文件
+            return;
+          }
+          
+          // 绘制并压缩
+          ctx.drawImage(img, 0, 0, newWidth, newHeight);
+          canvas.toBlob(
+            (blob) => {
+              if (!blob) {
+                resolve(file);
+                return;
+              }
+              // 如果压缩后更大，返回原文件
+              if (blob.size >= file.size) {
+                resolve(file);
+                return;
+              }
+              const compressedFile = new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), {
+                type: 'image/jpeg',
+                lastModified: Date.now(),
+              });
+              resolve(compressedFile);
+            },
+            'image/jpeg',
+            quality
+          );
+        };
+        img.onerror = () => resolve(file);
+        img.src = e.target?.result as string;
+      };
+      reader.onerror = () => resolve(file);
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setProductImage(file);
-      const previewUrl = URL.createObjectURL(file);
+      // 压缩图片
+      const compressedFile = await compressImage(file);
+      setProductImage(compressedFile);
+      const previewUrl = URL.createObjectURL(compressedFile);
       setImagePreview(previewUrl);
+      
+      // 显示压缩信息
+      if (compressedFile.size < file.size) {
+        console.log(`图片压缩: ${(file.size / 1024).toFixed(1)}KB → ${(compressedFile.size / 1024).toFixed(1)}KB (节省 ${Math.round((1 - compressedFile.size / file.size) * 100)}%)`);
+      }
     }
   };
 
@@ -610,12 +707,14 @@ export default function Home() {
 
     setTasks(prev => [newTask, ...prev]);
 
-    // 立即重置表单，允许用户输入新内容
+    // 保存用户偏好设置
+    saveUserPrefs();
+
+    // 立即重置表单，允许用户输入新内容（保留时长和语言偏好）
     setCoreSellingPoint('');
     setProductImage(null);
     setImagePreview(null);
-    setSpeechDuration('12');
-    setVideoDuration('15');
+    // 不重置 speechDuration、videoDuration、language，保留用户偏好
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -742,10 +841,146 @@ export default function Home() {
     return lang ? `${lang.flag} ${lang.native}` : langCode;
   };
 
-  // 筛选显示的任务
-  const displayedTasks = showStarredOnly 
-    ? tasks.filter(t => t.starred)
-    : tasks;
+  // 筛选显示的任务（搜索 + 状态筛选 + 收藏筛选）
+  const displayedTasks = tasks.filter(task => {
+    // 收藏筛选
+    if (showStarredOnly && !task.starred) return false;
+    
+    // 状态筛选
+    if (statusFilter === 'completed' && task.status !== 'completed') return false;
+    if (statusFilter === 'failed' && task.status !== 'failed') return false;
+    
+    // 关键词搜索
+    if (searchKeyword.trim()) {
+      const keyword = searchKeyword.toLowerCase();
+      const matchSellingPoint = task.coreSellingPoint.toLowerCase().includes(keyword);
+      const matchSora = task.sora?.toLowerCase().includes(keyword);
+      const matchSeedance = task.seedance?.toLowerCase().includes(keyword);
+      if (!matchSellingPoint && !matchSora && !matchSeedance) return false;
+    }
+    
+    return true;
+  });
+
+  // 批量操作功能
+  const toggleSelectMode = () => {
+    setIsSelectMode(!isSelectMode);
+    setSelectedTaskIds(new Set());
+  };
+
+  const toggleTaskSelection = (taskId: string) => {
+    const newSelected = new Set(selectedTaskIds);
+    if (newSelected.has(taskId)) {
+      newSelected.delete(taskId);
+    } else {
+      newSelected.add(taskId);
+    }
+    setSelectedTaskIds(newSelected);
+  };
+
+  const selectAllTasks = () => {
+    if (selectedTaskIds.size === displayedTasks.length) {
+      setSelectedTaskIds(new Set());
+    } else {
+      setSelectedTaskIds(new Set(displayedTasks.map(t => t.id)));
+    }
+  };
+
+  const batchToggleStar = async () => {
+    if (selectedTaskIds.size === 0) return;
+    
+    for (const taskId of selectedTaskIds) {
+      const task = tasks.find(t => t.id === taskId);
+      if (task && !task.starred) {
+        await toggleStar(taskId);
+      }
+    }
+    setSelectedTaskIds(new Set());
+  };
+
+  const batchDelete = async () => {
+    if (selectedTaskIds.size === 0) return;
+    if (!confirm(`确定要删除选中的 ${selectedTaskIds.size} 条记录吗？`)) return;
+    
+    for (const taskId of selectedTaskIds) {
+      await deleteTask(taskId);
+    }
+    setSelectedTaskIds(new Set());
+  };
+
+  const batchCopyAll = async () => {
+    if (selectedTaskIds.size === 0) return;
+    
+    const selectedTasks = tasks.filter(t => selectedTaskIds.has(t.id) && t.status === 'completed');
+    if (selectedTasks.length === 0) {
+      alert('请选择已完成的任务');
+      return;
+    }
+    
+    const allContent = selectedTasks.map((task, index) => {
+      return `【任务 ${index + 1}】\n卖点：${task.coreSellingPoint}\n\n【Sora】\n${task.sora || ''}\n\n【Seedance】\n${task.seedance || ''}`;
+    }).join('\n\n' + '='.repeat(40) + '\n\n');
+    
+    await navigator.clipboard.writeText(allContent);
+    alert(`已复制 ${selectedTasks.length} 条任务的提示词`);
+  };
+
+  // 导出功能
+  const exportTasks = (format: 'txt' | 'json') => {
+    const tasksToExport = displayedTasks.filter(t => t.status === 'completed');
+    
+    if (tasksToExport.length === 0) {
+      alert('没有可导出的任务');
+      return;
+    }
+    
+    let content: string;
+    let filename: string;
+    let mimeType: string;
+    
+    if (format === 'json') {
+      const exportData = tasksToExport.map(task => ({
+        id: task.id,
+        coreSellingPoint: task.coreSellingPoint,
+        language: task.language,
+        videoDuration: task.videoDuration,
+        sora: task.sora,
+        seedance: task.seedance,
+        starred: task.starred,
+        createdAt: task.createdAt,
+      }));
+      content = JSON.stringify(exportData, null, 2);
+      filename = `提示词导出_${new Date().toISOString().split('T')[0]}.json`;
+      mimeType = 'application/json';
+    } else {
+      content = tasksToExport.map((task, index) => {
+        return `【任务 ${index + 1}】
+时间：${new Date(task.createdAt).toLocaleString('zh-CN')}
+语言：${task.language}
+卖点：${task.coreSellingPoint}
+
+【Sora 提示词】
+${task.sora || '无'}
+
+【Seedance 提示词】
+${task.seedance || '无'}
+
+${'='.repeat(50)}`;
+      }).join('\n\n');
+      filename = `提示词导出_${new Date().toISOString().split('T')[0]}.txt`;
+      mimeType = 'text/plain';
+    }
+    
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
 
   // 当前正在处理的任务
   const processingTask = tasks.find(t => t.status === 'uploading' || t.status === 'processing');
@@ -1037,39 +1272,159 @@ export default function Home() {
 
           {/* 右侧：结果卡片 */}
           <div className="card overflow-hidden flex flex-col">
-            <div className="flex items-center justify-between p-4 sm:p-6 md:p-8 border-b border-gray-100">
-              <div className="flex items-center gap-3 sm:gap-4">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 icon-container warning">
-                  <Zap className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-amber-500" />
-                </div>
-                <div>
-                  <h2 className="text-lg sm:text-xl md:text-2xl font-semibold text-gray-800">生成结果</h2>
-                  <p className="text-xs sm:text-sm text-gray-500 mt-0.5 sm:mt-1">
-                    {displayedTasks.length > 0 ? `共 ${displayedTasks.length} 条记录` : '暂无记录'}
-                    <span className="text-orange-500 ml-2">未收藏记录48小时后自动删除</span>
-                  </p>
+            <div className="p-4 sm:p-6 md:p-8 border-b border-gray-100">
+              {/* 标题行 */}
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3 sm:gap-4">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 icon-container warning">
+                    <Zap className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-amber-500" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg sm:text-xl md:text-2xl font-semibold text-gray-800">生成结果</h2>
+                    <p className="text-xs sm:text-sm text-gray-500 mt-0.5 sm:mt-1">
+                      {displayedTasks.length > 0 ? `共 ${displayedTasks.length} 条记录` : '暂无记录'}
+                      <span className="text-orange-500 ml-2">未收藏记录48小时后自动删除</span>
+                    </p>
+                  </div>
                 </div>
               </div>
               
+              {/* 搜索和筛选工具栏 */}
               {tasks.length > 0 && (
-                <div className="flex items-center gap-2 sm:gap-3">
-                  <button
-                    onClick={() => setShowStarredOnly(!showStarredOnly)}
-                    className={`px-3 py-1.5 sm:px-4 sm:py-2 md:px-5 md:py-2.5 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium transition-all flex items-center gap-1.5 sm:gap-2 ${
-                      showStarredOnly 
-                        ? 'bg-amber-50 text-amber-600 border border-amber-200' 
-                        : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-                    }`}
-                  >
-                    <Star className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${showStarredOnly ? 'fill-current' : ''}`} />
-                    <span className="hidden sm:inline">收藏</span>
-                  </button>
-                  <button
-                    onClick={clearAllHistory}
-                    className="px-3 py-1.5 sm:px-4 sm:py-2 md:px-5 md:py-2.5 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium bg-gray-100 hover:bg-red-50 hover:text-red-500 text-gray-500 transition-colors"
-                  >
-                    清空
-                  </button>
+                <div className="space-y-3">
+                  {/* 搜索框 */}
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="搜索卖点或提示词内容..."
+                      value={searchKeyword}
+                      onChange={(e) => setSearchKeyword(e.target.value)}
+                      className="w-full h-10 sm:h-11 pl-10 pr-4 bg-gray-50 border border-gray-200 rounded-lg sm:rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#4fa3d1]/30 focus:border-[#4fa3d1]"
+                    />
+                    <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    {searchKeyword && (
+                      <button
+                        onClick={() => setSearchKeyword('')}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center text-gray-400 hover:text-gray-600"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                  
+                  {/* 筛选和操作按钮 */}
+                  <div className="flex flex-wrap items-center gap-2">
+                    {/* 状态筛选 */}
+                    <select
+                      value={statusFilter}
+                      onChange={(e) => setStatusFilter(e.target.value as 'all' | 'completed' | 'failed')}
+                      className="h-8 px-3 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-600 focus:outline-none focus:ring-2 focus:ring-[#4fa3d1]/30"
+                    >
+                      <option value="all">全部状态</option>
+                      <option value="completed">已完成</option>
+                      <option value="failed">已失败</option>
+                    </select>
+                    
+                    {/* 收藏筛选 */}
+                    <button
+                      onClick={() => setShowStarredOnly(!showStarredOnly)}
+                      className={`h-8 px-3 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
+                        showStarredOnly 
+                          ? 'bg-amber-50 text-amber-600 border border-amber-200' 
+                          : 'bg-gray-50 text-gray-500 border border-gray-200 hover:bg-gray-100'
+                      }`}
+                    >
+                      <Star className={`w-3.5 h-3.5 ${showStarredOnly ? 'fill-current' : ''}`} />
+                      收藏
+                    </button>
+                    
+                    <div className="flex-1" />
+                    
+                    {/* 批量操作模式 */}
+                    <button
+                      onClick={toggleSelectMode}
+                      className={`h-8 px-3 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
+                        isSelectMode 
+                          ? 'bg-[#4fa3d1] text-white' 
+                          : 'bg-gray-50 text-gray-500 border border-gray-200 hover:bg-gray-100'
+                      }`}
+                    >
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      {isSelectMode ? '取消选择' : '批量操作'}
+                    </button>
+                    
+                    {/* 导出按钮 */}
+                    <div className="relative group">
+                      <button
+                        className="h-8 px-3 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-600 hover:bg-gray-100 flex items-center gap-1.5"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        导出
+                      </button>
+                      <div className="absolute right-0 top-full mt-1 py-1 bg-white border border-gray-200 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10 min-w-[100px]">
+                        <button
+                          onClick={() => exportTasks('txt')}
+                          className="w-full px-3 py-1.5 text-left text-xs text-gray-600 hover:bg-gray-50"
+                        >
+                          导出为 TXT
+                        </button>
+                        <button
+                          onClick={() => exportTasks('json')}
+                          className="w-full px-3 py-1.5 text-left text-xs text-gray-600 hover:bg-gray-50"
+                        >
+                          导出为 JSON
+                        </button>
+                      </div>
+                    </div>
+                    
+                    {/* 清空按钮 */}
+                    <button
+                      onClick={clearAllHistory}
+                      className="h-8 px-3 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-500 hover:bg-red-50 hover:text-red-500 hover:border-red-200 transition-colors"
+                    >
+                      清空
+                    </button>
+                  </div>
+                  
+                  {/* 批量操作工具栏 */}
+                  {isSelectMode && displayedTasks.filter(t => t.status === 'completed').length > 0 && (
+                    <div className="flex items-center gap-2 p-3 bg-[#4fa3d1]/5 border border-[#4fa3d1]/20 rounded-lg">
+                      <button
+                        onClick={selectAllTasks}
+                        className="h-8 px-3 bg-white border border-gray-200 rounded-lg text-xs text-gray-600 hover:bg-gray-50"
+                      >
+                        {selectedTaskIds.size === displayedTasks.filter(t => t.status === 'completed').length ? '取消全选' : '全选'}
+                      </button>
+                      <span className="text-xs text-gray-500">
+                        已选择 {selectedTaskIds.size} 条
+                      </span>
+                      <div className="flex-1" />
+                      {selectedTaskIds.size > 0 && (
+                        <>
+                          <button
+                            onClick={batchCopyAll}
+                            className="h-8 px-3 bg-white border border-[#4fa3d1] text-[#4fa3d1] rounded-lg text-xs hover:bg-[#4fa3d1]/5"
+                          >
+                            批量复制
+                          </button>
+                          <button
+                            onClick={batchToggleStar}
+                            className="h-8 px-3 bg-amber-50 border border-amber-200 text-amber-600 rounded-lg text-xs hover:bg-amber-100"
+                          >
+                            批量收藏
+                          </button>
+                          <button
+                            onClick={batchDelete}
+                            className="h-8 px-3 bg-red-50 border border-red-200 text-red-500 rounded-lg text-xs hover:bg-red-100"
+                          >
+                            批量删除
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -1164,7 +1519,7 @@ export default function Home() {
                     <ImageIcon className="w-8 h-8 sm:w-10 sm:h-10 text-gray-300" />
                   </div>
                   <p className="text-gray-400 text-center text-sm sm:text-base sm:text-lg">
-                    {showStarredOnly ? '暂无收藏记录' : '提交表单后结果将显示在这里'}
+                    {searchKeyword ? '未找到匹配的记录' : showStarredOnly ? '暂无收藏记录' : '提交表单后结果将显示在这里'}
                   </p>
                 </div>
               ) : (
@@ -1178,6 +1533,22 @@ export default function Home() {
                       } overflow-hidden`}
                     >
                       <div className="p-3 sm:p-4 flex items-start gap-3 sm:gap-4">
+                        {/* 批量选择框 */}
+                        {isSelectMode && task.status === 'completed' && (
+                          <button
+                            onClick={() => toggleTaskSelection(task.id)}
+                            className={`flex-shrink-0 w-5 h-5 sm:w-6 sm:h-6 rounded border-2 flex items-center justify-center transition-all ${
+                              selectedTaskIds.has(task.id)
+                                ? 'bg-[#4fa3d1] border-[#4fa3d1]'
+                                : 'bg-white border-gray-300 hover:border-[#4fa3d1]'
+                            }`}
+                          >
+                            {selectedTaskIds.has(task.id) && (
+                              <Check className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
+                            )}
+                          </button>
+                        )}
+                        
                         <div className="flex-shrink-0">
                           {task.imagePreview || task.imageUrl ? (
                             <img 
