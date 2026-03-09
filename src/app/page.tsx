@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { 
   Video, Upload, Loader2, CheckCircle2, XCircle, 
   Copy, Check, Sparkles, ChevronDown, ChevronUp, Trash2, 
-  ImageIcon, ArrowRight, Zap, Globe
+  ImageIcon, ArrowRight, Zap, Globe, Moon, Sun, Star,
+  Edit3, X, Clock
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -42,6 +43,14 @@ const LANGUAGES = [
   { value: 'pa', label: 'Punjabi', native: 'ਪੰਜਾਬੀ', flag: '🇮🇳' },
 ];
 
+// 时长预设
+const DURATION_PRESETS = [
+  { label: '短视频', speech: '8', video: '10' },
+  { label: '标准', speech: '12', video: '15' },
+  { label: '中长', speech: '20', video: '30' },
+  { label: '长视频', speech: '30', video: '60' },
+];
+
 // 任务状态类型
 type TaskStatus = 'pending' | 'uploading' | 'processing' | 'completed' | 'failed';
 
@@ -51,7 +60,7 @@ interface Task {
   status: TaskStatus;
   coreSellingPoint: string;
   language: string;
-  createdAt: Date;
+  createdAt: string; // 使用 ISO 字符串便于序列化
   progress?: number;
   sora?: string;
   seedance?: string;
@@ -59,7 +68,15 @@ interface Task {
   expanded?: boolean;
   imageUrl?: string;
   imagePreview?: string;
+  starred?: boolean;
 }
+
+// localStorage 键名
+const STORAGE_KEYS = {
+  TASKS: 'changfeng_video_generator_tasks',
+  STARRED: 'changfeng_video_generator_starred',
+  THEME: 'changfeng_video_generator_theme',
+};
 
 // 加载动画文案
 const LOADING_MESSAGES = [
@@ -83,6 +100,17 @@ export default function Home() {
   // 任务列表状态
   const [tasks, setTasks] = useState<Task[]>([]);
   
+  // 深色模式
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  
+  // 收藏筛选
+  const [showStarredOnly, setShowStarredOnly] = useState(false);
+  
+  // 编辑状态
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [editSora, setEditSora] = useState('');
+  const [editSeedance, setEditSeedance] = useState('');
+  
   // 复制状态
   const [copiedId, setCopiedId] = useState<string | null>(null);
   
@@ -95,9 +123,60 @@ export default function Home() {
   // 文件输入引用
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // 初始化：加载本地存储数据
   useEffect(() => {
     setMounted(true);
+    
+    // 加载任务历史
+    try {
+      const savedTasks = localStorage.getItem(STORAGE_KEYS.TASKS);
+      if (savedTasks) {
+        const parsed = JSON.parse(savedTasks);
+        // 只加载已完成的任务，过滤掉进行中的任务
+        const completedTasks = parsed.filter((t: Task) => t.status === 'completed');
+        setTasks(completedTasks);
+      }
+    } catch (e) {
+      console.error('加载任务历史失败:', e);
+    }
+    
+    // 加载主题设置
+    try {
+      const savedTheme = localStorage.getItem(STORAGE_KEYS.THEME);
+      if (savedTheme === 'dark') {
+        setIsDarkMode(true);
+        document.documentElement.classList.add('dark');
+      }
+    } catch (e) {
+      console.error('加载主题设置失败:', e);
+    }
   }, []);
+
+  // 保存任务到 localStorage
+  const saveTasksToStorage = useCallback((newTasks: Task[]) => {
+    try {
+      // 只保存已完成的任务，最多保留50条
+      const completedTasks = newTasks
+        .filter(t => t.status === 'completed')
+        .slice(0, 50);
+      localStorage.setItem(STORAGE_KEYS.TASKS, JSON.stringify(completedTasks));
+    } catch (e) {
+      console.error('保存任务失败:', e);
+    }
+  }, []);
+
+  // 切换主题
+  const toggleTheme = () => {
+    const newMode = !isDarkMode;
+    setIsDarkMode(newMode);
+    if (newMode) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem(STORAGE_KEYS.THEME, 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem(STORAGE_KEYS.THEME, 'light');
+    }
+  };
 
   // 处理文件选择
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -118,6 +197,12 @@ export default function Home() {
     }
   };
 
+  // 应用时长预设
+  const applyPreset = (preset: typeof DURATION_PRESETS[0]) => {
+    setSpeechDuration(preset.speech);
+    setVideoDuration(preset.video);
+  };
+
   // 复制文本到剪贴板
   const copyToClipboard = async (text: string, id: string) => {
     try {
@@ -131,7 +216,30 @@ export default function Home() {
 
   // 删除任务
   const deleteTask = (taskId: string) => {
-    setTasks(prev => prev.filter(task => task.id !== taskId));
+    setTasks(prev => {
+      const newTasks = prev.filter(task => task.id !== taskId);
+      saveTasksToStorage(newTasks);
+      return newTasks;
+    });
+  };
+
+  // 清空所有历史
+  const clearAllHistory = () => {
+    if (confirm('确定要清空所有历史记录吗？此操作不可恢复。')) {
+      setTasks([]);
+      localStorage.removeItem(STORAGE_KEYS.TASKS);
+    }
+  };
+
+  // 切换收藏状态
+  const toggleStar = (taskId: string) => {
+    setTasks(prev => {
+      const newTasks = prev.map(task => 
+        task.id === taskId ? { ...task, starred: !task.starred } : task
+      );
+      saveTasksToStorage(newTasks);
+      return newTasks;
+    });
   };
 
   // 切换展开状态
@@ -141,6 +249,39 @@ export default function Home() {
         task.id === taskId ? { ...task, expanded: !task.expanded } : task
       )
     );
+  };
+
+  // 开始编辑提示词
+  const startEdit = (task: Task) => {
+    setEditingTask(task);
+    setEditSora(task.sora || '');
+    setEditSeedance(task.seedance || '');
+  };
+
+  // 保存编辑
+  const saveEdit = () => {
+    if (!editingTask) return;
+    
+    setTasks(prev => {
+      const newTasks = prev.map(task => 
+        task.id === editingTask.id 
+          ? { ...task, sora: editSora, seedance: editSeedance } 
+          : task
+      );
+      saveTasksToStorage(newTasks);
+      return newTasks;
+    });
+    
+    setEditingTask(null);
+    setEditSora('');
+    setEditSeedance('');
+  };
+
+  // 取消编辑
+  const cancelEdit = () => {
+    setEditingTask(null);
+    setEditSora('');
+    setEditSeedance('');
   };
 
   // 上传图片到对象存储
@@ -175,12 +316,10 @@ export default function Home() {
     } catch (error) {
       clearTimeout(timeoutId);
       
-      // 处理超时错误
       if (error instanceof Error && error.name === 'AbortError') {
         throw new Error('图片上传超时，请检查网络后重试');
       }
       
-      // 处理网络错误
       if (error instanceof TypeError && error.message === 'Failed to fetch') {
         throw new Error('网络连接失败，请检查网络后重试');
       }
@@ -197,9 +336,8 @@ export default function Home() {
     videoDur: string,
     lang: string
   ): Promise<{ sora?: string; seedance?: string }> => {
-    // 设置 3 分钟超时（工作流可能需要较长时间）
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 180000); // 3分钟
+    const timeoutId = setTimeout(() => controller.abort(), 180000);
 
     try {
       const response = await fetch('/api/generate-video', {
@@ -236,12 +374,10 @@ export default function Home() {
     } catch (error) {
       clearTimeout(timeoutId);
       
-      // 处理超时错误
       if (error instanceof Error && error.name === 'AbortError') {
         throw new Error('请求超时，工作流处理时间过长，请稍后重试');
       }
       
-      // 处理网络错误
       if (error instanceof TypeError && error.message === 'Failed to fetch') {
         throw new Error('网络连接失败，请检查网络后重试');
       }
@@ -264,7 +400,7 @@ export default function Home() {
       status: 'uploading',
       coreSellingPoint,
       language,
-      createdAt: new Date(),
+      createdAt: new Date().toISOString(),
       progress: 0,
       expanded: true,
       imagePreview: imagePreview || undefined,
@@ -303,19 +439,22 @@ export default function Home() {
         language
       );
 
-      setTasks(prev => 
-        prev.map(task => 
+      setTasks(prev => {
+        const newTasks = prev.map(task => 
           task.id === newTask.id 
             ? { 
                 ...task, 
-                status: 'completed', 
+                status: 'completed' as TaskStatus, 
                 progress: 100, 
                 sora: result.sora,
                 seedance: result.seedance,
+                imageUrl: imageUrl,
               }
             : task
-        )
-      );
+        );
+        saveTasksToStorage(newTasks);
+        return newTasks;
+      });
 
       // 重置表单
       setCoreSellingPoint('');
@@ -352,8 +491,13 @@ export default function Home() {
     return lang ? `${lang.flag} ${lang.native}` : langCode;
   };
 
+  // 筛选显示的任务
+  const displayedTasks = showStarredOnly 
+    ? tasks.filter(t => t.starred)
+    : tasks;
+
   return (
-    <div className="min-h-screen bg-background text-foreground overflow-hidden">
+    <div className={`min-h-screen bg-background text-foreground overflow-hidden transition-colors duration-300`}>
       {/* 背景光晕 */}
       <div className="fixed inset-0 bg-gradient-radial pointer-events-none" />
       
@@ -361,6 +505,21 @@ export default function Home() {
       <div className="relative max-w-6xl mx-auto px-6 py-8 md:py-12">
         {/* 头部区域 */}
         <header className={`text-center mb-12 transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+          {/* 主题切换按钮 */}
+          <div className="flex justify-end mb-4">
+            <button
+              onClick={toggleTheme}
+              className="w-10 h-10 rounded-xl bg-secondary/50 hover:bg-secondary flex items-center justify-center transition-smooth"
+              title={isDarkMode ? '切换到亮色模式' : '切换到深色模式'}
+            >
+              {isDarkMode ? (
+                <Sun className="h-5 w-5 text-yellow-500" />
+              ) : (
+                <Moon className="h-5 w-5 text-primary" />
+              )}
+            </button>
+          </div>
+          
           {/* Logo */}
           <div className="flex justify-center mb-6">
             <div className="relative w-20 h-20 md:w-24 md:h-24">
@@ -471,6 +630,30 @@ export default function Home() {
                   />
                 </div>
 
+                {/* 时长预设快捷按钮 */}
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium flex items-center gap-2">
+                    <Clock className="h-4 w-4" />
+                    时长预设
+                  </Label>
+                  <div className="flex gap-2">
+                    {DURATION_PRESETS.map((preset) => (
+                      <button
+                        key={preset.label}
+                        onClick={() => applyPreset(preset)}
+                        className={`flex-1 py-2 px-3 rounded-xl text-sm font-medium transition-smooth ${
+                          speechDuration === preset.speech && videoDuration === preset.video
+                            ? 'bg-primary text-white'
+                            : 'bg-secondary hover:bg-primary/10 text-muted-foreground'
+                        }`}
+                      >
+                        {preset.label}
+                        <span className="block text-xs opacity-70">{preset.video}s</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 {/* 时长设置 */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -562,27 +745,52 @@ export default function Home() {
                     <div>
                       <h2 className="text-lg font-medium">生成结果</h2>
                       <p className="text-sm text-muted-foreground">
-                        {tasks.length > 0 ? `${tasks.length} 条记录` : '暂无记录'}
+                        {displayedTasks.length > 0 
+                          ? `${displayedTasks.length} 条记录` 
+                          : '暂无记录'}
                       </p>
                     </div>
                   </div>
+                  
+                  {/* 筛选和操作按钮 */}
+                  {tasks.length > 0 && (
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setShowStarredOnly(!showStarredOnly)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-smooth flex items-center gap-1.5 ${
+                          showStarredOnly 
+                            ? 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400' 
+                            : 'bg-secondary hover:bg-secondary/80 text-muted-foreground'
+                        }`}
+                      >
+                        <Star className={`h-3.5 w-3.5 ${showStarredOnly ? 'fill-current' : ''}`} />
+                        收藏
+                      </button>
+                      <button
+                        onClick={clearAllHistory}
+                        className="px-3 py-1.5 rounded-lg text-xs font-medium bg-secondary hover:bg-red-500/10 hover:text-red-500 text-muted-foreground transition-smooth"
+                      >
+                        清空
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
 
               {/* 内容区 */}
               <div className="p-5 md:p-6">
-                {tasks.length === 0 ? (
+                {displayedTasks.length === 0 ? (
                   <div className="py-12 md:py-16 flex flex-col items-center justify-center">
                     <div className="w-20 h-20 rounded-3xl bg-secondary flex items-center justify-center mb-6">
                       <ImageIcon className="h-8 w-8 text-muted-foreground/30" />
                     </div>
                     <p className="text-muted-foreground text-center">
-                      提交表单后<br />结果将显示在这里
+                      {showStarredOnly ? '暂无收藏记录' : '提交表单后结果将显示在这里'}
                     </p>
                   </div>
                 ) : (
                   <div className="space-y-4 max-h-[500px] overflow-y-auto pr-1 -mr-1">
-                    {tasks.map((task, index) => (
+                    {displayedTasks.map((task, index) => (
                       <div
                         key={task.id}
                         className={`rounded-2xl overflow-hidden transition-all duration-500 ${
@@ -658,13 +866,36 @@ export default function Home() {
                             <div className="flex items-center gap-3 text-xs text-muted-foreground/70">
                               <span>{getLanguageName(task.language)}</span>
                               <span>•</span>
-                              <span>{task.createdAt.toLocaleTimeString()}</span>
+                              <span>{new Date(task.createdAt).toLocaleString('zh-CN', { 
+                                month: 'numeric', 
+                                day: 'numeric',
+                                hour: '2-digit', 
+                                minute: '2-digit' 
+                              })}</span>
                             </div>
                           </div>
 
                           {/* 操作按钮 */}
                           {task.status === 'completed' && (
                             <div className="flex items-center gap-1">
+                              {/* 收藏按钮 */}
+                              <button
+                                onClick={() => toggleStar(task.id)}
+                                className={`w-8 h-8 rounded-lg flex items-center justify-center transition-smooth ${
+                                  task.starred 
+                                    ? 'text-yellow-500 bg-yellow-500/10' 
+                                    : 'hover:bg-secondary text-muted-foreground hover:text-yellow-500'
+                                }`}
+                              >
+                                <Star className={`h-4 w-4 ${task.starred ? 'fill-current' : ''}`} />
+                              </button>
+                              {/* 编辑按钮 */}
+                              <button
+                                onClick={() => startEdit(task)}
+                                className="w-8 h-8 rounded-lg hover:bg-secondary hover:text-primary flex items-center justify-center transition-smooth text-muted-foreground"
+                              >
+                                <Edit3 className="h-4 w-4" />
+                              </button>
                               <button
                                 onClick={() => toggleExpand(task.id)}
                                 className="w-8 h-8 rounded-lg hover:bg-secondary flex items-center justify-center transition-smooth"
@@ -804,6 +1035,12 @@ export default function Home() {
                                 <span className="w-1.5 h-1.5 rounded-full bg-sky-500" />
                                 Seedance
                               </span>
+                              {task.starred && (
+                                <span className="flex items-center gap-1.5 text-yellow-500">
+                                  <Star className="h-3 w-3 fill-current" />
+                                  已收藏
+                                </span>
+                              )}
                             </div>
                             <span className="text-primary">展开查看</span>
                           </div>
@@ -824,6 +1061,73 @@ export default function Home() {
           </p>
         </footer>
       </div>
+
+      {/* 编辑弹窗 */}
+      {editingTask && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-background border border-border rounded-3xl w-full max-w-2xl max-h-[80vh] overflow-hidden shadow-2xl">
+            {/* 弹窗头部 */}
+            <div className="flex items-center justify-between p-6 border-b border-border">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center">
+                  <Edit3 className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-medium">编辑提示词</h3>
+                  <p className="text-sm text-muted-foreground">{editingTask.coreSellingPoint}</p>
+                </div>
+              </div>
+              <button
+                onClick={cancelEdit}
+                className="w-10 h-10 rounded-xl hover:bg-secondary flex items-center justify-center transition-smooth"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            
+            {/* 编辑内容 */}
+            <div className="p-6 space-y-4 overflow-y-auto max-h-[50vh]">
+              {/* Sora 编辑 */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-primary">Sora 提示词</Label>
+                <textarea
+                  value={editSora}
+                  onChange={(e) => setEditSora(e.target.value)}
+                  className="w-full h-40 p-4 bg-secondary border border-border rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  placeholder="Sora 提示词..."
+                />
+              </div>
+              
+              {/* Seedance 编辑 */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-sky-500">Seedance 提示词</Label>
+                <textarea
+                  value={editSeedance}
+                  onChange={(e) => setEditSeedance(e.target.value)}
+                  className="w-full h-40 p-4 bg-secondary border border-border rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-sky-500/20"
+                  placeholder="Seedance 提示词..."
+                />
+              </div>
+            </div>
+            
+            {/* 弹窗底部 */}
+            <div className="flex items-center justify-end gap-3 p-6 border-t border-border">
+              <button
+                onClick={cancelEdit}
+                className="px-5 py-2.5 rounded-xl text-sm font-medium bg-secondary hover:bg-secondary/80 transition-smooth"
+              >
+                取消
+              </button>
+              <button
+                onClick={saveEdit}
+                className="px-5 py-2.5 rounded-xl text-sm font-medium bg-primary text-white hover:bg-primary/90 transition-smooth"
+              >
+                保存修改
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
