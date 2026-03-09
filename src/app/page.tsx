@@ -3,11 +3,11 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { 
   Upload, Loader2, CheckCircle2, XCircle, 
-  Copy, Check, Sparkles, ChevronDown, ChevronUp, Trash2, 
-  ImageIcon, ArrowRight, Zap, Globe, Star,
-  Edit3, X, Clock, Film, Wand2
+  Copy, Check, ChevronDown, ChevronUp, Trash2, 
+  ImageIcon, Wand2, Star,
+  Edit3, X, Clock, Video, Sparkles, Globe,
+  Zap, Brain
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 
 // 语言选项
@@ -453,14 +453,18 @@ export default function Home() {
     : tasks;
 
   return (
-    <div className="min-h-screen circuit-bg">
+    <div className="min-h-screen page-bg relative overflow-hidden">
+      {/* 装饰波浪 */}
+      <div className="wave-decoration" />
+      
       {/* 主内容 */}
-      <div className="max-w-6xl mx-auto px-6 py-8">
+      <div className="relative max-w-7xl mx-auto px-6 py-8">
         
-        {/* 顶部品牌区 */}
-        <header className={`flex items-center justify-between mb-6 transition-all duration-700 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 relative">
+        {/* 顶部导航 */}
+        <header className={`flex items-center justify-between mb-8 opacity-0 ${mounted ? 'animate-fadeIn' : ''}`}>
+          {/* Logo */}
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 relative">
               <Image
                 src="https://code.coze.cn/api/sandbox/coze_coding/file/proxy?expire_time=-1&file_path=assets%2F%E9%95%BF%E9%A3%8E%E8%B7%A8%E5%A2%83logo%E6%8F%90%E5%8F%96.png&nonce=53b72a74-c3e7-4c4c-8632-417105b99d47&project_id=7615252896803864582&sign=a7b7df82deb47526062c47ad01bbef2b148a43f5c08de9c3127ab3a27bc61cf9"
                 alt="长风跨境"
@@ -470,39 +474,46 @@ export default function Home() {
               />
             </div>
           </div>
-          <div className="flex items-center gap-2 text-white/70">
+          
+          {/* 右侧标语 */}
+          <div className="hidden md:flex items-center gap-2 text-white/60">
             <Globe className="w-4 h-4" />
             <span className="text-sm">帮助中国商家出海</span>
           </div>
         </header>
 
         {/* 标题区 */}
-        <div className={`text-center mb-10 transition-all duration-700 delay-100 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-          <h1 className="text-4xl md:text-5xl font-bold text-white mb-3">
+        <div className={`text-center mb-12 opacity-0 ${mounted ? 'animate-fadeInUp delay-100' : ''}`}>
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 mb-6">
+            <Brain className="w-4 h-4 text-[#4fa3d1]" />
+            <span className="text-sm text-[#4fa3d1] font-medium">AI Powered</span>
+          </div>
+          
+          <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 tracking-tight">
             AI视频提示词生成器
           </h1>
-          <p className="text-lg text-white/60">
-            智能生成视频脚本，助力跨境营销
+          <p className="text-lg text-white/50 max-w-xl mx-auto leading-relaxed">
+            智能生成视频脚本，助力跨境营销内容创作
           </p>
         </div>
 
         {/* 主内容区 - 左右分栏 */}
-        <div className={`grid grid-cols-1 lg:grid-cols-2 gap-6 transition-all duration-700 delay-200 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+        <div className={`grid grid-cols-1 lg:grid-cols-2 gap-8 opacity-0 ${mounted ? 'animate-fadeInUp delay-200' : ''}`}>
           
           {/* 左侧：表单卡片 */}
-          <div className="bg-white rounded-2xl p-6 card-shadow">
+          <div className="card p-8">
             {/* 卡片标题 */}
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-xl bg-[#4fa3d1]/10 flex items-center justify-center">
-                <Film className="w-5 h-5 text-[#4fa3d1]" />
+            <div className="flex items-center gap-4 mb-8">
+              <div className="w-12 h-12 icon-container primary">
+                <Video className="w-6 h-6 text-[#4fa3d1]" />
               </div>
               <div>
-                <h2 className="text-lg font-semibold text-gray-800">生成提示词</h2>
-                <p className="text-sm text-gray-500">填写产品信息，AI自动生成</p>
+                <h2 className="text-xl font-semibold text-gray-800">生成提示词</h2>
+                <p className="text-sm text-gray-500 mt-0.5">填写产品信息，AI自动生成</p>
               </div>
             </div>
 
-            <div className="space-y-5">
+            <div className="space-y-6">
               {/* 核心卖点 */}
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-700">
@@ -513,7 +524,7 @@ export default function Home() {
                   placeholder="如：30天见效、无副作用、天然成分..."
                   value={coreSellingPoint}
                   onChange={(e) => setCoreSellingPoint(e.target.value)}
-                  className="w-full h-12 px-4 rounded-xl input-field text-gray-800 placeholder:text-gray-400"
+                  className="w-full h-14 px-5 input-field text-gray-800"
                 />
               </div>
 
@@ -525,16 +536,16 @@ export default function Home() {
                 
                 {imagePreview ? (
                   <div className="relative group">
-                    <div className="relative w-full h-28 rounded-xl overflow-hidden border border-gray-200">
+                    <div className="relative w-full h-32 rounded-2xl overflow-hidden border border-gray-200">
                       <img 
                         src={imagePreview} 
                         alt="产品预览" 
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                       />
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-4">
                         <button
                           onClick={removeImage}
-                          className="px-4 py-2 bg-white/90 rounded-lg text-sm font-medium text-gray-700 hover:bg-white transition-colors"
+                          className="px-4 py-2 bg-white rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors shadow-lg"
                         >
                           更换图片
                         </button>
@@ -544,10 +555,15 @@ export default function Home() {
                 ) : (
                   <button
                     onClick={() => fileInputRef.current?.click()}
-                    className="w-full h-28 rounded-xl upload-area flex flex-col items-center justify-center gap-2"
+                    className="w-full h-32 upload-area flex flex-col items-center justify-center gap-3"
                   >
-                    <Upload className="w-6 h-6 text-gray-400" />
-                    <span className="text-sm text-gray-500">点击上传产品图片</span>
+                    <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center shadow-sm">
+                      <Upload className="w-5 h-5 text-gray-400" />
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm font-medium text-gray-600">点击上传产品图片</p>
+                      <p className="text-xs text-gray-400 mt-1">支持 JPG、PNG 格式</p>
+                    </div>
                   </button>
                 )}
                 
@@ -561,7 +577,7 @@ export default function Home() {
               </div>
 
               {/* 时长预设 */}
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
                   <Clock className="w-4 h-4" />
                   时长预设
@@ -571,14 +587,14 @@ export default function Home() {
                     <button
                       key={preset.label}
                       onClick={() => applyPreset(preset)}
-                      className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-medium transition-all ${
+                      className={`flex-1 preset-btn ${
                         speechDuration === preset.speech && videoDuration === preset.video
-                          ? 'bg-[#4fa3d1] text-white'
-                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                          ? 'active'
+                          : 'inactive'
                       }`}
                     >
-                      {preset.label}
-                      <span className="block text-xs opacity-80">{preset.video}s</span>
+                      <span className="block">{preset.label}</span>
+                      <span className="block text-xs opacity-70 mt-0.5">{preset.video}s</span>
                     </button>
                   ))}
                 </div>
@@ -593,9 +609,9 @@ export default function Home() {
                       type="number"
                       value={speechDuration}
                       onChange={(e) => setSpeechDuration(e.target.value)}
-                      className="w-full h-12 px-4 pr-12 rounded-xl input-field text-gray-800"
+                      className="w-full h-14 px-5 pr-14 input-field text-gray-800"
                     />
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-gray-400">秒</span>
+                    <span className="absolute right-5 top-1/2 -translate-y-1/2 text-sm text-gray-400 font-medium">秒</span>
                   </div>
                 </div>
                 <div className="space-y-2">
@@ -605,9 +621,9 @@ export default function Home() {
                       type="number"
                       value={videoDuration}
                       onChange={(e) => setVideoDuration(e.target.value)}
-                      className="w-full h-12 px-4 pr-12 rounded-xl input-field text-gray-800"
+                      className="w-full h-14 px-5 pr-14 input-field text-gray-800"
                     />
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-gray-400">秒</span>
+                    <span className="absolute right-5 top-1/2 -translate-y-1/2 text-sm text-gray-400 font-medium">秒</span>
                   </div>
                 </div>
               </div>
@@ -621,7 +637,7 @@ export default function Home() {
                   <select
                     value={language}
                     onChange={(e) => setLanguage(e.target.value)}
-                    className="w-full h-12 px-4 rounded-xl input-field text-gray-800 appearance-none cursor-pointer"
+                    className="w-full h-14 px-5 input-field text-gray-800 appearance-none cursor-pointer"
                   >
                     {LANGUAGES.map((lang) => (
                       <option key={lang.value} value={lang.value}>
@@ -629,7 +645,7 @@ export default function Home() {
                       </option>
                     ))}
                   </select>
-                  <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                  <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
                 </div>
               </div>
 
@@ -637,7 +653,7 @@ export default function Home() {
               <button
                 onClick={handleSubmit}
                 disabled={!coreSellingPoint.trim() || !productImage || isSubmitting}
-                className="w-full h-14 rounded-xl btn-primary font-medium text-base flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none"
+                className="w-full h-16 btn-primary text-base flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none mt-2"
               >
                 {isSubmitting ? (
                   <>
@@ -646,8 +662,8 @@ export default function Home() {
                   </>
                 ) : (
                   <>
-                    <span>生成提示词</span>
-                    <Wand2 className="w-5 h-5 text-yellow-300" />
+                    <span className="font-semibold">生成提示词</span>
+                    <Wand2 className="w-5 h-5" />
                   </>
                 )}
               </button>
@@ -655,17 +671,17 @@ export default function Home() {
           </div>
 
           {/* 右侧：结果卡片 */}
-          <div className="bg-white rounded-2xl card-shadow overflow-hidden flex flex-col">
+          <div className="card overflow-hidden flex flex-col">
             {/* 卡片标题 */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-100">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-yellow-500/10 flex items-center justify-center">
-                  <Zap className="w-5 h-5 text-yellow-500" />
+            <div className="flex items-center justify-between p-8 border-b border-gray-100">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 icon-container warning">
+                  <Zap className="w-6 h-6 text-amber-500" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-800">生成结果</h2>
-                  <p className="text-sm text-gray-500">
-                    {displayedTasks.length > 0 ? `${displayedTasks.length} 条记录` : '暂无记录'}
+                  <h2 className="text-xl font-semibold text-gray-800">生成结果</h2>
+                  <p className="text-sm text-gray-500 mt-0.5">
+                    {displayedTasks.length > 0 ? `共 ${displayedTasks.length} 条记录` : '暂无记录'}
                   </p>
                 </div>
               </div>
@@ -674,18 +690,18 @@ export default function Home() {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setShowStarredOnly(!showStarredOnly)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
+                    className={`px-4 py-2 rounded-xl text-sm font-medium transition-all flex items-center gap-2 ${
                       showStarredOnly 
-                        ? 'bg-yellow-500/10 text-yellow-600' 
+                        ? 'bg-amber-50 text-amber-600 border border-amber-200' 
                         : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
                     }`}
                   >
-                    <Star className={`w-3.5 h-3.5 ${showStarredOnly ? 'fill-current' : ''}`} />
+                    <Star className={`w-4 h-4 ${showStarredOnly ? 'fill-current' : ''}`} />
                     收藏
                   </button>
                   <button
                     onClick={clearAllHistory}
-                    className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-100 hover:bg-red-50 hover:text-red-500 text-gray-500 transition-colors"
+                    className="px-4 py-2 rounded-xl text-sm font-medium bg-gray-100 hover:bg-red-50 hover:text-red-500 text-gray-500 transition-colors"
                   >
                     清空
                   </button>
@@ -694,13 +710,13 @@ export default function Home() {
             </div>
 
             {/* 内容区 */}
-            <div className="flex-1 p-6 overflow-y-auto">
+            <div className="flex-1 p-6 overflow-y-auto min-h-[400px] max-h-[600px]">
               {displayedTasks.length === 0 ? (
-                <div className="py-16 flex flex-col items-center justify-center">
-                  <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mb-4">
-                    <ImageIcon className="w-8 h-8 text-gray-300" />
+                <div className="h-full flex flex-col items-center justify-center py-12">
+                  <div className="w-20 h-20 rounded-3xl bg-gray-100 flex items-center justify-center mb-6">
+                    <ImageIcon className="w-10 h-10 text-gray-300" />
                   </div>
-                  <p className="text-gray-400 text-center">
+                  <p className="text-gray-400 text-center text-lg">
                     {showStarredOnly ? '暂无收藏记录' : '提交表单后结果将显示在这里'}
                   </p>
                 </div>
@@ -709,27 +725,25 @@ export default function Home() {
                   {displayedTasks.map((task) => (
                     <div
                       key={task.id}
-                      className={`rounded-xl overflow-hidden border transition-all ${
-                        task.status === 'failed' 
-                          ? 'border-red-200 bg-red-50' 
-                          : task.status === 'completed'
-                          ? 'border-gray-200 bg-gray-50'
-                          : 'border-gray-100 bg-gray-50/50'
-                      }`}
+                      className={`task-card ${
+                        task.status === 'processing' ? 'processing' : 
+                        task.status === 'completed' ? 'completed' : 
+                        task.status === 'failed' ? 'failed' : ''
+                      } overflow-hidden`}
                     >
                       {/* 任务头部 */}
-                      <div className="p-4 flex items-start gap-3">
+                      <div className="p-4 flex items-start gap-4">
                         {/* 产品图片 */}
                         <div className="flex-shrink-0">
                           {task.imagePreview || task.imageUrl ? (
                             <img 
                               src={task.imagePreview || task.imageUrl} 
                               alt="产品" 
-                              className="w-14 h-14 object-cover rounded-lg"
+                              className="w-16 h-16 object-cover rounded-xl"
                             />
                           ) : (
-                            <div className="w-14 h-14 rounded-lg bg-gray-200 flex items-center justify-center">
-                              <ImageIcon className="w-6 h-6 text-gray-400" />
+                            <div className="w-16 h-16 rounded-xl bg-gray-100 flex items-center justify-center">
+                              <ImageIcon className="w-7 h-7 text-gray-300" />
                             </div>
                           )}
                         </div>
@@ -738,16 +752,16 @@ export default function Home() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
                             {task.status === 'completed' && (
-                              <CheckCircle2 className="w-4 h-4 text-green-500" />
+                              <CheckCircle2 className="w-5 h-5 text-emerald-500" />
                             )}
                             {task.status === 'failed' && (
-                              <XCircle className="w-4 h-4 text-red-500" />
+                              <XCircle className="w-5 h-5 text-red-500" />
                             )}
                             {(task.status === 'processing' || task.status === 'uploading') && (
-                              <Loader2 className="w-4 h-4 text-[#4fa3d1] animate-spin" />
+                              <Loader2 className="w-5 h-5 text-[#4fa3d1] animate-spin" />
                             )}
                             
-                            <span className="text-sm font-medium text-gray-800">
+                            <span className="text-sm font-semibold text-gray-800">
                               {task.status === 'processing' 
                                 ? LOADING_MESSAGES[loadingMessageIndex]
                                 : task.status === 'uploading'
@@ -762,19 +776,21 @@ export default function Home() {
                             
                             {task.status === 'processing' && (
                               <span className="flex gap-1 ml-1">
-                                <span className="w-1 h-1 rounded-full bg-[#4fa3d1] animate-bounce" style={{animationDelay: '0ms'}} />
-                                <span className="w-1 h-1 rounded-full bg-[#4fa3d1] animate-bounce" style={{animationDelay: '150ms'}} />
-                                <span className="w-1 h-1 rounded-full bg-[#4fa3d1] animate-bounce" style={{animationDelay: '300ms'}} />
+                                <span className="w-1.5 h-1.5 rounded-full bg-[#4fa3d1] animate-bounce" style={{animationDelay: '0ms'}} />
+                                <span className="w-1.5 h-1.5 rounded-full bg-[#4fa3d1] animate-bounce" style={{animationDelay: '150ms'}} />
+                                <span className="w-1.5 h-1.5 rounded-full bg-[#4fa3d1] animate-bounce" style={{animationDelay: '300ms'}} />
                               </span>
                             )}
                           </div>
                           
-                          <p className="text-sm text-gray-500 truncate mb-1">
+                          <p className="text-sm text-gray-600 truncate mb-2 font-medium">
                             {task.coreSellingPoint}
                           </p>
                           
-                          <div className="flex items-center gap-2 text-xs text-gray-400">
-                            <span>{getLanguageName(task.language)}</span>
+                          <div className="flex items-center gap-3 text-xs text-gray-400">
+                            <span className="tag text-xs">
+                              {getLanguageName(task.language)}
+                            </span>
                             <span>•</span>
                             <span>{new Date(task.createdAt).toLocaleString('zh-CN', { 
                               month: 'numeric', 
@@ -790,35 +806,35 @@ export default function Home() {
                           <div className="flex items-center gap-1">
                             <button
                               onClick={() => toggleStar(task.id)}
-                              className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+                              className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${
                                 task.starred 
-                                  ? 'text-yellow-500 bg-yellow-50' 
-                                  : 'text-gray-400 hover:bg-gray-100 hover:text-yellow-500'
+                                  ? 'text-amber-500 bg-amber-50' 
+                                  : 'text-gray-400 hover:bg-gray-100 hover:text-amber-500'
                               }`}
                             >
-                              <Star className={`w-4 h-4 ${task.starred ? 'fill-current' : ''}`} />
+                              <Star className={`w-4.5 h-4.5 ${task.starred ? 'fill-current' : ''}`} />
                             </button>
                             <button
                               onClick={() => startEdit(task)}
-                              className="w-8 h-8 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-[#4fa3d1] flex items-center justify-center transition-colors"
+                              className="w-9 h-9 rounded-xl text-gray-400 hover:bg-gray-100 hover:text-[#4fa3d1] flex items-center justify-center transition-colors"
                             >
-                              <Edit3 className="w-4 h-4" />
+                              <Edit3 className="w-4.5 h-4.5" />
                             </button>
                             <button
                               onClick={() => toggleExpand(task.id)}
-                              className="w-8 h-8 rounded-lg text-gray-400 hover:bg-gray-100 flex items-center justify-center transition-colors"
+                              className="w-9 h-9 rounded-xl text-gray-400 hover:bg-gray-100 flex items-center justify-center transition-colors"
                             >
                               {task.expanded ? (
-                                <ChevronUp className="w-4 h-4" />
+                                <ChevronUp className="w-4.5 h-4.5" />
                               ) : (
-                                <ChevronDown className="w-4 h-4" />
+                                <ChevronDown className="w-4.5 h-4.5" />
                               )}
                             </button>
                             <button
                               onClick={() => deleteTask(task.id)}
-                              className="w-8 h-8 rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-500 flex items-center justify-center transition-colors"
+                              className="w-9 h-9 rounded-xl text-gray-400 hover:bg-red-50 hover:text-red-500 flex items-center justify-center transition-colors"
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <Trash2 className="w-4.5 h-4.5" />
                             </button>
                           </div>
                         )}
@@ -827,9 +843,9 @@ export default function Home() {
                       {/* 进度条 */}
                       {(task.status === 'uploading' || task.status === 'processing') && (
                         <div className="px-4 pb-4">
-                          <div className="h-1 bg-gray-200 rounded-full overflow-hidden">
+                          <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
                             <div
-                              className="h-full progress-bar rounded-full transition-all duration-700"
+                              className="h-full progress-bar transition-all duration-700"
                               style={{ width: `${task.progress}%` }}
                             />
                           </div>
@@ -839,7 +855,7 @@ export default function Home() {
                       {/* 错误信息 */}
                       {task.status === 'failed' && task.error && (
                         <div className="px-4 pb-4">
-                          <p className="text-sm text-red-500 bg-red-100 rounded-lg px-3 py-2">
+                          <p className="text-sm text-red-500 bg-red-50 rounded-xl px-4 py-3">
                             {task.error}
                           </p>
                         </div>
@@ -850,28 +866,31 @@ export default function Home() {
                         <div className="px-4 pb-4 space-y-3">
                           {/* Sora */}
                           {task.sora && (
-                            <div className="result-box rounded-xl overflow-hidden">
-                              <div className="flex items-center justify-between px-4 py-2.5 border-b border-gray-200 bg-white">
-                                <span className="text-xs font-medium text-[#4fa3d1]">Sora</span>
+                            <div className="result-box overflow-hidden">
+                              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-white">
+                                <div className="flex items-center gap-2">
+                                  <div className="decoration-dot primary" />
+                                  <span className="text-sm font-semibold text-[#1a3a6b]">Sora</span>
+                                </div>
                                 <button
                                   onClick={() => copyToClipboard(task.sora!, `${task.id}-sora`)}
-                                  className="flex items-center gap-1 text-xs text-gray-500 hover:text-[#4fa3d1] transition-colors"
+                                  className="flex items-center gap-2 text-sm text-gray-500 hover:text-[#4fa3d1] transition-colors"
                                 >
                                   {copiedId === `${task.id}-sora` ? (
                                     <>
-                                      <Check className="w-3.5 h-3.5 text-green-500" />
-                                      <span className="text-green-500">已复制</span>
+                                      <Check className="w-4 h-4 text-emerald-500" />
+                                      <span className="text-emerald-500">已复制</span>
                                     </>
                                   ) : (
                                     <>
-                                      <Copy className="w-3.5 h-3.5" />
+                                      <Copy className="w-4 h-4" />
                                       <span>复制</span>
                                     </>
                                   )}
                                 </button>
                               </div>
-                              <div className="p-3 max-h-36 overflow-y-auto">
-                                <p className="text-xs text-gray-600 whitespace-pre-wrap leading-relaxed">
+                              <div className="p-4 max-h-40 overflow-y-auto">
+                                <p className="text-sm text-gray-600 whitespace-pre-wrap leading-relaxed">
                                   {task.sora}
                                 </p>
                               </div>
@@ -880,28 +899,31 @@ export default function Home() {
 
                           {/* Seedance */}
                           {task.seedance && (
-                            <div className="result-box rounded-xl overflow-hidden">
-                              <div className="flex items-center justify-between px-4 py-2.5 border-b border-gray-200 bg-white">
-                                <span className="text-xs font-medium text-[#4fa3d1]">Seedance</span>
+                            <div className="result-box overflow-hidden">
+                              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-white">
+                                <div className="flex items-center gap-2">
+                                  <div className="decoration-dot secondary" />
+                                  <span className="text-sm font-semibold text-[#4fa3d1]">Seedance</span>
+                                </div>
                                 <button
                                   onClick={() => copyToClipboard(task.seedance!, `${task.id}-seedance`)}
-                                  className="flex items-center gap-1 text-xs text-gray-500 hover:text-[#4fa3d1] transition-colors"
+                                  className="flex items-center gap-2 text-sm text-gray-500 hover:text-[#4fa3d1] transition-colors"
                                 >
                                   {copiedId === `${task.id}-seedance` ? (
                                     <>
-                                      <Check className="w-3.5 h-3.5 text-green-500" />
-                                      <span className="text-green-500">已复制</span>
+                                      <Check className="w-4 h-4 text-emerald-500" />
+                                      <span className="text-emerald-500">已复制</span>
                                     </>
                                   ) : (
                                     <>
-                                      <Copy className="w-3.5 h-3.5" />
+                                      <Copy className="w-4 h-4" />
                                       <span>复制</span>
                                     </>
                                   )}
                                 </button>
                               </div>
-                              <div className="p-3 max-h-36 overflow-y-auto">
-                                <p className="text-xs text-gray-600 whitespace-pre-wrap leading-relaxed">
+                              <div className="p-4 max-h-40 overflow-y-auto">
+                                <p className="text-sm text-gray-600 whitespace-pre-wrap leading-relaxed">
                                   {task.seedance}
                                 </p>
                               </div>
@@ -914,12 +936,12 @@ export default function Home() {
                               const allText = `【Sora】\n${task.sora || ''}\n\n【Seedance】\n${task.seedance || ''}`;
                               copyToClipboard(allText, `${task.id}-all`);
                             }}
-                            className="w-full h-10 bg-gray-100 hover:bg-[#4fa3d1]/10 rounded-xl text-sm font-medium text-gray-600 hover:text-[#4fa3d1] transition-colors flex items-center justify-center gap-2"
+                            className="w-full h-12 btn-secondary flex items-center justify-center gap-2 text-sm"
                           >
                             {copiedId === `${task.id}-all` ? (
                               <>
-                                <Check className="w-4 h-4 text-green-500" />
-                                <span className="text-green-500">已复制全部</span>
+                                <Check className="w-4 h-4 text-emerald-500" />
+                                <span className="text-emerald-500">已复制全部</span>
                               </>
                             ) : (
                               <>
@@ -933,24 +955,24 @@ export default function Home() {
 
                       {/* 收起状态 */}
                       {task.status === 'completed' && !task.expanded && (
-                        <div className="px-4 pb-4 flex items-center justify-between text-xs text-gray-400">
-                          <div className="flex items-center gap-3">
-                            <span className="flex items-center gap-1">
-                              <span className="w-1.5 h-1.5 rounded-full bg-[#4fa3d1]" />
+                        <div className="px-4 pb-4 flex items-center justify-between text-sm">
+                          <div className="flex items-center gap-4 text-gray-400">
+                            <span className="flex items-center gap-2">
+                              <div className="decoration-dot primary" />
                               Sora
                             </span>
-                            <span className="flex items-center gap-1">
-                              <span className="w-1.5 h-1.5 rounded-full bg-[#a8d8ea]" />
+                            <span className="flex items-center gap-2">
+                              <div className="decoration-dot secondary" />
                               Seedance
                             </span>
                             {task.starred && (
-                              <span className="flex items-center gap-1 text-yellow-500">
-                                <Star className="w-3 h-3 fill-current" />
+                              <span className="flex items-center gap-1.5 text-amber-500">
+                                <Star className="w-3.5 h-3.5 fill-current" />
                                 已收藏
                               </span>
                             )}
                           </div>
-                          <span className="text-[#4fa3d1]">展开查看</span>
+                          <span className="text-[#4fa3d1] font-medium">展开查看</span>
                         </div>
                       )}
                     </div>
@@ -962,11 +984,16 @@ export default function Home() {
         </div>
 
         {/* 底部 */}
-        <footer className={`mt-10 text-center transition-all duration-700 delay-300 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
-          <p className="text-sm text-white/40">
+        <footer className={`mt-16 text-center opacity-0 ${mounted ? 'animate-fadeIn delay-400' : ''}`}>
+          <div className="inline-flex items-center gap-3 text-white/30 mb-4">
+            <div className="h-px w-12 bg-white/10" />
+            <Sparkles className="w-4 h-4" />
+            <div className="h-px w-12 bg-white/10" />
+          </div>
+          <p className="text-sm text-white/40 mb-2">
             帮助中国商家出海 | Helping Chinese Merchants Go Global
           </p>
-          <p className="text-xs text-white/30 mt-2">
+          <p className="text-xs text-white/20">
             Powered by Coze Workflow
           </p>
         </footer>
@@ -974,17 +1001,17 @@ export default function Home() {
 
       {/* 编辑弹窗 */}
       {editingTask && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[80vh] overflow-hidden card-shadow">
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="card w-full max-w-2xl max-h-[85vh] overflow-hidden animate-fadeInUp">
             {/* 弹窗头部 */}
             <div className="flex items-center justify-between p-6 border-b border-gray-100">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-[#4fa3d1]/10 flex items-center justify-center">
-                  <Edit3 className="w-5 h-5 text-[#4fa3d1]" />
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 icon-container primary">
+                  <Edit3 className="w-6 h-6 text-[#4fa3d1]" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-800">编辑提示词</h3>
-                  <p className="text-sm text-gray-500">{editingTask.coreSellingPoint}</p>
+                  <h3 className="text-xl font-semibold text-gray-800">编辑提示词</h3>
+                  <p className="text-sm text-gray-500 mt-0.5">{editingTask.coreSellingPoint}</p>
                 </div>
               </div>
               <button
@@ -996,39 +1023,39 @@ export default function Home() {
             </div>
             
             {/* 编辑内容 */}
-            <div className="p-6 space-y-4 overflow-y-auto max-h-[50vh]">
+            <div className="p-6 space-y-5 overflow-y-auto max-h-[50vh]">
               <div className="space-y-2">
-                <label className="text-sm font-medium text-[#4fa3d1]">Sora 提示词</label>
+                <label className="text-sm font-semibold text-gray-700">Sora 提示词</label>
                 <textarea
                   value={editSora}
                   onChange={(e) => setEditSora(e.target.value)}
-                  className="w-full h-40 p-4 bg-gray-50 border border-gray-200 rounded-xl text-sm resize-none focus:outline-none focus:border-[#4fa3d1] focus:ring-2 focus:ring-[#4fa3d1]/20 transition-all"
+                  className="w-full h-44 p-4 input-field text-sm resize-none"
                   placeholder="Sora 提示词..."
                 />
               </div>
               
               <div className="space-y-2">
-                <label className="text-sm font-medium text-[#4fa3d1]">Seedance 提示词</label>
+                <label className="text-sm font-semibold text-gray-700">Seedance 提示词</label>
                 <textarea
                   value={editSeedance}
                   onChange={(e) => setEditSeedance(e.target.value)}
-                  className="w-full h-40 p-4 bg-gray-50 border border-gray-200 rounded-xl text-sm resize-none focus:outline-none focus:border-[#4fa3d1] focus:ring-2 focus:ring-[#4fa3d1]/20 transition-all"
+                  className="w-full h-44 p-4 input-field text-sm resize-none"
                   placeholder="Seedance 提示词..."
                 />
               </div>
             </div>
             
             {/* 弹窗底部 */}
-            <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-100">
+            <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-100 bg-gray-50/50">
               <button
                 onClick={cancelEdit}
-                className="px-5 py-2.5 rounded-xl text-sm font-medium bg-gray-100 hover:bg-gray-200 text-gray-600 transition-colors"
+                className="px-6 py-3 btn-secondary"
               >
                 取消
               </button>
               <button
                 onClick={saveEdit}
-                className="px-5 py-2.5 rounded-xl text-sm font-medium btn-primary"
+                className="px-6 py-3 btn-primary"
               >
                 保存修改
               </button>
