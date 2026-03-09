@@ -186,7 +186,6 @@ function AdminDashboard({ token, user, onLogout }: { token: string; user: AdminU
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   // 生成表单状态
-  const [generateType, setGenerateType] = useState<'invite' | 'redemption'>('invite');
   const [generateCount, setGenerateCount] = useState(10);
   const [generateAmount, setGenerateAmount] = useState(10);
   const [generateDescription, setGenerateDescription] = useState('');
@@ -260,11 +259,11 @@ function AdminDashboard({ token, user, onLogout }: { token: string; user: AdminU
     }
   };
 
-  const handleGenerateCodes = async () => {
+  const handleGenerateCodes = async (type: 'invite' | 'redemption') => {
     setIsGenerating(true);
     try {
-      const endpoint = generateType === 'invite' ? '/api/admin/invites' : '/api/admin/codes';
-      const body = generateType === 'invite'
+      const endpoint = type === 'invite' ? '/api/admin/invites' : '/api/admin/codes';
+      const body = type === 'invite'
         ? {
             secret: 'changfeng-admin-2024',
             count: generateCount,
@@ -290,8 +289,8 @@ function AdminDashboard({ token, user, onLogout }: { token: string; user: AdminU
 
       const data = await res.json();
       if (data.success) {
-        alert(`成功生成 ${data.codes.length} 个${generateType === 'invite' ? '邀请码' : '兑换码'}！`);
-        if (generateType === 'invite') {
+        alert(`成功生成 ${data.codes.length} 个${type === 'invite' ? '邀请码' : '兑换码'}！`);
+        if (type === 'invite') {
           loadInviteCodes();
         } else {
           loadRedemptionCodes();
@@ -495,7 +494,7 @@ function AdminDashboard({ token, user, onLogout }: { token: string; user: AdminU
                 </div>
                 <div className="flex items-end">
                   <button
-                    onClick={handleGenerateCodes}
+                    onClick={() => handleGenerateCodes('invite')}
                     disabled={isGenerating}
                     className="w-full h-10 bg-gradient-to-r from-[#4fa3d1] to-[#1a3a6b] text-white rounded-xl font-semibold flex items-center justify-center gap-2 hover:opacity-90 transition-opacity disabled:opacity-50"
                   >
@@ -636,10 +635,7 @@ function AdminDashboard({ token, user, onLogout }: { token: string; user: AdminU
                 </div>
                 <div className="flex items-end">
                   <button
-                    onClick={() => {
-                      setGenerateType('redemption');
-                      handleGenerateCodes();
-                    }}
+                    onClick={() => handleGenerateCodes('redemption')}
                     disabled={isGenerating}
                     className="w-full h-10 bg-gradient-to-r from-[#4fa3d1] to-[#1a3a6b] text-white rounded-xl font-semibold flex items-center justify-center gap-2 hover:opacity-90 transition-opacity disabled:opacity-50"
                   >

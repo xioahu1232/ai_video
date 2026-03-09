@@ -30,6 +30,16 @@ async function verifyAdmin(request: NextRequest): Promise<{ valid: boolean; supa
   return { valid: false, supabase: getSupabaseClient() };
 }
 
+// 生成4位随机码
+function generateCodeSegment(): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let result = '';
+  for (let i = 0; i < 4; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
+
 // 生成兑换码
 export async function POST(request: NextRequest) {
   try {
@@ -121,7 +131,6 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const secret = searchParams.get('secret');
-    const batchId = searchParams.get('batchId');
 
     // 验证管理员权限
     const { valid, supabase } = await verifyAdmin(request);
@@ -132,79 +141,25 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    if (batchId) {
-      // 查询特定批次的兑换码
-      const { data, error } = await supabase
-        .from('redemption_codes')
-        .select('*')
-        .eq('batch_id', batchId)
-        .order('created_at', { ascending: false });
+    // 直接查询所有兑换码列表
+    const { data, error } = await supabase
+      .from('redemption_codes')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(200);
 
-      if (error) {
-        console.error('Query codes error:', error);
-        return NextResponse.json(
-          { error: '查询失败' },
-          { status: 500 }
-        );
-      }
-
-      return NextResponse.json({
-        success: true,
-        codes: data,
-      });
-    } else {
-      // 查询所有批次概览
-      const { data, error } = await supabase
-        .from('redemption_codes')
-        .select('batch_id, amount, description, is_used, created_at')
-        .order('created_at', { ascending: false })
-        .limit(500);
-
-      if (error) {
-        console.error('Query codes error:', error);
-        return NextResponse.json(
-          { error: '查询失败' },
-          { status: 500 }
-        );
-      }
-
-      // 按批次汇总
-      const batchSummary: Record<string, {
-        batchId: string;
-        amount: number;
-        description: string;
-        total: number;
-        used: number;
-        unused: number;
-        createdAt: string;
-      }> = {};
-
-      data?.forEach((code) => {
-        const id = code.batch_id;
-        if (!batchSummary[id]) {
-          batchSummary[id] = {
-            batchId: id,
-            amount: code.amount,
-            description: code.description || '',
-            total: 0,
-            used: 0,
-            unused: 0,
-            createdAt: code.created_at,
-          };
-        }
-        batchSummary[id].total++;
-        if (code.is_used) {
-          batchSummary[id].used++;
-        } else {
-          batchSummary[id].unused++;
-        }
-      });
-
-      return NextResponse.json({
-        success: true,
-        batches: Object.values(batchSummary),
-      });
+    if (error) {
+      console.error('Query codes error:', error);
+      return NextResponse.json(
+        { error: '查询失败' },
+        { status: 500 }
+      );
     }
+
+    return NextResponse.json({
+      success: true,
+      codes: data || [],
+    });
   } catch (error) {
     console.error('Query codes error:', error);
     return NextResponse.json(
@@ -212,14 +167,4 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-}
-
-// 生成4位随机码
-function generateCodeSegment(): string {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let result = '';
-  for (let i = 0; i < 4; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return result;
 }
