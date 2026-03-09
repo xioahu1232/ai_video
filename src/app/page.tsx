@@ -18,16 +18,28 @@ import {
 } from '@/components/ui/select';
 import Image from 'next/image';
 
-// 语言选项
+// 语言选项 - 全球使用量最大的前20种语言（按使用人数排名）
 const LANGUAGES = [
-  { value: 'es', label: 'Español' },
-  { value: 'en', label: 'English' },
-  { value: 'zh', label: '中文' },
-  { value: 'ja', label: '日本語' },
-  { value: 'ko', label: '한국어' },
-  { value: 'fr', label: 'Français' },
-  { value: 'de', label: 'Deutsch' },
-  { value: 'pt', label: 'Português' },
+  { value: 'zh', label: '中文', native: '中文', flag: '🇨🇳' },
+  { value: 'en', label: 'English', native: 'English', flag: '🇬🇧' },
+  { value: 'hi', label: 'Hindi', native: 'हिन्दी', flag: '🇮🇳' },
+  { value: 'es', label: 'Spanish', native: 'Español', flag: '🇪🇸' },
+  { value: 'fr', label: 'French', native: 'Français', flag: '🇫🇷' },
+  { value: 'ar', label: 'Arabic', native: 'العربية', flag: '🇸🇦' },
+  { value: 'bn', label: 'Bengali', native: 'বাংলা', flag: '🇧🇩' },
+  { value: 'pt', label: 'Portuguese', native: 'Português', flag: '🇧🇷' },
+  { value: 'ru', label: 'Russian', native: 'Русский', flag: '🇷🇺' },
+  { value: 'ja', label: 'Japanese', native: '日本語', flag: '🇯🇵' },
+  { value: 'de', label: 'German', native: 'Deutsch', flag: '🇩🇪' },
+  { value: 'ko', label: 'Korean', native: '한국어', flag: '🇰🇷' },
+  { value: 'tr', label: 'Turkish', native: 'Türkçe', flag: '🇹🇷' },
+  { value: 'vi', label: 'Vietnamese', native: 'Tiếng Việt', flag: '🇻🇳' },
+  { value: 'th', label: 'Thai', native: 'ไทย', flag: '🇹🇭' },
+  { value: 'it', label: 'Italian', native: 'Italiano', flag: '🇮🇹' },
+  { value: 'ur', label: 'Urdu', native: 'اردو', flag: '🇵🇰' },
+  { value: 'fa', label: 'Persian', native: 'فارسی', flag: '🇮🇷' },
+  { value: 'id', label: 'Indonesian', native: 'Bahasa Indonesia', flag: '🇮🇩' },
+  { value: 'pa', label: 'Punjabi', native: 'ਪੰਜਾਬੀ', flag: '🇮🇳' },
 ];
 
 // 任务状态类型
@@ -280,10 +292,10 @@ export default function Home() {
     }
   };
 
-  // 获取语言名称
+  // 获取语言名称（带国旗）
   const getLanguageName = (langCode: string) => {
     const lang = LANGUAGES.find(l => l.value === langCode);
-    return lang?.label || langCode;
+    return lang ? `${lang.flag} ${lang.native}` : langCode;
   };
 
   return (
@@ -442,14 +454,18 @@ export default function Home() {
                     <SelectTrigger className="h-12 bg-secondary border-border rounded-xl">
                       <SelectValue placeholder="选择语言" />
                     </SelectTrigger>
-                    <SelectContent className="bg-popover border-border rounded-xl">
+                    <SelectContent className="bg-popover border-border rounded-xl max-h-80">
                       {LANGUAGES.map((lang) => (
                         <SelectItem 
                           key={lang.value} 
                           value={lang.value}
                           className="rounded-lg focus:bg-secondary"
                         >
-                          {lang.label}
+                          <span className="flex items-center gap-2">
+                            <span>{lang.flag}</span>
+                            <span>{lang.native}</span>
+                            <span className="text-muted-foreground text-xs">({lang.label})</span>
+                          </span>
                         </SelectItem>
                       ))}
                     </SelectContent>
