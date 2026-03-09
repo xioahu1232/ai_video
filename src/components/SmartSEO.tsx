@@ -29,6 +29,8 @@ import {
 
 interface SmartSEOData {
   overallScore: number;
+  targetMarket?: string;
+  detectedLanguage?: string;
   category: string;
   analysis?: {
     titleScore: number;
@@ -170,6 +172,16 @@ export default function SmartSEO({ prompt, sellingPoint, language, onCopy }: Sma
         
         {data && !loading && (
           <div className="space-y-4">
+            {/* 目标市场提示 */}
+            {data.targetMarket && (
+              <div className="bg-gradient-to-r from-[#4fa3d1]/10 to-[#1a3a6b]/10 rounded-lg p-3 flex items-center gap-2">
+                <Target className="w-5 h-5 text-[#4fa3d1]" />
+                <span className="text-sm font-medium text-[#1a3a6b]">
+                  智能识别目标市场：<Badge className="ml-2 bg-[#4fa3d1] text-white">{data.targetMarket}</Badge>
+                </span>
+              </div>
+            )}
+            
             {/* 综合评分 */}
             <Card className="border-[#4fa3d1]/20">
               <CardContent className="pt-6">
