@@ -656,33 +656,35 @@ export default function Home() {
         </div>
       )}
       
-      {/* 主内容 */}
-      <div className="relative max-w-7xl mx-auto px-6 py-8">
-        
       {/* 白色顶部导航栏 */}
-      <header className="bg-white border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-28 h-14 relative">
+      <header className="bg-white shadow-sm relative z-10">
+        <div className="max-w-6xl mx-auto px-8 py-5 flex items-center justify-between">
+          <div className="flex items-center">
+            <div className="w-44 h-20 relative">
               <Image
                 src="https://code.coze.cn/api/sandbox/coze_coding/file/proxy?expire_time=-1&file_path=assets%2F%E9%95%BF%E9%A3%8E%E8%B7%A8%E5%A2%83logo%E6%8F%90%E5%8F%96.png&nonce=53b72a74-c3e7-4c4c-8632-417105b99d47&project_id=7615252896803864582&sign=a7b7df82deb47526062c47ad01bbef2b148a43f5c08de9c3127ab3a27bc61cf9"
                 alt="长风跨境"
                 fill
                 className="object-contain"
                 unoptimized
+                loading="eager"
+                priority
               />
             </div>
           </div>
           
           <div className="hidden md:flex items-center gap-2 text-gray-500">
-            <Globe className="w-4 h-4" />
+            <Globe className="w-5 h-5" />
             <span className="text-sm font-medium">帮助中国商家出海</span>
           </div>
         </div>
       </header>
 
+      {/* 主内容 */}
+      <div className="relative max-w-6xl mx-auto px-8 py-12">
+        
         {/* 标题区 */}
-        <div className={`text-center mb-12 opacity-0 ${mounted ? 'animate-fadeInUp delay-100' : ''}`}>
+        <div className={`text-center mb-16 opacity-0 ${mounted ? 'animate-fadeInUp delay-100' : ''}`}>
 
           
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 tracking-tight">
@@ -694,24 +696,24 @@ export default function Home() {
         </div>
 
         {/* 主内容区 - 左右分栏 */}
-        <div className={`grid grid-cols-1 lg:grid-cols-2 gap-8 opacity-0 ${mounted ? 'animate-fadeInUp delay-200' : ''}`}>
+        <div className={`grid grid-cols-1 lg:grid-cols-2 gap-10 opacity-0 ${mounted ? 'animate-fadeInUp delay-200' : ''}`}>
           
           {/* 左侧：表单卡片 */}
-          <div className="card p-8">
-            <div className="flex items-center gap-4 mb-8">
-              <div className="w-12 h-12 icon-container primary">
-                <Video className="w-6 h-6 text-[#4fa3d1]" />
+          <div className="card p-10">
+            <div className="flex items-center gap-4 mb-10">
+              <div className="w-14 h-14 icon-container primary">
+                <Video className="w-7 h-7 text-[#4fa3d1]" />
               </div>
               <div>
-                <h2 className="text-xl font-semibold text-gray-800">生成提示词</h2>
-                <p className="text-sm text-gray-500 mt-0.5">填写产品信息，AI自动生成</p>
+                <h2 className="text-2xl font-semibold text-gray-800">生成提示词</h2>
+                <p className="text-sm text-gray-500 mt-1">填写产品信息，AI自动生成</p>
               </div>
             </div>
 
-            <div className="space-y-6">
+            <div className="space-y-7">
               {/* 核心卖点 */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">
+              <div className="space-y-3">
+                <label className="text-sm font-semibold text-gray-700">
                   核心卖点 <span className="text-red-400">*</span>
                 </label>
                 <input
@@ -719,28 +721,28 @@ export default function Home() {
                   placeholder="如：30天见效、无副作用、天然成分..."
                   value={coreSellingPoint}
                   onChange={(e) => setCoreSellingPoint(e.target.value)}
-                  className="w-full h-14 px-5 input-field text-gray-800"
+                  className="w-full h-16 px-6 input-field text-gray-800 text-base"
                 />
               </div>
 
               {/* 产品图片 */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">
+              <div className="space-y-3">
+                <label className="text-sm font-semibold text-gray-700">
                   产品图片 <span className="text-red-400">*</span>
                 </label>
                 
                 {imagePreview ? (
                   <div className="relative group">
-                    <div className="relative w-full h-32 rounded-2xl overflow-hidden border border-gray-200">
+                    <div className="relative w-full h-40 rounded-2xl overflow-hidden border border-gray-200">
                       <img 
                         src={imagePreview} 
                         alt="产品预览" 
                         className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-4">
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-5">
                         <button
                           onClick={removeImage}
-                          className="px-4 py-2 bg-white rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors shadow-lg"
+                          className="px-5 py-2.5 bg-white rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors shadow-lg"
                         >
                           更换图片
                         </button>
@@ -750,14 +752,14 @@ export default function Home() {
                 ) : (
                   <button
                     onClick={() => fileInputRef.current?.click()}
-                    className="w-full h-32 upload-area flex flex-col items-center justify-center gap-3"
+                    className="w-full h-40 upload-area flex flex-col items-center justify-center gap-4"
                   >
-                    <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center shadow-sm">
-                      <Upload className="w-5 h-5 text-gray-400" />
+                    <div className="w-14 h-14 rounded-2xl bg-white flex items-center justify-center shadow-sm">
+                      <Upload className="w-6 h-6 text-gray-400" />
                     </div>
                     <div className="text-center">
-                      <p className="text-sm font-medium text-gray-600">点击上传产品图片</p>
-                      <p className="text-xs text-gray-400 mt-1">支持 JPG、PNG 格式</p>
+                      <p className="text-base font-medium text-gray-600">点击上传产品图片</p>
+                      <p className="text-sm text-gray-400 mt-1">支持 JPG、PNG 格式</p>
                     </div>
                   </button>
                 )}
@@ -772,33 +774,33 @@ export default function Home() {
               </div>
 
               {/* 时长预设 */}
-              <div className="space-y-3">
-                <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+              <div className="space-y-4">
+                <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
                   <Clock className="w-4 h-4" />
                   时长预设
                 </label>
-                <div className="flex gap-3">
+                <div className="flex gap-4">
                   {DURATION_PRESETS.map((preset) => (
                     <button
                       key={preset.label}
                       onClick={() => applyPreset(preset)}
-                      className={`flex-1 preset-btn ${
+                      className={`flex-1 preset-btn py-4 ${
                         speechDuration === preset.speech && videoDuration === preset.video
                           ? 'active'
                           : 'inactive'
                       }`}
                     >
-                      <span className="block">{preset.label}</span>
-                      <span className="block text-xs opacity-70 mt-0.5">{preset.video}s</span>
+                      <span className="block text-base">{preset.label}</span>
+                      <span className="block text-sm opacity-70 mt-1">{preset.video}s</span>
                     </button>
                   ))}
                 </div>
               </div>
 
               {/* 时长设置 */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">口播时长</label>
+              <div className="grid grid-cols-2 gap-5">
+                <div className="space-y-3">
+                  <label className="text-sm font-semibold text-gray-700">口播时长</label>
                   <div className="relative">
                     <input
                       type="number"
@@ -809,8 +811,8 @@ export default function Home() {
                     <span className="absolute right-5 top-1/2 -translate-y-1/2 text-sm text-gray-400 font-medium">秒</span>
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">视频时长</label>
+                <div className="space-y-3">
+                  <label className="text-sm font-semibold text-gray-700">视频时长</label>
                   <div className="relative">
                     <input
                       type="number"
@@ -824,8 +826,8 @@ export default function Home() {
               </div>
 
               {/* 语言选择 */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">
+              <div className="space-y-3">
+                <label className="text-sm font-semibold text-gray-700">
                   语言 <span className="text-red-400">*</span>
                 </label>
                 <div className="relative">
@@ -848,7 +850,7 @@ export default function Home() {
               <button
                 onClick={handleSubmit}
                 disabled={!coreSellingPoint.trim() || !productImage || isSubmitting}
-                className="w-full h-16 btn-primary text-base flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none mt-2"
+                className="w-full h-16 btn-primary text-lg flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none mt-4"
               >
                 {isSubmitting ? (
                   <>
@@ -869,22 +871,22 @@ export default function Home() {
           <div className="card overflow-hidden flex flex-col">
             <div className="flex items-center justify-between p-8 border-b border-gray-100">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 icon-container warning">
-                  <Zap className="w-6 h-6 text-amber-500" />
+                <div className="w-14 h-14 icon-container warning">
+                  <Zap className="w-7 h-7 text-amber-500" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-semibold text-gray-800">生成结果</h2>
-                  <p className="text-sm text-gray-500 mt-0.5">
+                  <h2 className="text-2xl font-semibold text-gray-800">生成结果</h2>
+                  <p className="text-sm text-gray-500 mt-1">
                     {displayedTasks.length > 0 ? `共 ${displayedTasks.length} 条记录` : '暂无记录'}
                   </p>
                 </div>
               </div>
               
               {tasks.length > 0 && (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
                   <button
                     onClick={() => setShowStarredOnly(!showStarredOnly)}
-                    className={`px-4 py-2 rounded-xl text-sm font-medium transition-all flex items-center gap-2 ${
+                    className={`px-5 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center gap-2 ${
                       showStarredOnly 
                         ? 'bg-amber-50 text-amber-600 border border-amber-200' 
                         : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
@@ -895,7 +897,7 @@ export default function Home() {
                   </button>
                   <button
                     onClick={clearAllHistory}
-                    className="px-4 py-2 rounded-xl text-sm font-medium bg-gray-100 hover:bg-red-50 hover:text-red-500 text-gray-500 transition-colors"
+                    className="px-5 py-2.5 rounded-xl text-sm font-medium bg-gray-100 hover:bg-red-50 hover:text-red-500 text-gray-500 transition-colors"
                   >
                     清空
                   </button>
@@ -1134,16 +1136,16 @@ export default function Home() {
         </div>
 
         {/* 底部 */}
-        <footer className={`mt-16 text-center opacity-0 ${mounted ? 'animate-fadeIn delay-400' : ''}`}>
-          <div className="inline-flex items-center gap-3 text-white/30 mb-4">
-            <div className="h-px w-12 bg-white/10" />
-            <Sparkles className="w-4 h-4" />
-            <div className="h-px w-12 bg-white/10" />
+        <footer className={`mt-20 text-center opacity-0 ${mounted ? 'animate-fadeIn delay-400' : ''}`}>
+          <div className="inline-flex items-center gap-3 text-white/30 mb-5">
+            <div className="h-px w-16 bg-white/10" />
+            <Sparkles className="w-5 h-5" />
+            <div className="h-px w-16 bg-white/10" />
           </div>
-          <p className="text-sm text-white/40 mb-2">
+          <p className="text-base text-white/40 mb-2">
             帮助中国商家出海 | Helping Chinese Merchants Go Global
           </p>
-          <p className="text-xs text-white/20">
+          <p className="text-sm text-white/20">
             Powered by Coze Workflow
           </p>
         </footer>
