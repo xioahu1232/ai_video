@@ -190,8 +190,13 @@ export default function Confetti({
     particle.rotation += particle.rotationSpeed;
     particle.wobble += particle.wobbleSpeed;
     
-    // 缓慢降低透明度
-    particle.opacity *= 0.995;
+    // 快速降低透明度（动画结束后加速消失）
+    const elapsed = Date.now() - startTimeRef.current;
+    if (elapsed > duration) {
+      particle.opacity *= 0.9; // 动画结束后快速消失
+    } else {
+      particle.opacity *= 0.995;
+    }
     
     return particle.opacity > 0.01;
   };
@@ -230,26 +235,38 @@ export default function Confetti({
 
   // 启动动画
   useEffect(() => {
-    if (!isActive || !canvasRef.current) return;
+    if (!canvasRef.current) return;
 
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // 设置画布大小
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    if (isActive) {
+      // 设置画布大小
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
 
-    // 重置状态
-    particlesRef.current = [];
-    startTimeRef.current = Date.now();
+      // 重置状态
+      particlesRef.current = [];
+      startTimeRef.current = Date.now();
 
-    // 开始动画
-    animate(canvas, ctx);
+      // 开始动画
+      animate(canvas, ctx);
+    } else {
+      // isActive 变为 false 时，立即停止动画并清理
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+        animationRef.current = undefined;
+      }
+      particlesRef.current = [];
+      // 清除画布
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
 
     return () => {
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
+        animationRef.current = undefined;
       }
     };
   }, [isActive, animate]);

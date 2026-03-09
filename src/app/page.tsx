@@ -17,6 +17,7 @@ import WelcomeModal from '@/components/WelcomeModal';
 import Confetti from '@/components/Confetti';
 import ContactButton from '@/components/ContactButton';
 import Footer from '@/components/Footer';
+import { SmartBlessing } from '@/components/BlessingToast';
 
 // 语言选项
 const LANGUAGES = [
@@ -128,6 +129,9 @@ export default function Home() {
   // 欢迎弹窗和礼花
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   const [showRedeemConfetti, setShowRedeemConfetti] = useState(false);
+  
+  // 小帆帆祝福
+  const [showBlessing, setShowBlessing] = useState(false);
   
   // 表单状态
   const [coreSellingPoint, setCoreSellingPoint] = useState('');
@@ -706,6 +710,9 @@ export default function Home() {
           task.id === newTask.id ? completedTask : task
         );
       });
+
+      // 触发小帆帆祝福
+      setShowBlessing(true);
 
     } catch (error) {
       console.error('Submit error:', error);
@@ -1494,6 +1501,15 @@ export default function Home() {
         duration={3000}
         particleCount={120}
         onComplete={() => setShowRedeemConfetti(false)}
+      />
+
+      {/* 小帆帆智能祝福 */}
+      <SmartBlessing
+        isVisible={showBlessing}
+        onClose={() => setShowBlessing(false)}
+        context="视频提示词生成成功"
+        autoClose={true}
+        autoCloseDelay={5000}
       />
 
       {/* 联系客服悬浮按钮 */}
