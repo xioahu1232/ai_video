@@ -148,18 +148,45 @@ export default function Home() {
     const formData = new FormData();
     formData.append('file', file);
 
-    const response = await fetch('/api/upload-image', {
-      method: 'POST',
-      body: formData,
-    });
+    // 设置 30 秒超时
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-    const data = await response.json();
-    
-    if (!data.success) {
-      throw new Error(data.error || '图片上传失败');
+    try {
+      const response = await fetch('/api/upload-image', {
+        method: 'POST',
+        body: formData,
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.error || '图片上传失败');
+      }
+
+      return data.url;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      
+      // 处理超时错误
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new Error('图片上传超时，请检查网络后重试');
+      }
+      
+      // 处理网络错误
+      if (error instanceof TypeError && error.message === 'Failed to fetch') {
+        throw new Error('网络连接失败，请检查网络后重试');
+      }
+      
+      throw error;
     }
-
-    return data.url;
   };
 
   // 调用工作流生成视频提示词
@@ -170,30 +197,57 @@ export default function Home() {
     videoDur: string,
     lang: string
   ): Promise<{ sora?: string; seedance?: string }> => {
-    const response = await fetch('/api/generate-video', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        coreSellingPoint: sellingPoint,
-        productImageUrl: imageUrl,
-        speechDuration: speechDur,
-        videoDuration: videoDur,
-        language: lang,
-      }),
-    });
+    // 设置 3 分钟超时（工作流可能需要较长时间）
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 180000); // 3分钟
 
-    const data = await response.json();
-    
-    if (!data.success) {
-      throw new Error(data.error || '提示词生成失败');
+    try {
+      const response = await fetch('/api/generate-video', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          coreSellingPoint: sellingPoint,
+          productImageUrl: imageUrl,
+          speechDuration: speechDur,
+          videoDuration: videoDur,
+          language: lang,
+        }),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.error || '提示词生成失败');
+      }
+
+      return {
+        sora: data.sora,
+        seedance: data.seedance,
+      };
+    } catch (error) {
+      clearTimeout(timeoutId);
+      
+      // 处理超时错误
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new Error('请求超时，工作流处理时间过长，请稍后重试');
+      }
+      
+      // 处理网络错误
+      if (error instanceof TypeError && error.message === 'Failed to fetch') {
+        throw new Error('网络连接失败，请检查网络后重试');
+      }
+      
+      throw error;
     }
-
-    return {
-      sora: data.sora,
-      seedance: data.seedance,
-    };
   };
 
   // 提交表单
