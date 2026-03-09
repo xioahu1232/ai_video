@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getSupabaseClient } from '@/storage/database/supabase-client';
 
 // Coze 工作流配置
 const WORKFLOW_ID = '7601074566710444095';
@@ -20,10 +21,60 @@ interface TaskResponse {
   debugUrl?: string;
   error?: string;
   rawResponse?: unknown;
+  balance?: number;
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse<TaskResponse>> {
   try {
+    // 验证用户登录状态
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json(
+        { success: false, error: '请先登录' },
+        { status: 401 }
+      );
+    }
+
+    const token = authHeader.substring(7);
+    const supabase = getSupabaseClient(token);
+
+    // 验证用户
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return NextResponse.json(
+        { success: false, error: '登录已过期，请重新登录' },
+        { status: 401 }
+      );
+    }
+
+    // 检查用户余额
+    const { data: userBalance, error: balanceError } = await supabase
+      .from('user_balances')
+      .select('*')
+      .eq('user_id', user.id)
+      .single();
+
+    if (balanceError && balanceError.code !== 'PGRST116') {
+      console.error('Get balance error:', balanceError);
+      return NextResponse.json(
+        { success: false, error: '获取余额失败' },
+        { status: 500 }
+      );
+    }
+
+    const currentBalance = userBalance?.balance || 0;
+
+    if (currentBalance <= 0) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: '余额不足，请先充值',
+          balance: currentBalance 
+        },
+        { status: 402 } // 402 Payment Required
+      );
+    }
+
     const body: GenerateVideoRequest = await request.json();
     const { coreSellingPoint, productImageUrl, speechDuration, videoDuration, language } = body;
 
@@ -106,12 +157,43 @@ export async function POST(request: NextRequest): Promise<NextResponse<TaskRespo
 
     console.log('Parsed output:', outputData);
 
+    // 扣减余额
+    const newBalance = currentBalance - 1;
+    
+    if (userBalance) {
+      // 更新已有记录
+      const { error: updateError } = await supabase
+        .from('user_balances')
+        .update({
+          balance: newBalance,
+          total_used: userBalance.total_used + 1,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('user_id', user.id);
+
+      if (updateError) {
+        console.error('Update balance error:', updateError);
+        // 不影响主流程，只记录错误
+      }
+    } else {
+      // 创建新记录（理论上不会走到这里，因为前面已经检查过余额）
+      await supabase
+        .from('user_balances')
+        .insert({
+          user_id: user.id,
+          balance: 0,
+          total_used: 1,
+          total_purchased: 0,
+        });
+    }
+
     return NextResponse.json({
       success: true,
       taskId: result.execute_id || Date.now().toString(),
       sora: outputData.sora as string | undefined,
       seedance: outputData.seedance as string | undefined,
       debugUrl: result.debug_url,
+      balance: newBalance,
     });
 
   } catch (error) {

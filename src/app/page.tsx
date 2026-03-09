@@ -7,11 +7,12 @@ import {
   ImageIcon, Wand2, Star,
   Edit3, X, Clock, Video, Sparkles, Globe,
   Zap, Brain, Eye, Lightbulb, PenTool, FileText,
-  LogIn, LogOut, User
+  LogIn, LogOut, User, Gift, Coins
 } from 'lucide-react';
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 import { AuthModal } from '@/components/AuthModal';
+import { RedeemModal } from '@/components/RedeemModal';
 
 // 语言选项
 const LANGUAGES = [
@@ -116,6 +117,10 @@ export default function Home() {
   const { user, token, isLoading: authLoading, login, register, logout } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
   
+  // 余额相关
+  const [balance, setBalance] = useState(0);
+  const [showRedeemModal, setShowRedeemModal] = useState(false);
+  
   // 表单状态
   const [coreSellingPoint, setCoreSellingPoint] = useState('');
   const [productImage, setProductImage] = useState<File | null>(null);
@@ -184,19 +189,40 @@ export default function Home() {
     }
   }, [token]);
 
+  // 获取用户余额
+  const loadBalance = useCallback(async () => {
+    if (!token) return;
+    
+    try {
+      const res = await fetch('/api/balance', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      
+      const data = await res.json();
+      
+      if (data.success) {
+        setBalance(data.balance.balance);
+      }
+    } catch (error) {
+      console.error('获取余额失败:', error);
+    }
+  }, [token]);
+
   // 初始化：加载任务
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // 登录状态变化时加载任务
+  // 登录状态变化时加载任务和余额
   useEffect(() => {
     if (token && user) {
       loadTasksFromDB();
+      loadBalance();
     } else {
       setTasks([]);
+      setBalance(0);
     }
-  }, [token, user, loadTasksFromDB]);
+  }, [token, user, loadTasksFromDB, loadBalance]);
 
   // 保存任务到数据库
   const saveTaskToDB = useCallback(async (task: Task) => {
@@ -460,7 +486,7 @@ export default function Home() {
     speechDur: string,
     videoDur: string,
     lang: string
-  ): Promise<{ sora?: string; seedance?: string }> => {
+  ): Promise<{ sora?: string; seedance?: string; balance?: number }> => {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 180000);
 
@@ -469,6 +495,7 @@ export default function Home() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           coreSellingPoint: sellingPoint,
@@ -495,6 +522,7 @@ export default function Home() {
       return {
         sora: data.sora,
         seedance: data.seedance,
+        balance: data.balance,
       };
     } catch (error) {
       clearTimeout(timeoutId);
@@ -520,6 +548,12 @@ export default function Home() {
     // 检查是否登录
     if (!user || !token) {
       setShowAuthModal(true);
+      return;
+    }
+
+    // 检查余额是否足够
+    if (balance <= 0) {
+      setShowRedeemModal(true);
       return;
     }
 
@@ -637,6 +671,13 @@ export default function Home() {
       // 保存到数据库
       const savedTask = await saveTaskToDB(completedTask);
 
+      // 更新本地余额显示（API已经扣减了余额）
+      if (result.balance !== undefined) {
+        setBalance(result.balance);
+      } else {
+        setBalance(prev => Math.max(0, prev - 1));
+      }
+
       setTasks(prev => {
         if (savedTask) {
           return prev.map(task => 
@@ -709,6 +750,24 @@ export default function Home() {
           <div className="flex items-center gap-3 sm:gap-4">
             {user ? (
               <>
+                {/* 余额显示 */}
+                <button
+                  onClick={() => setShowRedeemModal(true)}
+                  className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-gradient-to-r from-[#4fa3d1]/10 to-[#1a3a6b]/10 rounded-lg sm:rounded-xl border border-[#4fa3d1]/20 hover:border-[#4fa3d1]/40 transition-colors"
+                >
+                  <Coins className="w-4 h-4 text-[#4fa3d1]" />
+                  <span className="text-xs sm:text-sm font-semibold text-[#1a3a6b]">{balance} 次</span>
+                </button>
+                
+                {/* 兑换按钮 */}
+                <button
+                  onClick={() => setShowRedeemModal(true)}
+                  className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium bg-amber-50 hover:bg-amber-100 text-amber-600 transition-colors"
+                >
+                  <Gift className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  <span className="hidden sm:inline">兑换</span>
+                </button>
+                
                 <div className="hidden sm:flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-gray-100 rounded-lg sm:rounded-xl">
                   <User className="w-4 h-4 text-gray-500" />
                   <span className="text-xs sm:text-sm text-gray-700 font-medium">{user.name}</span>
@@ -906,14 +965,31 @@ export default function Home() {
               </div>
 
               {/* 提交按钮 */}
-              <button
-                onClick={handleSubmit}
-                disabled={!coreSellingPoint.trim() || !productImage}
-                className="w-full h-12 sm:h-14 md:h-16 btn-primary text-base sm:text-lg flex items-center justify-center gap-2 sm:gap-3 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none mt-2 sm:mt-4"
-              >
-                <span className="font-semibold">生成提示词</span>
-                <Wand2 className="w-4 h-4 sm:w-5 sm:h-5" />
-              </button>
+              {user && balance <= 0 ? (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 p-3 sm:p-4 bg-red-50 rounded-lg sm:rounded-xl text-red-500 text-xs sm:text-sm">
+                    <Coins className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+                    <span>余额不足，请先兑换使用额度</span>
+                  </div>
+                  <button
+                    onClick={() => setShowRedeemModal(true)}
+                    className="w-full h-12 sm:h-14 md:h-16 bg-amber-500 hover:bg-amber-600 text-white rounded-xl sm:rounded-2xl text-base sm:text-lg flex items-center justify-center gap-2 sm:gap-3 transition-colors"
+                  >
+                    <Gift className="w-4 h-4 sm:w-5 sm:h-5" />
+                    <span className="font-semibold">立即兑换</span>
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={handleSubmit}
+                  disabled={!coreSellingPoint.trim() || !productImage}
+                  className="w-full h-12 sm:h-14 md:h-16 btn-primary text-base sm:text-lg flex items-center justify-center gap-2 sm:gap-3 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none mt-2 sm:mt-4"
+                >
+                  <span className="font-semibold">生成提示词</span>
+                  {user && <span className="text-xs sm:text-sm opacity-80">({balance}次)</span>}
+                  <Wand2 className="w-4 h-4 sm:w-5 sm:h-5" />
+                </button>
+              )}
             </div>
           </div>
 
@@ -1353,6 +1429,18 @@ export default function Home() {
         onLogin={login}
         onRegister={register}
       />
+
+      {/* 兑换码弹窗 */}
+      {token && (
+        <RedeemModal
+          isOpen={showRedeemModal}
+          onClose={() => setShowRedeemModal(false)}
+          onSuccess={(amount) => {
+            setBalance(prev => prev + amount);
+          }}
+          token={token}
+        />
+      )}
     </div>
   );
 }
