@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { Video, Clock, Upload, Loader2, CheckCircle2, XCircle, Copy, Check } from 'lucide-react';
+import { Video, Clock, Upload, Loader2, CheckCircle2, XCircle, Copy, Check, Sparkles, FileText, ChevronDown, ChevronUp, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -40,7 +40,17 @@ interface Task {
   sora?: string;
   seedance?: string;
   error?: string;
+  expanded?: boolean;
 }
+
+// 加载动画文案
+const LOADING_MESSAGES = [
+  '正在分析产品卖点...',
+  'AI正在构思创意...',
+  '生成视频脚本中...',
+  '优化提示词质量...',
+  '即将完成...',
+];
 
 export default function Home() {
   // 表单状态
@@ -57,6 +67,9 @@ export default function Home() {
   // 复制状态
   const [copiedId, setCopiedId] = useState<string | null>(null);
   
+  // 加载动画
+  const [loadingMessageIndex, setLoadingMessageIndex] = useState(0);
+  
   // 文件输入引用
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -69,14 +82,28 @@ export default function Home() {
   };
 
   // 复制文本到剪贴板
-  const copyToClipboard = async (text: string, taskId: string) => {
+  const copyToClipboard = async (text: string, id: string) => {
     try {
       await navigator.clipboard.writeText(text);
-      setCopiedId(taskId);
+      setCopiedId(id);
       setTimeout(() => setCopiedId(null), 2000);
     } catch (err) {
       console.error('复制失败:', err);
     }
+  };
+
+  // 删除任务
+  const deleteTask = (taskId: string) => {
+    setTasks(prev => prev.filter(task => task.id !== taskId));
+  };
+
+  // 切换展开状态
+  const toggleExpand = (taskId: string) => {
+    setTasks(prev => 
+      prev.map(task => 
+        task.id === taskId ? { ...task, expanded: !task.expanded } : task
+      )
+    );
   };
 
   // 上传图片到对象存储
@@ -139,6 +166,7 @@ export default function Home() {
     }
 
     setIsSubmitting(true);
+    setLoadingMessageIndex(0);
     
     // 创建新任务
     const newTask: Task = {
@@ -148,9 +176,15 @@ export default function Home() {
       language,
       createdAt: new Date(),
       progress: 0,
+      expanded: true,
     };
 
     setTasks(prev => [newTask, ...prev]);
+
+    // 加载动画轮播
+    const messageInterval = setInterval(() => {
+      setLoadingMessageIndex(prev => (prev + 1) % LOADING_MESSAGES.length);
+    }, 2000);
 
     try {
       // 步骤1：上传图片
@@ -221,40 +255,15 @@ export default function Home() {
         )
       );
     } finally {
+      clearInterval(messageInterval);
       setIsSubmitting(false);
     }
   };
 
-  // 获取状态图标
-  const getStatusIcon = (status: TaskStatus) => {
-    switch (status) {
-      case 'pending':
-        return <Clock className="h-4 w-4 text-yellow-500" />;
-      case 'uploading':
-        return <Upload className="h-4 w-4 text-blue-400 animate-pulse" />;
-      case 'processing':
-        return <Loader2 className="h-4 w-4 text-blue-500 animate-spin" />;
-      case 'completed':
-        return <CheckCircle2 className="h-4 w-4 text-green-500" />;
-      case 'failed':
-        return <XCircle className="h-4 w-4 text-red-500" />;
-    }
-  };
-
-  // 获取状态文本
-  const getStatusText = (status: TaskStatus) => {
-    switch (status) {
-      case 'pending':
-        return '等待中';
-      case 'uploading':
-        return '上传图片中';
-      case 'processing':
-        return '生成提示词中';
-      case 'completed':
-        return '已完成';
-      case 'failed':
-        return '失败';
-    }
+  // 获取语言名称
+  const getLanguageName = (langCode: string) => {
+    const lang = LANGUAGES.find(l => l.value === langCode);
+    return lang?.label || langCode;
   };
 
   return (
@@ -263,7 +272,8 @@ export default function Home() {
       <div className="max-w-6xl mx-auto">
         {/* 功能标识按钮 */}
         <div className="flex justify-center mb-6">
-          <div className="px-4 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-full">
+          <div className="px-4 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-full flex items-center gap-2">
+            <Sparkles className="h-4 w-4" />
             AI Video Generator
           </div>
         </div>
@@ -408,108 +418,253 @@ export default function Home() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2 text-lg">
-                  <Clock className="h-5 w-5 text-blue-500" />
-                  任务列表
+                  <FileText className="h-5 w-5 text-blue-500" />
+                  生成结果
                 </CardTitle>
-                <span className="text-sm text-muted-foreground bg-muted px-2 py-0.5 rounded">
-                  {tasks.length} 个任务
-                </span>
+                {tasks.length > 0 && (
+                  <span className="text-xs text-muted-foreground">
+                    共 {tasks.length} 条记录
+                  </span>
+                )}
               </div>
             </CardHeader>
             <CardContent>
               {tasks.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-                  <Loader2 className="h-12 w-12 mb-4 opacity-20" />
-                  <p className="text-sm font-medium mb-1">暂无任务</p>
-                  <p className="text-xs">提交表单后任务将显示在这里</p>
+                <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+                  <div className="w-16 h-16 rounded-full bg-secondary/50 flex items-center justify-center mb-4">
+                    <Sparkles className="h-8 w-8 opacity-30" />
+                  </div>
+                  <p className="text-sm font-medium mb-1">暂无生成记录</p>
+                  <p className="text-xs">提交表单后结果将显示在这里</p>
                 </div>
               ) : (
-                <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2">
+                <div className="space-y-4 max-h-[600px] overflow-y-auto pr-1">
                   {tasks.map((task) => (
                     <div
                       key={task.id}
-                      className="p-4 bg-secondary/50 border border-border rounded-lg"
+                      className={`rounded-xl overflow-hidden transition-all duration-300 ${
+                        task.status === 'failed' 
+                          ? 'bg-red-500/5 border border-red-500/20' 
+                          : task.status === 'completed'
+                          ? 'bg-gradient-to-br from-blue-500/5 to-purple-500/5 border border-blue-500/20'
+                          : 'bg-secondary/30 border border-border'
+                      }`}
                     >
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                          {getStatusIcon(task.status)}
-                          <span className="text-sm font-medium">
-                            {getStatusText(task.status)}
-                          </span>
+                      {/* 任务头部 */}
+                      <div className="p-4 flex items-start justify-between gap-3">
+                        <div className="flex items-start gap-3 flex-1 min-w-0">
+                          {/* 状态图标 */}
+                          <div className={`mt-0.5 flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
+                            task.status === 'completed' 
+                              ? 'bg-green-500/20' 
+                              : task.status === 'failed'
+                              ? 'bg-red-500/20'
+                              : task.status === 'processing'
+                              ? 'bg-blue-500/20'
+                              : 'bg-yellow-500/20'
+                          }`}>
+                            {task.status === 'completed' && <CheckCircle2 className="h-4 w-4 text-green-500" />}
+                            {task.status === 'failed' && <XCircle className="h-4 w-4 text-red-500" />}
+                            {task.status === 'processing' && <Loader2 className="h-4 w-4 text-blue-500 animate-spin" />}
+                            {task.status === 'uploading' && <Upload className="h-4 w-4 text-yellow-500 animate-pulse" />}
+                            {task.status === 'pending' && <Clock className="h-4 w-4 text-yellow-500" />}
+                          </div>
+                          
+                          {/* 任务信息 */}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="text-sm font-medium truncate">
+                                {task.status === 'processing' 
+                                  ? LOADING_MESSAGES[loadingMessageIndex]
+                                  : task.status === 'uploading'
+                                  ? '正在上传图片...'
+                                  : task.status === 'completed'
+                                  ? '生成完成'
+                                  : task.status === 'failed'
+                                  ? '生成失败'
+                                  : '等待中'
+                                }
+                              </span>
+                              {task.status === 'processing' && (
+                                <span className="inline-flex gap-1">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-bounce" style={{animationDelay: '0ms'}} />
+                                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-bounce" style={{animationDelay: '150ms'}} />
+                                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-bounce" style={{animationDelay: '300ms'}} />
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs text-muted-foreground truncate">
+                              {task.coreSellingPoint}
+                            </p>
+                            <div className="flex items-center gap-2 mt-1">
+                              <span className="text-xs text-muted-foreground bg-secondary/50 px-2 py-0.5 rounded">
+                                {getLanguageName(task.language)}
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                {task.createdAt.toLocaleTimeString()}
+                              </span>
+                            </div>
+                          </div>
                         </div>
-                        <span className="text-xs text-muted-foreground">
-                          {task.createdAt.toLocaleTimeString()}
-                        </span>
+                        
+                        {/* 操作按钮 */}
+                        {task.status === 'completed' && (
+                          <div className="flex items-center gap-1">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-8 w-8 p-0"
+                              onClick={() => toggleExpand(task.id)}
+                            >
+                              {task.expanded ? (
+                                <ChevronUp className="h-4 w-4" />
+                              ) : (
+                                <ChevronDown className="h-4 w-4" />
+                              )}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-8 w-8 p-0 hover:text-red-400"
+                              onClick={() => deleteTask(task.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        )}
                       </div>
-                      <p className="text-sm text-muted-foreground truncate mb-3">
-                        {task.coreSellingPoint}
-                      </p>
-                      
+
                       {/* 进度条 */}
                       {(task.status === 'uploading' || task.status === 'processing') && (
-                        <div className="w-full bg-secondary rounded-full h-1.5 mb-3">
-                          <div
-                            className="bg-blue-500 h-1.5 rounded-full transition-all duration-300"
-                            style={{ width: `${task.progress}%` }}
-                          />
+                        <div className="px-4 pb-3">
+                          <div className="h-1 bg-secondary rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full transition-all duration-500"
+                              style={{ width: `${task.progress}%` }}
+                            />
+                          </div>
                         </div>
                       )}
 
                       {/* 错误信息 */}
                       {task.status === 'failed' && task.error && (
-                        <p className="text-xs text-red-400 mb-3">{task.error}</p>
+                        <div className="px-4 pb-4">
+                          <p className="text-xs text-red-400 bg-red-500/10 rounded-lg px-3 py-2">
+                            {task.error}
+                          </p>
+                        </div>
                       )}
 
                       {/* 生成的提示词 */}
-                      {task.status === 'completed' && (
-                        <div className="space-y-3">
+                      {task.status === 'completed' && task.expanded && (
+                        <div className="px-4 pb-4 space-y-3">
                           {/* Sora 提示词 */}
                           {task.sora && (
-                            <div className="bg-secondary rounded-lg p-3">
-                              <div className="flex items-center justify-between mb-2">
-                                <span className="text-xs font-medium text-blue-400">Sora 提示词</span>
+                            <div className="bg-secondary/50 rounded-lg overflow-hidden">
+                              <div className="flex items-center justify-between px-3 py-2 border-b border-border/50">
+                                <span className="text-xs font-medium text-blue-400 flex items-center gap-1.5">
+                                  <span className="w-2 h-2 rounded-full bg-blue-500" />
+                                  Sora 提示词
+                                </span>
                                 <Button
                                   size="sm"
                                   variant="ghost"
-                                  className="h-6 px-2"
+                                  className="h-6 px-2 text-xs"
                                   onClick={() => copyToClipboard(task.sora!, `${task.id}-sora`)}
                                 >
                                   {copiedId === `${task.id}-sora` ? (
-                                    <Check className="h-3 w-3 text-green-500" />
+                                    <>
+                                      <Check className="h-3 w-3 mr-1 text-green-500" />
+                                      已复制
+                                    </>
                                   ) : (
-                                    <Copy className="h-3 w-3 text-muted-foreground" />
+                                    <>
+                                      <Copy className="h-3 w-3 mr-1" />
+                                      复制
+                                    </>
                                   )}
                                 </Button>
                               </div>
-                              <p className="text-xs text-muted-foreground whitespace-pre-wrap break-words">
-                                {task.sora}
-                              </p>
+                              <div className="p-3 max-h-48 overflow-y-auto">
+                                <p className="text-xs text-muted-foreground whitespace-pre-wrap break-words leading-relaxed">
+                                  {task.sora}
+                                </p>
+                              </div>
                             </div>
                           )}
 
                           {/* Seedance 提示词 */}
                           {task.seedance && (
-                            <div className="bg-secondary rounded-lg p-3">
-                              <div className="flex items-center justify-between mb-2">
-                                <span className="text-xs font-medium text-purple-400">Seedance 提示词</span>
+                            <div className="bg-secondary/50 rounded-lg overflow-hidden">
+                              <div className="flex items-center justify-between px-3 py-2 border-b border-border/50">
+                                <span className="text-xs font-medium text-purple-400 flex items-center gap-1.5">
+                                  <span className="w-2 h-2 rounded-full bg-purple-500" />
+                                  Seedance 提示词
+                                </span>
                                 <Button
                                   size="sm"
                                   variant="ghost"
-                                  className="h-6 px-2"
+                                  className="h-6 px-2 text-xs"
                                   onClick={() => copyToClipboard(task.seedance!, `${task.id}-seedance`)}
                                 >
                                   {copiedId === `${task.id}-seedance` ? (
-                                    <Check className="h-3 w-3 text-green-500" />
+                                    <>
+                                      <Check className="h-3 w-3 mr-1 text-green-500" />
+                                      已复制
+                                    </>
                                   ) : (
-                                    <Copy className="h-3 w-3 text-muted-foreground" />
+                                    <>
+                                      <Copy className="h-3 w-3 mr-1" />
+                                      复制
+                                    </>
                                   )}
                                 </Button>
                               </div>
-                              <p className="text-xs text-muted-foreground whitespace-pre-wrap break-words">
-                                {task.seedance}
-                              </p>
+                              <div className="p-3 max-h-48 overflow-y-auto">
+                                <p className="text-xs text-muted-foreground whitespace-pre-wrap break-words leading-relaxed">
+                                  {task.seedance}
+                                </p>
+                              </div>
                             </div>
                           )}
+
+                          {/* 一键复制全部 */}
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="w-full bg-secondary/30 border-border hover:bg-secondary/50"
+                            onClick={() => {
+                              const allText = `【Sora 提示词】\n${task.sora || ''}\n\n【Seedance 提示词】\n${task.seedance || ''}`;
+                              copyToClipboard(allText, `${task.id}-all`);
+                            }}
+                          >
+                            {copiedId === `${task.id}-all` ? (
+                              <>
+                                <Check className="h-4 w-4 mr-2 text-green-500" />
+                                已复制全部内容
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="h-4 w-4 mr-2" />
+                                一键复制全部
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      )}
+
+                      {/* 收起状态的完成提示词预览 */}
+                      {task.status === 'completed' && !task.expanded && (
+                        <div className="px-4 pb-4 flex items-center gap-4 text-xs text-muted-foreground">
+                          <span className="flex items-center gap-1">
+                            <span className="w-2 h-2 rounded-full bg-blue-500" />
+                            Sora
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <span className="w-2 h-2 rounded-full bg-purple-500" />
+                            Seedance
+                          </span>
+                          <span className="text-blue-400 ml-auto">点击展开查看</span>
                         </div>
                       )}
                     </div>
