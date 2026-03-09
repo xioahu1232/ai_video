@@ -107,14 +107,14 @@ export async function POST(request: NextRequest) {
       // 不影响注册流程，但记录错误
     }
 
-    // 为新用户创建余额记录，赠送1次免费体验
+    // 为新用户创建余额记录，赠送5次免费体验
     const { error: balanceError } = await supabase
       .from('user_balances')
       .insert({
         user_id: data.user.id,
-        balance: 1, // 赠送1次免费体验
+        balance: 5, // 赠送5次免费体验
         total_used: 0,
-        total_purchased: 1, // 记录为赠送
+        total_purchased: 5, // 记录为赠送
       });
 
     if (balanceError) {
@@ -129,7 +129,7 @@ export async function POST(request: NextRequest) {
         email: data.user.email,
         name: data.user.user_metadata?.name || email.split('@')[0],
       },
-      message: '注册成功，获得1次免费体验额度',
+      message: '注册成功，获得5次免费体验额度',
     });
   } catch (error) {
     console.error('Register error:', error);
