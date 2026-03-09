@@ -15,6 +15,8 @@ import { AuthModal } from '@/components/AuthModal';
 import { RedeemModal } from '@/components/RedeemModal';
 import WelcomeModal from '@/components/WelcomeModal';
 import Confetti from '@/components/Confetti';
+import ContactButton from '@/components/ContactButton';
+import Footer from '@/components/Footer';
 
 // 语言选项
 const LANGUAGES = [
@@ -1493,6 +1495,12 @@ export default function Home() {
         particleCount={120}
         onComplete={() => setShowRedeemConfetti(false)}
       />
+
+      {/* 联系客服悬浮按钮 */}
+      <ContactButton />
+
+      {/* 页脚 */}
+      <Footer />
     </div>
   );
 }

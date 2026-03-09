@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, Gift, Loader2, CheckCircle, AlertCircle, Sparkles, PartyPopper } from 'lucide-react';
+import { X, Gift, Loader2, AlertCircle, Sparkles, PartyPopper, QrCode, MessageCircle } from 'lucide-react';
+import Image from 'next/image';
 
 interface RedeemModalProps {
   isOpen: boolean;
@@ -159,8 +160,30 @@ export function RedeemModal({ isOpen, onClose, onSuccess, token }: RedeemModalPr
                 )}
               </button>
 
-              <div className="text-center text-xs text-gray-400">
-                兑换码由管理员发放，可联系客服购买
+              <div className="mt-4 pt-4 border-t border-gray-100">
+                <p className="text-center text-xs text-gray-500 mb-3">
+                  没有兑换码？联系管理员获取
+                </p>
+                <div className="flex items-center justify-center gap-3">
+                  <div className="bg-gray-50 p-2 rounded-lg">
+                    <Image
+                      src="https://code.coze.cn/api/sandbox/coze_coding/file/proxy?expire_time=-1&file_path=assets%2F50998985b708600651cbaa34e65c607c.jpg&nonce=20a2c68f-6399-4831-a186-860fb48e8928&project_id=7615252896803864582&sign=0fb25f951062fc9d0477443e0c985b30c922f4c1bc30cc3b89293be746b2aad3"
+                      alt="微信二维码"
+                      width={60}
+                      height={60}
+                      className="rounded"
+                      unoptimized
+                    />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-sm font-medium text-gray-700 flex items-center gap-1">
+                      <MessageCircle className="w-4 h-4 text-[#4fa3d1]" />
+                      扫码添加微信
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">购买额度 · 吐槽建议</p>
+                    <p className="text-xs text-[#4fa3d1]">优质反馈送免费额度</p>
+                  </div>
+                </div>
               </div>
             </>
           ) : (
