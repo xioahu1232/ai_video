@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { Video, Clock, Upload, Loader2, CheckCircle2, XCircle } from 'lucide-react';
+import { Video, Clock, Upload, Loader2, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -27,7 +27,7 @@ const LANGUAGES = [
 ];
 
 // 任务状态类型
-type TaskStatus = 'pending' | 'processing' | 'completed' | 'failed';
+type TaskStatus = 'pending' | 'uploading' | 'processing' | 'completed' | 'failed';
 
 // 任务接口
 interface Task {
@@ -38,6 +38,7 @@ interface Task {
   createdAt: Date;
   progress?: number;
   videoUrl?: string;
+  prompt?: string;
   error?: string;
 }
 
@@ -64,6 +65,59 @@ export default function Home() {
     }
   };
 
+  // 上传图片到对象存储
+  const uploadImage = async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch('/api/upload-image', {
+      method: 'POST',
+      body: formData,
+    });
+
+    const data = await response.json();
+    
+    if (!data.success) {
+      throw new Error(data.error || '图片上传失败');
+    }
+
+    return data.url;
+  };
+
+  // 调用工作流生成视频
+  const generateVideo = async (
+    imageUrl: string,
+    sellingPoint: string,
+    speechDur: string,
+    videoDur: string,
+    lang: string
+  ): Promise<{ videoUrl?: string; prompt?: string }> => {
+    const response = await fetch('/api/generate-video', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        coreSellingPoint: sellingPoint,
+        productImageUrl: imageUrl,
+        speechDuration: speechDur,
+        videoDuration: videoDur,
+        language: lang,
+      }),
+    });
+
+    const data = await response.json();
+    
+    if (!data.success) {
+      throw new Error(data.error || '视频生成失败');
+    }
+
+    return {
+      videoUrl: data.videoUrl,
+      prompt: data.prompt,
+    };
+  };
+
   // 提交表单
   const handleSubmit = async () => {
     if (!coreSellingPoint.trim() || !productImage) {
@@ -75,7 +129,7 @@ export default function Home() {
     // 创建新任务
     const newTask: Task = {
       id: Date.now().toString(),
-      status: 'pending',
+      status: 'uploading',
       coreSellingPoint,
       language,
       createdAt: new Date(),
@@ -84,9 +138,20 @@ export default function Home() {
 
     setTasks(prev => [newTask, ...prev]);
 
-    // 模拟任务处理
-    // TODO: 替换为真实的后端API调用
-    setTimeout(() => {
+    try {
+      // 步骤1：上传图片
+      setTasks(prev => 
+        prev.map(task => 
+          task.id === newTask.id 
+            ? { ...task, status: 'uploading', progress: 10 }
+            : task
+        )
+      );
+
+      const imageUrl = await uploadImage(productImage);
+      console.log('Image uploaded:', imageUrl);
+
+      // 步骤2：调用工作流
       setTasks(prev => 
         prev.map(task => 
           task.id === newTask.id 
@@ -94,36 +159,55 @@ export default function Home() {
             : task
         )
       );
-    }, 1000);
 
-    setTimeout(() => {
+      const result = await generateVideo(
+        imageUrl,
+        coreSellingPoint,
+        speechDuration,
+        videoDuration,
+        language
+      );
+      console.log('Video generated:', result);
+
+      // 完成
       setTasks(prev => 
         prev.map(task => 
           task.id === newTask.id 
-            ? { ...task, progress: 60 }
+            ? { 
+                ...task, 
+                status: 'completed', 
+                progress: 100, 
+                videoUrl: result.videoUrl,
+                prompt: result.prompt,
+              }
             : task
         )
       );
-    }, 2000);
 
-    setTimeout(() => {
+      // 重置表单
+      setCoreSellingPoint('');
+      setProductImage(null);
+      setSpeechDuration('12');
+      setVideoDuration('15');
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+
+    } catch (error) {
+      console.error('Submit error:', error);
       setTasks(prev => 
         prev.map(task => 
           task.id === newTask.id 
-            ? { ...task, status: 'completed', progress: 100, videoUrl: '#' }
+            ? { 
+                ...task, 
+                status: 'failed', 
+                error: error instanceof Error ? error.message : '未知错误' 
+              }
             : task
         )
       );
+    } finally {
       setIsSubmitting(false);
-    }, 3000);
-
-    // 重置表单
-    setCoreSellingPoint('');
-    setProductImage(null);
-    setSpeechDuration('12');
-    setVideoDuration('15');
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
     }
   };
 
@@ -132,6 +216,8 @@ export default function Home() {
     switch (status) {
       case 'pending':
         return <Clock className="h-4 w-4 text-yellow-500" />;
+      case 'uploading':
+        return <Upload className="h-4 w-4 text-blue-400 animate-pulse" />;
       case 'processing':
         return <Loader2 className="h-4 w-4 text-blue-500 animate-spin" />;
       case 'completed':
@@ -146,8 +232,10 @@ export default function Home() {
     switch (status) {
       case 'pending':
         return '等待中';
+      case 'uploading':
+        return '上传图片中';
       case 'processing':
-        return '处理中';
+        return '生成视频中';
       case 'completed':
         return '已完成';
       case 'failed':
@@ -177,6 +265,24 @@ export default function Home() {
           <p className="text-muted-foreground text-sm">
             通过AI技术快速生成高质量视频内容，助力您的营销推广
           </p>
+        </div>
+
+        {/* 配置提示 */}
+        <div className="mb-6 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="h-5 w-5 text-yellow-500 flex-shrink-0 mt-0.5" />
+            <div className="text-sm">
+              <p className="text-yellow-200 font-medium mb-1">需要配置后端参数</p>
+              <p className="text-muted-foreground">
+                请提供以下信息完成集成：
+              </p>
+              <ul className="text-muted-foreground mt-2 space-y-1 list-disc list-inside">
+                <li>Coze API Key（在个人设置 → API访问令牌中创建）</li>
+                <li>工作流输入参数名称（在工作流开始节点查看）</li>
+                <li>工作流输出参数名称（在工作流结束节点查看）</li>
+              </ul>
+            </div>
+          </div>
         </div>
 
         {/* 双卡片布局 */}
@@ -219,7 +325,7 @@ export default function Home() {
                     <Upload className="h-4 w-4 mr-2" />
                     选择文件
                   </Button>
-                  <span className="text-sm text-muted-foreground">
+                  <span className="text-sm text-muted-foreground truncate max-w-[200px]">
                     {productImage ? productImage.name : '未选择任何文件'}
                   </span>
                 </div>
@@ -342,14 +448,31 @@ export default function Home() {
                       <p className="text-sm text-muted-foreground truncate mb-2">
                         {task.coreSellingPoint}
                       </p>
-                      {task.status === 'processing' && (
-                        <div className="w-full bg-secondary rounded-full h-1.5">
+                      
+                      {/* 进度条 */}
+                      {(task.status === 'uploading' || task.status === 'processing') && (
+                        <div className="w-full bg-secondary rounded-full h-1.5 mb-2">
                           <div
                             className="bg-blue-500 h-1.5 rounded-full transition-all duration-300"
                             style={{ width: `${task.progress}%` }}
                           />
                         </div>
                       )}
+
+                      {/* 错误信息 */}
+                      {task.status === 'failed' && task.error && (
+                        <p className="text-xs text-red-400 mb-2">{task.error}</p>
+                      )}
+
+                      {/* 生成的提示词 */}
+                      {task.status === 'completed' && task.prompt && (
+                        <div className="mb-2 p-2 bg-secondary rounded text-xs text-muted-foreground">
+                          <p className="font-medium text-foreground mb-1">生成的提示词：</p>
+                          <p className="line-clamp-3">{task.prompt}</p>
+                        </div>
+                      )}
+
+                      {/* 查看视频按钮 */}
                       {task.status === 'completed' && task.videoUrl && (
                         <Button
                           size="sm"
