@@ -381,14 +381,14 @@ export default function Home() {
 
   // 处理文件选择
   // 图片压缩函数
-  const compressImage = async (file: File, maxWidth: number = 1920, quality: number = 0.8): Promise<File> => {
+  const compressImage = async (file: File, maxWidth: number = 1280, quality: number = 0.7): Promise<File> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = (e) => {
         const img = new window.Image();
         img.onload = () => {
-          // 如果图片尺寸小于最大宽度，不需要压缩
-          if (img.width <= maxWidth && file.size <= 1024 * 1024) {
+          // 如果图片尺寸小于最大宽度且小于500KB，不需要压缩
+          if (img.width <= maxWidth && file.size <= 500 * 1024) {
             resolve(file);
             return;
           }
@@ -429,6 +429,7 @@ export default function Home() {
                 type: 'image/jpeg',
                 lastModified: Date.now(),
               });
+              console.log(`图片压缩完成: ${(file.size / 1024).toFixed(1)}KB → ${(compressedFile.size / 1024).toFixed(1)}KB`);
               resolve(compressedFile);
             },
             'image/jpeg',
@@ -557,12 +558,13 @@ export default function Home() {
   };
 
   // 上传图片到对象存储
-  const uploadImage = async (file: File): Promise<string> => {
+  const uploadImage = async (file: File, retryCount = 0): Promise<string> => {
     const formData = new FormData();
     formData.append('file', file);
 
+    // 移动端网络较慢，超时时间设置为90秒
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000);
+    const timeoutId = setTimeout(() => controller.abort(), 90000);
 
     try {
       const response = await fetch('/api/upload-image', {
@@ -574,24 +576,52 @@ export default function Home() {
       clearTimeout(timeoutId);
 
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
+        const errorText = await response.text().catch(() => 'Unknown error');
+        console.error('Upload failed:', response.status, errorText);
+        
+        // 服务器错误时重试（最多2次）
+        if (response.status >= 500 && retryCount < 2) {
+          console.log(`Retrying upload (${retryCount + 1}/2)...`);
+          await new Promise(resolve => setTimeout(resolve, 1000)); // 等待1秒后重试
+          return uploadImage(file, retryCount + 1);
+        }
+        
+        throw new Error(`上传失败 (HTTP ${response.status})，请稍后重试`);
       }
 
       const data = await response.json();
       
       if (!data.success) {
-        throw new Error(data.error || '图片上传失败');
+        // 业务错误时重试（最多1次）
+        if (retryCount < 1) {
+          console.log(`Retrying upload due to business error (${retryCount + 1}/1)...`);
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          return uploadImage(file, retryCount + 1);
+        }
+        throw new Error(data.error || '图片上传失败，请稍后重试');
       }
 
+      console.log('Image uploaded successfully:', data.url);
       return data.url;
     } catch (error) {
       clearTimeout(timeoutId);
       
       if (error instanceof Error && error.name === 'AbortError') {
-        throw new Error('图片上传超时，请检查网络后重试');
+        // 超时时重试
+        if (retryCount < 1) {
+          console.log(`Retrying upload due to timeout (${retryCount + 1}/1)...`);
+          return uploadImage(file, retryCount + 1);
+        }
+        throw new Error('图片上传超时，请检查网络连接后重试');
       }
       
       if (error instanceof TypeError && error.message === 'Failed to fetch') {
+        // 网络错误时重试
+        if (retryCount < 2) {
+          console.log(`Retrying upload due to network error (${retryCount + 1}/2)...`);
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          return uploadImage(file, retryCount + 1);
+        }
         throw new Error('网络连接失败，请检查网络后重试');
       }
       
