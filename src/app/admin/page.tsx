@@ -414,51 +414,51 @@ function AdminDashboard({ token, user, onLogout }: { token: string; user: AdminU
 
         {/* 数据概览 */}
         {activeTab === 'overview' && (
-          <div className="space-y-4 sm:space-y-6">
-            <h2 className="text-xl sm:text-2xl font-bold text-white">数据概览</h2>
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-white">数据概览</h2>
 
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-white/10">
-                <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-500/20 rounded-lg sm:rounded-xl flex items-center justify-center">
-                    <Users className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/10">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 bg-blue-500/20 rounded-xl flex items-center justify-center">
+                    <Users className="w-5 h-5 text-blue-400" />
                   </div>
-                  <span className="text-white/70 text-xs sm:text-sm">注册用户</span>
+                  <span className="text-white/70 text-sm">注册用户</span>
                 </div>
-                <p className="text-2xl sm:text-3xl font-bold text-white">{stats?.totalUsers || 0}</p>
+                <p className="text-3xl font-bold text-white">{stats?.totalUsers || 0}</p>
               </div>
 
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-white/10">
-                <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-green-500/20 rounded-lg sm:rounded-xl flex items-center justify-center">
-                    <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5 text-green-400" />
+              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/10">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 bg-green-500/20 rounded-xl flex items-center justify-center">
+                    <BarChart3 className="w-5 h-5 text-green-400" />
                   </div>
-                  <span className="text-white/70 text-xs sm:text-sm">生成任务</span>
+                  <span className="text-white/70 text-sm">生成任务</span>
                 </div>
-                <p className="text-2xl sm:text-3xl font-bold text-white">{stats?.totalTasks || 0}</p>
+                <p className="text-3xl font-bold text-white">{stats?.totalTasks || 0}</p>
               </div>
 
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-white/10">
-                <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-purple-500/20 rounded-lg sm:rounded-xl flex items-center justify-center">
-                    <Gift className="w-4 h-4 sm:w-5 sm:h-5 text-purple-400" />
+              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/10">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 bg-purple-500/20 rounded-xl flex items-center justify-center">
+                    <Gift className="w-5 h-5 text-purple-400" />
                   </div>
-                  <span className="text-white/70 text-xs sm:text-sm">邀请码使用</span>
+                  <span className="text-white/70 text-sm">邀请码使用</span>
                 </div>
-                <p className="text-xl sm:text-3xl font-bold text-white">
-                  {stats?.usedInviteCodes || 0}/{stats?.totalInviteCodes || 0}
+                <p className="text-3xl font-bold text-white">
+                  {stats?.usedInviteCodes || 0} / {stats?.totalInviteCodes || 0}
                 </p>
               </div>
 
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-white/10">
-                <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-orange-500/20 rounded-lg sm:rounded-xl flex items-center justify-center">
-                    <Ticket className="w-4 h-4 sm:w-5 sm:h-5 text-orange-400" />
+              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/10">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 bg-orange-500/20 rounded-xl flex items-center justify-center">
+                    <Ticket className="w-5 h-5 text-orange-400" />
                   </div>
-                  <span className="text-white/70 text-xs sm:text-sm">兑换码使用</span>
+                  <span className="text-white/70 text-sm">兑换码使用</span>
                 </div>
-                <p className="text-xl sm:text-3xl font-bold text-white">
-                  {stats?.usedRedemptionCodes || 0}/{stats?.totalRedemptionCodes || 0}
+                <p className="text-3xl font-bold text-white">
+                  {stats?.usedRedemptionCodes || 0} / {stats?.totalRedemptionCodes || 0}
                 </p>
               </div>
             </div>
@@ -467,50 +467,50 @@ function AdminDashboard({ token, user, onLogout }: { token: string; user: AdminU
 
         {/* 邀请码管理 */}
         {activeTab === 'invites' && (
-          <div className="space-y-4 sm:space-y-6">
-            <h2 className="text-xl sm:text-2xl font-bold text-white">邀请码管理</h2>
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-white">邀请码管理</h2>
 
             {/* 生成表单 */}
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-white/10">
-              <h3 className="text-base sm:text-lg font-semibold text-white mb-3 sm:mb-4">生成新邀请码</h3>
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/10">
+              <h3 className="text-lg font-semibold text-white mb-4">生成新邀请码</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div>
-                  <label className="text-white/70 text-xs sm:text-sm mb-1.5 sm:mb-2 block">数量</label>
+                  <label className="text-white/70 text-sm mb-2 block">数量</label>
                   <input
                     type="number"
                     value={generateCount}
                     onChange={(e) => setGenerateCount(Number(e.target.value))}
                     min={1}
                     max={1000}
-                    className="w-full h-9 sm:h-10 px-3 sm:px-4 bg-white/10 border border-white/20 rounded-lg sm:rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#4fa3d1]"
+                    className="w-full h-10 px-4 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-[#4fa3d1]"
                   />
                 </div>
                 <div>
-                  <label className="text-white/70 text-xs sm:text-sm mb-1.5 sm:mb-2 block">描述</label>
+                  <label className="text-white/70 text-sm mb-2 block">描述</label>
                   <input
                     type="text"
                     value={generateDescription}
                     onChange={(e) => setGenerateDescription(e.target.value)}
-                    placeholder="如：第一批"
-                    className="w-full h-9 sm:h-10 px-3 sm:px-4 bg-white/10 border border-white/20 rounded-lg sm:rounded-xl text-white text-sm placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#4fa3d1]"
+                    placeholder="如：第一批邀请码"
+                    className="w-full h-10 px-4 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#4fa3d1]"
                   />
                 </div>
                 <div>
-                  <label className="text-white/70 text-xs sm:text-sm mb-1.5 sm:mb-2 block">有效期（天）</label>
+                  <label className="text-white/70 text-sm mb-2 block">有效期（天）</label>
                   <input
                     type="number"
                     value={generateExpiresDays}
                     onChange={(e) => setGenerateExpiresDays(Number(e.target.value))}
                     min={1}
                     max={365}
-                    className="w-full h-9 sm:h-10 px-3 sm:px-4 bg-white/10 border border-white/20 rounded-lg sm:rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#4fa3d1]"
+                    className="w-full h-10 px-4 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-[#4fa3d1]"
                   />
                 </div>
-                <div className="flex items-end col-span-2 lg:col-span-1">
+                <div className="flex items-end">
                   <button
                     onClick={() => handleGenerateCodes('invite')}
                     disabled={isGenerating}
-                    className="w-full h-9 sm:h-10 bg-gradient-to-r from-[#4fa3d1] to-[#1a3a6b] text-white rounded-lg sm:rounded-xl font-semibold text-sm flex items-center justify-center gap-1.5 sm:gap-2 hover:opacity-90 transition-opacity disabled:opacity-50"
+                    className="w-full h-10 bg-gradient-to-r from-[#4fa3d1] to-[#1a3a6b] text-white rounded-xl font-semibold flex items-center justify-center gap-2 hover:opacity-90 transition-opacity disabled:opacity-50"
                   >
                     {isGenerating ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
@@ -525,9 +525,9 @@ function AdminDashboard({ token, user, onLogout }: { token: string; user: AdminU
 
             {/* 邀请码列表 */}
             <div className="bg-white/10 backdrop-blur-sm rounded-2xl border border-white/10 overflow-hidden">
-              <div className="p-3 sm:p-4 border-b border-white/10 flex items-center justify-between">
-                <h3 className="text-base sm:text-lg font-semibold text-white">邀请码列表</h3>
-                <div className="flex items-center gap-1.5 sm:gap-2">
+              <div className="p-4 border-b border-white/10 flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-white">邀请码列表</h3>
+                <div className="flex items-center gap-2">
                   <button
                     onClick={async () => {
                       if (!confirm('确定要删除所有已使用的邀请码吗？此操作不可恢复。')) return;
@@ -548,23 +548,20 @@ function AdminDashboard({ token, user, onLogout }: { token: string; user: AdminU
                         alert('删除失败');
                       }
                     }}
-                    className="px-2 sm:px-3 py-1 sm:py-1.5 bg-red-500/20 text-red-400 rounded-lg text-xs sm:text-sm hover:bg-red-500/30 transition-colors flex items-center gap-1 sm:gap-1.5"
+                    className="px-3 py-1.5 bg-red-500/20 text-red-400 rounded-lg text-sm hover:bg-red-500/30 transition-colors flex items-center gap-1.5"
                   >
-                    <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                    <span className="hidden sm:inline">删除已使用</span>
-                    <span className="sm:hidden">删除</span>
+                    <Trash2 className="w-4 h-4" />
+                    删除已使用
                   </button>
                   <button
                     onClick={loadInviteCodes}
-                    className="p-1.5 sm:p-2 hover:bg-white/10 rounded-lg transition-colors text-white/70 hover:text-white"
+                    className="p-2 hover:bg-white/10 rounded-lg transition-colors text-white/70 hover:text-white"
                   >
-                    <RefreshCw className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                    <RefreshCw className="w-4 h-4" />
                   </button>
                 </div>
               </div>
-              
-              {/* 桌面端表格 */}
-              <div className="hidden md:block overflow-x-auto">
+              <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-white/10">
@@ -621,106 +618,67 @@ function AdminDashboard({ token, user, onLogout }: { token: string; user: AdminU
                   </tbody>
                 </table>
               </div>
-              
-              {/* 移动端卡片列表 */}
-              <div className="md:hidden divide-y divide-white/10">
-                {inviteCodes.length === 0 ? (
-                  <div className="p-8 text-center text-white/50">暂无邀请码</div>
-                ) : (
-                  inviteCodes.map((code) => (
-                    <div key={code.id} className="p-3 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-white font-mono text-sm">{code.code}</span>
-                        <div className="flex items-center gap-2">
-                          {code.is_used ? (
-                            <span className="px-2 py-0.5 bg-red-500/20 text-red-400 text-xs rounded-full">已使用</span>
-                          ) : (
-                            <span className="px-2 py-0.5 bg-green-500/20 text-green-400 text-xs rounded-full">未使用</span>
-                          )}
-                          <button
-                            onClick={() => copyToClipboard(code.code, code.id)}
-                            className="p-1.5 hover:bg-white/10 rounded-lg transition-colors text-white/70"
-                          >
-                            {copiedId === code.id ? (
-                              <Check className="w-4 h-4 text-green-400" />
-                            ) : (
-                              <Copy className="w-4 h-4" />
-                            )}
-                          </button>
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between text-xs text-white/50">
-                        <span>{code.description || '无描述'}</span>
-                        <span>{formatDate(code.created_at)}</span>
-                      </div>
-                      {code.used_by_email && (
-                        <div className="text-xs text-white/70">使用者: {code.used_by_email}</div>
-                      )}
-                    </div>
-                  ))
-                )}
-              </div>
             </div>
           </div>
         )}
 
         {/* 兑换码管理 */}
         {activeTab === 'redemption' && (
-          <div className="space-y-4 sm:space-y-6">
-            <h2 className="text-xl sm:text-2xl font-bold text-white">兑换码管理</h2>
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-white">兑换码管理</h2>
 
             {/* 生成表单 */}
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-white/10">
-              <h3 className="text-base sm:text-lg font-semibold text-white mb-3 sm:mb-4">生成新兑换码</h3>
-              <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
+            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/10">
+              <h3 className="text-lg font-semibold text-white mb-4">生成新兑换码</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                 <div>
-                  <label className="text-white/70 text-xs sm:text-sm mb-1.5 sm:mb-2 block">数量</label>
+                  <label className="text-white/70 text-sm mb-2 block">数量</label>
                   <input
                     type="number"
                     value={generateCount}
                     onChange={(e) => setGenerateCount(Number(e.target.value))}
                     min={1}
                     max={1000}
-                    className="w-full h-9 sm:h-10 px-3 sm:px-4 bg-white/10 border border-white/20 rounded-lg sm:rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#4fa3d1]"
+                    className="w-full h-10 px-4 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-[#4fa3d1]"
                   />
                 </div>
                 <div>
-                  <label className="text-white/70 text-xs sm:text-sm mb-1.5 sm:mb-2 block">面额（次数）</label>
+                  <label className="text-white/70 text-sm mb-2 block">面额（次数）</label>
                   <input
                     type="number"
                     value={generateAmount}
                     onChange={(e) => setGenerateAmount(Number(e.target.value))}
                     min={1}
                     max={10000}
-                    className="w-full h-9 sm:h-10 px-3 sm:px-4 bg-white/10 border border-white/20 rounded-lg sm:rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#4fa3d1]"
+                    className="w-full h-10 px-4 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-[#4fa3d1]"
                   />
                 </div>
-                <div className="col-span-2 lg:col-span-1">
-                  <label className="text-white/70 text-xs sm:text-sm mb-1.5 sm:mb-2 block">描述</label>
+                <div>
+                  <label className="text-white/70 text-sm mb-2 block">描述</label>
                   <input
                     type="text"
                     value={generateDescription}
                     onChange={(e) => setGenerateDescription(e.target.value)}
                     placeholder="如：100次套餐"
-                    className="w-full h-9 sm:h-10 px-3 sm:px-4 bg-white/10 border border-white/20 rounded-lg sm:rounded-xl text-white text-sm placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#4fa3d1]"
+                    className="w-full h-10 px-4 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#4fa3d1]"
                   />
                 </div>
                 <div>
-                  <label className="text-white/70 text-xs sm:text-sm mb-1.5 sm:mb-2 block">有效期</label>
+                  <label className="text-white/70 text-sm mb-2 block">有效期（天）</label>
                   <input
                     type="number"
                     value={generateExpiresDays}
                     onChange={(e) => setGenerateExpiresDays(Number(e.target.value))}
                     min={1}
                     max={365}
-                    className="w-full h-9 sm:h-10 px-3 sm:px-4 bg-white/10 border border-white/20 rounded-lg sm:rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#4fa3d1]"
+                    className="w-full h-10 px-4 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-[#4fa3d1]"
                   />
                 </div>
-                <div className="flex items-end col-span-2 lg:col-span-1">
+                <div className="flex items-end">
                   <button
                     onClick={() => handleGenerateCodes('redemption')}
                     disabled={isGenerating}
-                    className="w-full h-9 sm:h-10 bg-gradient-to-r from-[#4fa3d1] to-[#1a3a6b] text-white rounded-lg sm:rounded-xl font-semibold text-sm flex items-center justify-center gap-1.5 sm:gap-2 hover:opacity-90 transition-opacity disabled:opacity-50"
+                    className="w-full h-10 bg-gradient-to-r from-[#4fa3d1] to-[#1a3a6b] text-white rounded-xl font-semibold flex items-center justify-center gap-2 hover:opacity-90 transition-opacity disabled:opacity-50"
                   >
                     {isGenerating ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
@@ -735,9 +693,9 @@ function AdminDashboard({ token, user, onLogout }: { token: string; user: AdminU
 
             {/* 兑换码列表 */}
             <div className="bg-white/10 backdrop-blur-sm rounded-2xl border border-white/10 overflow-hidden">
-              <div className="p-3 sm:p-4 border-b border-white/10 flex items-center justify-between">
-                <h3 className="text-base sm:text-lg font-semibold text-white">兑换码列表</h3>
-                <div className="flex items-center gap-1.5 sm:gap-2">
+              <div className="p-4 border-b border-white/10 flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-white">兑换码列表</h3>
+                <div className="flex items-center gap-2">
                   <button
                     onClick={async () => {
                       if (!confirm('确定要删除所有已使用的兑换码吗？此操作不可恢复。')) return;
@@ -758,23 +716,20 @@ function AdminDashboard({ token, user, onLogout }: { token: string; user: AdminU
                         alert('删除失败');
                       }
                     }}
-                    className="px-2 sm:px-3 py-1 sm:py-1.5 bg-red-500/20 text-red-400 rounded-lg text-xs sm:text-sm hover:bg-red-500/30 transition-colors flex items-center gap-1 sm:gap-1.5"
+                    className="px-3 py-1.5 bg-red-500/20 text-red-400 rounded-lg text-sm hover:bg-red-500/30 transition-colors flex items-center gap-1.5"
                   >
-                    <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                    <span className="hidden sm:inline">删除已使用</span>
-                    <span className="sm:hidden">删除</span>
+                    <Trash2 className="w-4 h-4" />
+                    删除已使用
                   </button>
                   <button
                     onClick={loadRedemptionCodes}
-                    className="p-1.5 sm:p-2 hover:bg-white/10 rounded-lg transition-colors text-white/70 hover:text-white"
+                    className="p-2 hover:bg-white/10 rounded-lg transition-colors text-white/70 hover:text-white"
                   >
-                    <RefreshCw className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                    <RefreshCw className="w-4 h-4" />
                   </button>
                 </div>
               </div>
-              
-              {/* 桌面端表格 */}
-              <div className="hidden md:block overflow-x-auto">
+              <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-white/10">
@@ -833,43 +788,6 @@ function AdminDashboard({ token, user, onLogout }: { token: string; user: AdminU
                   </tbody>
                 </table>
               </div>
-              
-              {/* 移动端卡片列表 */}
-              <div className="md:hidden divide-y divide-white/10">
-                {redemptionCodes.length === 0 ? (
-                  <div className="p-8 text-center text-white/50">暂无兑换码</div>
-                ) : (
-                  redemptionCodes.map((code) => (
-                    <div key={code.id} className="p-3 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-white font-mono text-sm">{code.code}</span>
-                        <div className="flex items-center gap-2">
-                          <span className="text-[#4fa3d1] font-semibold text-sm">{code.amount}次</span>
-                          {code.is_used ? (
-                            <span className="px-2 py-0.5 bg-red-500/20 text-red-400 text-xs rounded-full">已使用</span>
-                          ) : (
-                            <span className="px-2 py-0.5 bg-green-500/20 text-green-400 text-xs rounded-full">未使用</span>
-                          )}
-                          <button
-                            onClick={() => copyToClipboard(code.code, code.id)}
-                            className="p-1.5 hover:bg-white/10 rounded-lg transition-colors text-white/70"
-                          >
-                            {copiedId === code.id ? (
-                              <Check className="w-4 h-4 text-green-400" />
-                            ) : (
-                              <Copy className="w-4 h-4" />
-                            )}
-                          </button>
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between text-xs text-white/50">
-                        <span>{code.description || '无描述'}</span>
-                        <span>{formatDate(code.created_at)}</span>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
             </div>
           </div>
         )}
@@ -877,11 +795,10 @@ function AdminDashboard({ token, user, onLogout }: { token: string; user: AdminU
         {/* 用户管理 */}
         {activeTab === 'users' && (
           <div className="space-y-6">
-            <h2 className="text-xl sm:text-2xl font-bold text-white">用户管理</h2>
+            <h2 className="text-2xl font-bold text-white">用户管理</h2>
 
             <div className="bg-white/10 backdrop-blur-sm rounded-2xl border border-white/10 overflow-hidden">
-              {/* 桌面端表格 */}
-              <div className="hidden md:block overflow-x-auto">
+              <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-white/10">
@@ -930,33 +847,6 @@ function AdminDashboard({ token, user, onLogout }: { token: string; user: AdminU
                     )}
                   </tbody>
                 </table>
-              </div>
-              
-              {/* 移动端卡片列表 */}
-              <div className="md:hidden divide-y divide-white/10">
-                {users.length === 0 ? (
-                  <div className="p-8 text-center text-white/50">暂无用户</div>
-                ) : (
-                  users.map((u) => (
-                    <div key={u.id} className="p-3 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="text-white text-sm">{u.email || '未知邮箱'}</span>
-                          {u.role === 'admin' ? (
-                            <span className="px-2 py-0.5 bg-purple-500/20 text-purple-400 text-xs rounded-full">管理员</span>
-                          ) : (
-                            <span className="px-2 py-0.5 bg-blue-500/20 text-blue-400 text-xs rounded-full">用户</span>
-                          )}
-                        </div>
-                        <span className="text-[#4fa3d1] font-semibold text-sm">{u.balance}次</span>
-                      </div>
-                      <div className="flex items-center justify-between text-xs text-white/50">
-                        <span>已用 {u.total_used}次 · 已购 {u.total_purchased}次</span>
-                        <span>{formatDate(u.created_at)}</span>
-                      </div>
-                    </div>
-                  ))
-                )}
               </div>
             </div>
           </div>
@@ -1121,83 +1011,83 @@ function HealthMonitor({ token }: { token: string }) {
   const storageWarning = healthData?.database?.storage?.warning;
 
   return (
-    <div className="space-y-4 sm:space-y-6">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl sm:text-2xl font-bold text-white">系统健康监控</h2>
+        <h2 className="text-2xl font-bold text-white">系统健康监控</h2>
         <button
           onClick={loadHealthData}
-          className="p-1.5 sm:p-2 hover:bg-white/10 rounded-lg transition-colors text-white/70 hover:text-white"
+          className="p-2 hover:bg-white/10 rounded-lg transition-colors text-white/70 hover:text-white"
         >
-          <RefreshCw className="w-4 h-4 sm:w-5 sm:h-5" />
+          <RefreshCw className="w-5 h-5" />
         </button>
       </div>
 
       {/* 存储告警 */}
       {storageWarning && (
-        <div className="bg-orange-500/20 border border-orange-500/30 rounded-xl sm:rounded-2xl p-3 sm:p-4 flex items-center gap-2 sm:gap-3">
-          <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-orange-400 flex-shrink-0" />
-          <span className="text-orange-200 text-xs sm:text-sm">{storageWarning}</span>
+        <div className="bg-orange-500/20 border border-orange-500/30 rounded-2xl p-4 flex items-center gap-3">
+          <AlertTriangle className="w-5 h-5 text-orange-400" />
+          <span className="text-orange-200">{storageWarning}</span>
         </div>
       )}
 
       {/* 快捷操作 */}
-      <div className="grid grid-cols-2 gap-3 sm:gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <button
           onClick={handleBackup}
           disabled={isBackingUp}
-          className="bg-white/10 backdrop-blur-sm rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-white/10 hover:bg-white/20 transition-colors text-left group"
+          className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/10 hover:bg-white/20 transition-colors text-left group"
         >
-          <div className="flex items-center gap-2 sm:gap-3 mb-1 sm:mb-2">
-            <Download className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400" />
-            <span className="text-white font-semibold text-sm sm:text-base">数据备份</span>
+          <div className="flex items-center gap-3 mb-2">
+            <Download className="w-5 h-5 text-blue-400" />
+            <span className="text-white font-semibold">数据备份</span>
           </div>
-          <p className="text-white/60 text-xs sm:text-sm">导出所有数据为 JSON</p>
+          <p className="text-white/60 text-sm">导出所有数据为 JSON 文件</p>
           {isBackingUp && <Loader2 className="w-4 h-4 text-white animate-spin mt-2" />}
         </button>
 
         <button
           onClick={handleCleanup}
           disabled={isCleaningUp}
-          className="bg-white/10 backdrop-blur-sm rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-white/10 hover:bg-white/20 transition-colors text-left group"
+          className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/10 hover:bg-white/20 transition-colors text-left group"
         >
-          <div className="flex items-center gap-2 sm:gap-3 mb-1 sm:mb-2">
-            <Trash2 className="w-4 h-4 sm:w-5 sm:h-5 text-red-400" />
-            <span className="text-white font-semibold text-sm sm:text-base">数据清理</span>
+          <div className="flex items-center gap-3 mb-2">
+            <Trash2 className="w-5 h-5 text-red-400" />
+            <span className="text-white font-semibold">数据清理</span>
           </div>
-          <p className="text-white/60 text-xs sm:text-sm">清理超过30天的记录</p>
+          <p className="text-white/60 text-sm">清理超过30天的历史记录</p>
           {isCleaningUp && <Loader2 className="w-4 h-4 text-white animate-spin mt-2" />}
         </button>
       </div>
 
       {/* 数据库状态 */}
-      <div className="bg-white/10 backdrop-blur-sm rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-white/10">
-        <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
-          <Database className="w-4 h-4 sm:w-5 sm:h-5 text-green-400" />
-          <h3 className="text-base sm:text-lg font-semibold text-white">数据库状态</h3>
+      <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/10">
+        <div className="flex items-center gap-3 mb-4">
+          <Database className="w-5 h-5 text-green-400" />
+          <h3 className="text-lg font-semibold text-white">数据库状态</h3>
         </div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 mb-4 sm:mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           {healthData?.database?.tables && Object.entries(healthData.database.tables).map(([name, info]) => (
-            <div key={name} className="bg-white/5 rounded-lg sm:rounded-xl p-3 sm:p-4">
-              <p className="text-white/70 text-xs sm:text-sm mb-0.5 sm:mb-1">{name}</p>
-              <p className="text-lg sm:text-xl font-bold text-white">{info.count} 条</p>
+            <div key={name} className="bg-white/5 rounded-xl p-4">
+              <p className="text-white/70 text-sm mb-1">{name}</p>
+              <p className="text-xl font-bold text-white">{info.count} 条</p>
               <p className="text-white/50 text-xs">{info.estimatedSize}</p>
             </div>
           ))}
         </div>
 
         {/* 存储使用情况 */}
-        <div className="bg-white/5 rounded-lg sm:rounded-xl p-3 sm:p-4">
-          <div className="flex items-center justify-between mb-1.5 sm:mb-2">
-            <div className="flex items-center gap-1.5 sm:gap-2">
-              <HardDrive className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white/70" />
-              <span className="text-white/70 text-xs sm:text-sm">存储使用</span>
+        <div className="bg-white/5 rounded-xl p-4">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <HardDrive className="w-4 h-4 text-white/70" />
+              <span className="text-white/70 text-sm">存储使用</span>
             </div>
-            <span className="text-white font-semibold text-xs sm:text-sm">
+            <span className="text-white font-semibold">
               {healthData?.database?.storage?.used} / {healthData?.database?.storage?.max}
             </span>
           </div>
-          <div className="w-full h-1.5 sm:h-2 bg-white/10 rounded-full overflow-hidden">
+          <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
             <div
               className={`h-full rounded-full transition-all ${
                 parseFloat(healthData?.database?.storage?.usagePercent || '0') > 80
@@ -1207,42 +1097,42 @@ function HealthMonitor({ token }: { token: string }) {
               style={{ width: healthData?.database?.storage?.usagePercent }}
             />
           </div>
-          <p className="text-white/50 text-xs mt-1.5 sm:mt-2">
+          <p className="text-white/50 text-xs mt-2">
             使用率：{healthData?.database?.storage?.usagePercent}
           </p>
         </div>
       </div>
 
       {/* 限流状态 */}
-      <div className="bg-white/10 backdrop-blur-sm rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-white/10">
-        <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
-          <Activity className="w-4 h-4 sm:w-5 sm:h-5 text-purple-400" />
-          <h3 className="text-base sm:text-lg font-semibold text-white">请求限流状态</h3>
+      <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/10">
+        <div className="flex items-center gap-3 mb-4">
+          <Activity className="w-5 h-5 text-purple-400" />
+          <h3 className="text-lg font-semibold text-white">请求限流状态</h3>
         </div>
 
-        <div className="grid grid-cols-3 gap-2 sm:gap-4">
-          <div className="bg-white/5 rounded-lg sm:rounded-xl p-3 sm:p-4">
-            <p className="text-white/70 text-xs sm:text-sm mb-0.5 sm:mb-1">活跃限流</p>
-            <p className="text-lg sm:text-xl font-bold text-white">{healthData?.rateLimit?.activeEntries || 0}</p>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="bg-white/5 rounded-xl p-4">
+            <p className="text-white/70 text-sm mb-1">活跃限流记录</p>
+            <p className="text-xl font-bold text-white">{healthData?.rateLimit?.activeEntries || 0}</p>
           </div>
-          <div className="bg-white/5 rounded-lg sm:rounded-xl p-3 sm:p-4">
-            <p className="text-white/70 text-xs sm:text-sm mb-0.5 sm:mb-1">总余额</p>
-            <p className="text-lg sm:text-xl font-bold text-white">{healthData?.business?.totalBalance || 0}</p>
+          <div className="bg-white/5 rounded-xl p-4">
+            <p className="text-white/70 text-sm mb-1">总余额（次）</p>
+            <p className="text-xl font-bold text-white">{healthData?.business?.totalBalance || 0}</p>
           </div>
-          <div className="bg-white/5 rounded-lg sm:rounded-xl p-3 sm:p-4">
-            <p className="text-white/70 text-xs sm:text-sm mb-0.5 sm:mb-1">总使用</p>
-            <p className="text-lg sm:text-xl font-bold text-white">{healthData?.business?.totalUsed || 0}</p>
+          <div className="bg-white/5 rounded-xl p-4">
+            <p className="text-white/70 text-sm mb-1">总使用量（次）</p>
+            <p className="text-xl font-bold text-white">{healthData?.business?.totalUsed || 0}</p>
           </div>
         </div>
 
         {healthData?.rateLimit?.topUsers && healthData.rateLimit.topUsers.length > 0 && (
-          <div className="mt-3 sm:mt-4">
-            <p className="text-white/70 text-xs sm:text-sm mb-1.5 sm:mb-2">高频请求用户</p>
-            <div className="space-y-1.5 sm:space-y-2">
+          <div className="mt-4">
+            <p className="text-white/70 text-sm mb-2">高频请求用户</p>
+            <div className="space-y-2">
               {healthData.rateLimit.topUsers.slice(0, 5).map((user, idx) => (
-                <div key={idx} className="flex items-center justify-between bg-white/5 rounded-lg px-2.5 sm:px-3 py-1.5 sm:py-2">
-                  <span className="text-white/70 text-xs sm:text-sm truncate mr-2">{user.key}</span>
-                  <span className="text-white font-medium text-xs sm:text-sm flex-shrink-0">{user.count} 次/分钟</span>
+                <div key={idx} className="flex items-center justify-between bg-white/5 rounded-lg px-3 py-2">
+                  <span className="text-white/70 text-sm">{user.key}</span>
+                  <span className="text-white font-medium">{user.count} 次/分钟</span>
                 </div>
               ))}
             </div>
@@ -1251,24 +1141,24 @@ function HealthMonitor({ token }: { token: string }) {
       </div>
 
       {/* 维护建议 */}
-      <div className="bg-white/10 backdrop-blur-sm rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-white/10">
-        <h3 className="text-base sm:text-lg font-semibold text-white mb-3 sm:mb-4">系统建议</h3>
-        <ul className="space-y-1.5 sm:space-y-2">
+      <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/10">
+        <h3 className="text-lg font-semibold text-white mb-4">系统建议</h3>
+        <ul className="space-y-2">
           {healthData?.recommendations?.map((rec, idx) => (
-            <li key={idx} className="text-white/70 text-xs sm:text-sm flex items-center gap-2">
-              <span className="w-1.5 h-1.5 bg-blue-400 rounded-full flex-shrink-0" />
+            <li key={idx} className="text-white/70 text-sm flex items-center gap-2">
+              <span className="w-1.5 h-1.5 bg-blue-400 rounded-full" />
               {rec as string}
             </li>
           ))}
         </ul>
 
         {maintStats?.recommendations && Array.isArray(maintStats.recommendations) && (
-          <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-white/10">
-            <p className="text-white/70 text-xs sm:text-sm mb-1.5 sm:mb-2">优化建议</p>
-            <ul className="space-y-1.5 sm:space-y-2">
+          <div className="mt-4 pt-4 border-t border-white/10">
+            <p className="text-white/70 text-sm mb-2">优化建议</p>
+            <ul className="space-y-2">
               {((maintStats.recommendations as string[]) || []).filter((r): r is string => Boolean(r)).map((rec, idx) => (
-                <li key={idx} className="text-orange-300/80 text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2">
-                  <AlertTriangle className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+                <li key={idx} className="text-orange-300/80 text-sm flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4" />
                   {rec}
                 </li>
               ))}
