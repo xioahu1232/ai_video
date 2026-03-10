@@ -380,25 +380,47 @@ export default function Home() {
   }, [isSubmitting, currentStepIndex, stepProgress]);
 
   // 处理文件选择
-  // 图片压缩函数
-  const compressImage = async (file: File, maxWidth: number = 1280, quality: number = 0.7): Promise<File> => {
+  // 图片压缩函数 - 支持5MB高清图片
+  const compressImage = async (file: File): Promise<File> => {
+    const MAX_SIZE = 5 * 1024 * 1024; // 5MB上限
+    const HIGH_QUALITY_MAX_WIDTH = 2048; // 高清模式下最大宽度
+    const COMPRESSED_MAX_WIDTH = 1280; // 压缩模式下最大宽度
+    const HIGH_QUALITY = 0.85; // 高清模式质量
+    const COMPRESSED_QUALITY = 0.75; // 压缩模式质量
+    
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = (e) => {
         const img = new window.Image();
         img.onload = () => {
-          // 如果图片尺寸小于最大宽度且小于500KB，不需要压缩
-          if (img.width <= maxWidth && file.size <= 500 * 1024) {
+          const fileSizeMB = file.size / (1024 * 1024);
+          
+          // 5MB以内的图片：宽度不超过2048px则不压缩，保留高清画质
+          if (file.size <= MAX_SIZE && img.width <= HIGH_QUALITY_MAX_WIDTH) {
+            console.log(`高清图片无需压缩: ${fileSizeMB.toFixed(2)}MB, ${img.width}x${img.height}`);
             resolve(file);
             return;
           }
           
-          // 计算新尺寸
+          // 超过5MB或宽度超过2048px：需要压缩
           let newWidth = img.width;
           let newHeight = img.height;
-          if (img.width > maxWidth) {
-            newWidth = maxWidth;
-            newHeight = (img.height * maxWidth) / img.width;
+          let quality: number;
+          
+          if (file.size <= MAX_SIZE) {
+            // 5MB以内但宽度超大：压缩到2048px，高质量
+            newWidth = HIGH_QUALITY_MAX_WIDTH;
+            newHeight = (img.height * HIGH_QUALITY_MAX_WIDTH) / img.width;
+            quality = HIGH_QUALITY;
+            console.log(`宽度超标压缩: ${img.width}px → ${newWidth}px, 质量${quality}`);
+          } else {
+            // 超过5MB：压缩到1280px，中等质量
+            if (img.width > COMPRESSED_MAX_WIDTH) {
+              newWidth = COMPRESSED_MAX_WIDTH;
+              newHeight = (img.height * COMPRESSED_MAX_WIDTH) / img.width;
+            }
+            quality = COMPRESSED_QUALITY;
+            console.log(`大文件压缩: ${fileSizeMB.toFixed(2)}MB, ${img.width}px → ${newWidth}px, 质量${quality}`);
           }
           
           // 创建 canvas 压缩
@@ -422,6 +444,7 @@ export default function Home() {
               }
               // 如果压缩后更大，返回原文件
               if (blob.size >= file.size) {
+                console.log('压缩后更大，保留原文件');
                 resolve(file);
                 return;
               }
@@ -429,7 +452,7 @@ export default function Home() {
                 type: 'image/jpeg',
                 lastModified: Date.now(),
               });
-              console.log(`图片压缩完成: ${(file.size / 1024).toFixed(1)}KB → ${(compressedFile.size / 1024).toFixed(1)}KB`);
+              console.log(`压缩完成: ${(file.size / 1024 / 1024).toFixed(2)}MB → ${(compressedFile.size / 1024 / 1024).toFixed(2)}MB (节省${Math.round((1 - compressedFile.size / file.size) * 100)}%)`);
               resolve(compressedFile);
             },
             'image/jpeg',
