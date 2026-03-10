@@ -266,6 +266,18 @@ export async function isAdmin(
 }
 
 /**
+ * 退款（当工作流执行失败时返还余额）
+ */
+export async function refundBalance(
+  supabase: SupabaseClient,
+  userId: string,
+  amount: number = 1
+): Promise<AddBalanceResult> {
+  console.log(`[Refund] Refunding ${amount} to user ${userId}`);
+  return addBalance(supabase, userId, amount);
+}
+
+/**
  * 辅助函数：延迟
  */
 function sleep(ms: number): Promise<void> {

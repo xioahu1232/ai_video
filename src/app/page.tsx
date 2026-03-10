@@ -118,6 +118,7 @@ interface Task {
   starred?: boolean;
   videoDuration?: string;
   expiresAt?: string; // 过期时间（未收藏的记录48小时后过期）
+  processingTime?: number; // 处理耗时（秒）
 }
 
 export default function Home() {
@@ -647,7 +648,13 @@ export default function Home() {
           ctx.drawImage(img, 0, 0, newWidth, newHeight);
           
           // 递归压缩函数：确保最终文件不超过800KB
-          const compressWithQuality = (currentQuality: number, attempt: number = 1): void => {
+          // 🚀 优化：优先使用 WebP 格式（比 JPEG 小 25-35%）
+          const compressWithQuality = (currentQuality: number, attempt: number = 1, useWebP: boolean = true): void => {
+            // 检测浏览器是否支持 WebP
+            const supportsWebP = useWebP && typeof canvas.toBlob === 'function';
+            const outputFormat = supportsWebP ? 'image/webp' : 'image/jpeg';
+            const fileExtension = supportsWebP ? '.webp' : '.jpg';
+            
             canvas.toBlob(
               (blob) => {
                 if (!blob) {
@@ -660,7 +667,14 @@ export default function Home() {
                 if (blob.size > SAFE_UPLOAD_SIZE && currentQuality > 0.4 && attempt < 5) {
                   const newQuality = currentQuality - 0.1;
                   console.log(`[压缩] 仍超标(${(blob.size/1024).toFixed(0)}KB)，降低质量: ${currentQuality}→${newQuality}`);
-                  compressWithQuality(newQuality, attempt + 1);
+                  compressWithQuality(newQuality, attempt + 1, useWebP);
+                  return;
+                }
+                
+                // 如果 WebP 仍超标，尝试 JPEG
+                if (blob.size > SAFE_UPLOAD_SIZE && useWebP && attempt < 3) {
+                  console.log('[压缩] WebP仍超标，尝试JPEG格式');
+                  compressWithQuality(0.75, attempt + 1, false);
                   return;
                 }
                 
@@ -670,7 +684,7 @@ export default function Home() {
                   canvas.width = Math.round(newWidth * 0.8);
                   canvas.height = Math.round(newHeight * 0.8);
                   ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                  compressWithQuality(0.5, attempt + 1);
+                  compressWithQuality(0.5, attempt + 1, useWebP);
                   return;
                 }
                 
@@ -681,14 +695,14 @@ export default function Home() {
                   return;
                 }
                 
-                const compressedFile = new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), {
-                  type: 'image/jpeg',
+                const compressedFile = new File([blob], file.name.replace(/\.[^.]+$/, fileExtension), {
+                  type: outputFormat,
                   lastModified: Date.now(),
                 });
-                console.log(`[压缩] 完成: ${(file.size / 1024).toFixed(0)}KB → ${(compressedFile.size / 1024).toFixed(0)}KB (节省${Math.round((1 - compressedFile.size / file.size) * 100)}%)`);
+                console.log(`[压缩] 完成: ${(file.size / 1024).toFixed(0)}KB → ${(compressedFile.size / 1024).toFixed(0)}KB (${outputFormat}, 节省${Math.round((1 - compressedFile.size / file.size) * 100)}%)`);
                 resolve(compressedFile);
               },
-              'image/jpeg',
+              outputFormat,
               currentQuality
             );
           };
@@ -931,7 +945,113 @@ export default function Home() {
     }
   };
 
-  // 调用工作流生成视频提示词
+  // 流式生成视频提示词（优先使用）
+  const generatePromptStream = async (
+    imageUrl: string,
+    sellingPoint: string,
+    speechDur: string,
+    videoDur: string,
+    lang: string,
+    taskId: string,
+    onProgress: (message: string, progress?: number) => void
+  ): Promise<{ sora?: string; seedance?: string }> => {
+    console.log('[GenerateStream] Starting stream request...');
+    
+    const response = await fetch('/api/generate-video-stream', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+        'Accept': 'text/event-stream',
+      },
+      body: JSON.stringify({
+        coreSellingPoint: sellingPoint,
+        productImageUrl: imageUrl,
+        speechDuration: speechDur,
+        videoDuration: videoDur,
+        language: lang,
+        taskId,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: '请求失败' }));
+      throw new Error(errorData.error || `HTTP ${response.status}`);
+    }
+
+    const reader = response.body?.getReader();
+    if (!reader) {
+      throw new Error('无法读取响应流');
+    }
+
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let result: { sora?: string; seedance?: string } = {};
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        
+        if (done) {
+          console.log('[GenerateStream] Stream completed');
+          break;
+        }
+
+        buffer += decoder.decode(value, { stream: true });
+        
+        // 解析 SSE 数据
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (line.startsWith('event:')) {
+            // 跳过事件类型行
+            continue;
+          }
+          if (line.startsWith('data:')) {
+            try {
+              const data = JSON.parse(line.slice(5).trim());
+              console.log('[GenerateStream] Received:', data);
+
+              if (data.message && !data.sora && !data.seedance) {
+                // 进度消息
+                onProgress(data.message, data.progress);
+              }
+              
+              if (data.sora !== undefined || data.seedance !== undefined) {
+                // 最终结果
+                result = {
+                  sora: data.sora || result.sora,
+                  seedance: data.seedance || result.seedance,
+                };
+              }
+              
+              if (data.error) {
+                throw new Error(data.error);
+              }
+            } catch (parseError) {
+              // 如果解析失败，可能不是 JSON
+              if (parseError instanceof SyntaxError) {
+                console.log('[GenerateStream] Non-JSON data:', line);
+              } else {
+                throw parseError;
+              }
+            }
+          }
+        }
+      }
+    } finally {
+      reader.releaseLock();
+    }
+
+    if (!result.sora && !result.seedance) {
+      throw new Error('未收到有效结果');
+    }
+
+    return result;
+  };
+
+  // 调用工作流生成视频提示词（普通模式，作为备用）
   const generatePrompt = async (
     imageUrl: string,
     sellingPoint: string,
@@ -1041,6 +1161,9 @@ export default function Home() {
     setCurrentStepIndex(0);
     setStepProgress(0);
     setOverallProgress(0);
+    
+    // 🕐 记录开始时间
+    const startTime = Date.now();
     
     const newTask: Task = {
       id: Date.now().toString(),
@@ -1164,19 +1287,58 @@ export default function Home() {
         speechDuration
       });
 
-      const result = await generatePrompt(
-        imageUrl,
-        coreSellingPoint,
-        speechDuration,
-        videoDuration,
-        language
-      );
+      // 🚀 优化：优先尝试流式 API
+      let result: { sora?: string; seedance?: string; balance?: number };
+      let useStreamMode = true;
+      
+      // 流式进度回调
+      const onStreamProgress = (message: string, progress?: number) => {
+        console.log('[StreamProgress]', message, progress);
+        // 更新动态文字
+        setDynamicText(message);
+        // 更新进度
+        if (progress !== undefined) {
+          setStepProgress(Math.min(progress, 95));
+          setOverallProgress(Math.min(20 + progress * 0.8, 99));
+        }
+      };
+
+      try {
+        console.log('[Generate] Trying stream mode first...');
+        result = await generatePromptStream(
+          imageUrl,
+          coreSellingPoint,
+          speechDuration,
+          videoDuration,
+          language,
+          taskId,
+          onStreamProgress
+        );
+        console.log('[Generate] Stream mode success:', result);
+      } catch (streamError) {
+        console.warn('[Generate] Stream mode failed, falling back to normal mode:', streamError);
+        useStreamMode = false;
+        
+        // 回退到普通模式
+        result = await generatePrompt(
+          imageUrl,
+          coreSellingPoint,
+          speechDuration,
+          videoDuration,
+          language
+        );
+        console.log('[Generate] Normal mode success:', result);
+      }
 
       // 完成
       clearInterval(stepInterval);
       setCurrentStepIndex(PROCESSING_STEPS.length - 1);
       setStepProgress(100);
       setOverallProgress(100);
+
+      // 🕐 计算耗时
+      const processingTime = Math.round((Date.now() - startTime) / 1000);
+      console.log(`[Generate] Total processing time: ${processingTime}s`);
 
       // 更新任务为完成状态
       const completedTask = {
@@ -1185,6 +1347,7 @@ export default function Home() {
         sora: result.sora,
         seedance: result.seedance,
         imageUrl: imageUrl,
+        processingTime,
       };
 
       // 更新数据库中的任务
