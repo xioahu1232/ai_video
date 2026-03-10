@@ -147,7 +147,7 @@ export default function Home() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   // AI 建议卖点状态
-  const [aiSuggestions, setAiSuggestions] = useState<{ zh: string; en: string }[]>([]);
+  const [aiSuggestion, setAiSuggestion] = useState<string>(''); // 完整的卖点建议
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [productType, setProductType] = useState<string>('');
   
@@ -752,7 +752,7 @@ export default function Home() {
     if (!imageUrl) return;
 
     setIsAnalyzing(true);
-    setAiSuggestions([]);
+    setAiSuggestion('');
     setProductType('');
 
     try {
@@ -778,15 +778,14 @@ export default function Home() {
         },
         body: JSON.stringify({
           imageBase64: base64,
-          language: 'zh', // 始终使用中文分析
         }),
       });
 
       const data = await apiResponse.json();
 
       if (data.success) {
-        console.log('[AI] Analysis complete:', data.suggestions);
-        setAiSuggestions(data.suggestions || []);
+        console.log('[AI] Analysis complete:', data.result);
+        setAiSuggestion(data.result || '');
         setProductType(data.productType || '');
       } else {
         console.error('[AI] Analysis failed:', data.error);
@@ -798,19 +797,13 @@ export default function Home() {
     }
   };
 
-  // 采纳 AI 建议的卖点（使用中文版本）
-  const adoptSuggestion = (suggestion: { zh: string; en: string }) => {
-    // 使用中文版本填入输入框
-    const textToUse = suggestion.zh;
-    
-    // 如果已有内容，追加；否则直接替换
-    if (coreSellingPoint.trim()) {
-      setCoreSellingPoint(prev => prev + '，' + textToUse);
-    } else {
-      setCoreSellingPoint(textToUse);
-    }
-    // 清空建议列表
-    setAiSuggestions([]);
+  // 采纳 AI 建议的卖点
+  const adoptSuggestion = () => {
+    if (!aiSuggestion) return;
+    // 直接替换填入
+    setCoreSellingPoint(aiSuggestion);
+    // 清空建议
+    setAiSuggestion('');
   };
 
   // 移除图片
@@ -1833,49 +1826,46 @@ ${'='.repeat(50)}`;
               </div>
 
               {/* AI 建议卖点 */}
-              {(isAnalyzing || aiSuggestions.length > 0) && (
+              {(isAnalyzing || aiSuggestion) && (
                 <div className="ai-suggestions-card">
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center">
-                      <Sparkles className="w-4 h-4 text-white" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-gray-800">AI 智能分析</p>
-                      {productType && (
-                        <p className="text-xs text-gray-500">识别为：{productType}</p>
-                      )}
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center">
+                        <Sparkles className="w-4 h-4 text-white" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-gray-800">AI 智能分析</p>
+                        {productType && (
+                          <p className="text-xs text-gray-500">识别为：{productType}</p>
+                        )}
+                      </div>
                     </div>
                   </div>
 
                   {isAnalyzing ? (
                     <div className="flex items-center gap-3 py-4">
                       <Loader2 className="w-5 h-5 text-purple-500 animate-spin" />
-                      <span className="text-sm text-gray-600">正在分析产品图片...</span>
+                      <span className="text-sm text-gray-600">正在分析产品图片，请稍候...</span>
                     </div>
                   ) : (
-                    <div className="space-y-2">
-                      <p className="text-xs text-gray-500 mb-2">点击下方建议可快速填入：</p>
-                      {aiSuggestions.map((suggestion, index) => (
-                        <button
-                          key={index}
-                          onClick={() => adoptSuggestion(suggestion)}
-                          className="w-full text-left px-4 py-3 rounded-xl bg-gradient-to-r from-purple-50 to-blue-50 hover:from-purple-100 hover:to-blue-100 border border-purple-100 hover:border-purple-200 transition-all group"
-                        >
-                          <div className="flex items-start gap-2">
-                            <Lightbulb className="w-4 h-4 text-purple-500 flex-shrink-0 mt-0.5 group-hover:scale-110 transition-transform" />
-                            <div className="flex-1">
-                              {/* 中文卖点 - 主要显示 */}
-                              <p className="text-sm text-gray-800 font-medium group-hover:text-purple-700">
-                                {suggestion.zh}
-                              </p>
-                              {/* 英文版本 - 辅助显示 */}
-                              <p className="text-xs text-gray-500 mt-1 italic">
-                                {suggestion.en}
-                              </p>
-                            </div>
-                          </div>
-                        </button>
-                      ))}
+                    <div className="space-y-3">
+                      <p className="text-xs text-gray-500">点击下方按钮可一键填入：</p>
+                      
+                      {/* 卖点预览 */}
+                      <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-4 border border-purple-100">
+                        <pre className="text-sm text-gray-700 whitespace-pre-wrap font-sans leading-relaxed">
+                          {aiSuggestion}
+                        </pre>
+                      </div>
+                      
+                      {/* 一键采纳按钮 */}
+                      <button
+                        onClick={adoptSuggestion}
+                        className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white font-medium text-sm flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg active:scale-[0.98]"
+                      >
+                        <Lightbulb className="w-4 h-4" />
+                        一键采纳
+                      </button>
                     </div>
                   )}
                 </div>

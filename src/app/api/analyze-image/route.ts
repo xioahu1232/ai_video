@@ -4,17 +4,11 @@ import { getUserClient } from '@/lib/db-pool';
 
 interface AnalyzeRequest {
   imageBase64: string;
-  language?: string;
-}
-
-interface SellingPoint {
-  zh: string;  // 中文版本
-  en: string;  // 英文版本（用于后续生成）
 }
 
 interface AnalyzeResponse {
   success: boolean;
-  suggestions?: SellingPoint[];
+  result?: string;  // 完整的卖点文本
   productType?: string;
   error?: string;
 }
@@ -24,7 +18,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<AnalyzeRe
   console.log(`[${requestId}] Analyze image request started`);
 
   try {
-    // 验证用户登录状态（可选，可以根据需求调整）
+    // 验证用户登录状态（可选）
     const authHeader = request.headers.get('authorization');
     let userId = 'anonymous';
     
@@ -42,7 +36,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<AnalyzeRe
     }
 
     const body: AnalyzeRequest = await request.json();
-    const { imageBase64, language = 'zh' } = body;
+    const { imageBase64 } = body;
 
     if (!imageBase64) {
       return NextResponse.json(
@@ -58,7 +52,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<AnalyzeRe
     const config = new Config();
     const client = new LLMClient(config, customHeaders);
 
-    // 构建分析提示词 - 要求同时输出中英文
+    // 构建分析提示词 - 要求特定格式
     const systemPrompt = `你是一位专业的电商文案专家和产品分析师。你的任务是分析产品图片，提取产品卖点。
 
 请仔细观察图片中的产品，从以下维度进行分析：
@@ -69,22 +63,23 @@ export async function POST(request: NextRequest): Promise<NextResponse<AnalyzeRe
 5. **使用场景**：在什么场景下使用？
 6. **差异化优势**：与同类产品相比有什么独特之处？
 
-**重要**：你的输出必须同时包含中文和英文版本，方便中国用户理解。
+**重要**：请严格按照以下格式输出，不要添加任何其他内容（如前言、解释、总结等）：
 
-请按以下 JSON 格式输出（不要添加任何其他文字）：
-[
-  {"zh": "中文卖点描述", "en": "English selling point"},
-  {"zh": "中文卖点描述", "en": "English selling point"},
-  ...
-]
+这是一个[产品名称/类型]，具有以下独特卖点：
+1. [卖点一]
+2. [卖点二]
+3. [卖点三]
+4. [卖点四]
+5. [卖点五]
 
-要求：
-- 提供 3-5 个核心卖点
-- 中文卖点：15-30 字，简洁有力的营销语言
-- 英文卖点：对应的英文翻译，10-25 words
-- 突出产品的独特价值，避免空洞的形容词`;
+输出要求：
+- 第一行必须以"这是一个"开头，清晰描述产品是什么
+- 必须列出5个卖点，用数字1-5编号
+- 每个卖点15-30字，简洁有力的营销语言
+- 卖点要突出产品的独特价值，避免空洞的形容词
+- 直接输出上述格式的内容，不要有任何其他文字`;
 
-    const userPrompt = '请分析这张产品图片，提取核心卖点。按 JSON 格式输出，同时包含中文和英文版本。';
+    const userPrompt = '请分析这张产品图片，按指定格式输出核心卖点（产品是什么 + 5个编号卖点）。';
 
     // 构建多模态消息
     const messages = [
@@ -97,7 +92,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<AnalyzeRe
             type: 'image_url' as const,
             image_url: {
               url: imageBase64,
-              detail: 'high' as const, // 高细节模式，更准确的分析
+              detail: 'high' as const,
             },
           },
         ],
@@ -108,57 +103,29 @@ export async function POST(request: NextRequest): Promise<NextResponse<AnalyzeRe
 
     // 调用视觉模型
     const response = await client.invoke(messages, {
-      model: 'doubao-seed-1-6-vision-250815', // 视觉模型
+      model: 'doubao-seed-1-6-vision-250815',
       temperature: 0.7,
     });
 
     console.log(`[${requestId}] Vision model response received`);
 
-    // 解析结果
-    const content = response.content.trim();
-    console.log(`[${requestId}] Raw response:`, content);
-    
-    // 尝试解析 JSON
-    let suggestions: SellingPoint[] = [];
-    
-    try {
-      // 尝试提取 JSON 数组
-      const jsonMatch = content.match(/\[[\s\S]*\]/);
-      if (jsonMatch) {
-        suggestions = JSON.parse(jsonMatch[0]);
-      }
-    } catch (parseError) {
-      console.log(`[${requestId}] JSON parse failed, trying alternative parsing`);
-      
-      // 如果 JSON 解析失败，尝试从文本中提取
-      const lines = content.split('\n').filter(line => line.trim());
-      for (const line of lines) {
-        // 尝试匹配中英文格式
-        const match = line.match(/["']zh["']\s*:\s*["']([^"']+)["'].*["']en["']\s*:\s*["']([^"']+)["']/);
-        if (match) {
-          suggestions.push({ zh: match[1], en: match[2] });
-        }
-      }
-    }
+    // 获取结果
+    const result = response.content.trim();
+    console.log(`[${requestId}] Analysis result:\n${result}`);
 
-    // 如果仍然没有提取到，创建默认格式
-    if (suggestions.length === 0) {
-      // 将原始内容作为中文，生成简单英文
-      const lines = content.split('\n').filter(line => line.trim() && line.length > 5);
-      suggestions = lines.slice(0, 5).map(line => ({
-        zh: line.replace(/^[\d\-\•\*\•]+\s*/, '').trim(),
-        en: line.replace(/^[\d\-\•\*\•]+\s*/, '').trim() // 如果没有英文，暂时用中文
-      }));
+    // 验证格式是否正确
+    if (!result.includes('这是一个') || !result.includes('独特卖点')) {
+      console.log(`[${requestId}] Format warning: result may not match expected format`);
     }
 
     // 尝试识别产品类型
-    const productType = extractProductType(content);
+    const productType = extractProductType(result);
 
-    console.log(`[${requestId}] Analysis complete: ${suggestions.length} suggestions`);
+    console.log(`[${requestId}] Analysis complete, product type: ${productType}`);
 
     return NextResponse.json({
       success: true,
-      suggestions: suggestions.slice(0, 5), // 最多返回5个
+      result,
       productType,
     });
 
@@ -180,32 +147,22 @@ export async function POST(request: NextRequest): Promise<NextResponse<AnalyzeRe
  * 从分析结果中提取产品类型
  */
 function extractProductType(content: string): string {
+  // 尝试从"这是一个XXX"中提取
+  const match = content.match(/这是一个([^，,。\n]+)/);
+  if (match) {
+    return match[1].trim();
+  }
+  
+  // 关键词匹配
   const keywords = [
-    { zh: '手机', en: 'phone' },
-    { zh: '耳机', en: 'earphone' },
-    { zh: '手表', en: 'watch' },
-    { zh: '包', en: 'bag' },
-    { zh: '鞋', en: 'shoes' },
-    { zh: '服装', en: 'clothing' },
-    { zh: '化妆品', en: 'cosmetics' },
-    { zh: '食品', en: 'food' },
-    { zh: '饮料', en: 'drink' },
-    { zh: '电子产品', en: 'electronics' },
-    { zh: '家居', en: 'home' },
-    { zh: '玩具', en: 'toy' },
-    { zh: '书籍', en: 'book' },
-    { zh: '运动', en: 'sports' },
-    { zh: '首饰', en: 'jewelry' },
-    { zh: '眼镜', en: 'glasses' },
-    { zh: '灯具', en: 'lamp' },
-    { zh: '家具', en: 'furniture' },
+    '手机', '耳机', '手表', '包', '鞋', '服装', '化妆品', 
+    '食品', '饮料', '电子产品', '家居', '玩具', '书籍', 
+    '运动', '首饰', '眼镜', '灯具', '家具', '家电'
   ];
   
-  const lowerContent = content.toLowerCase();
-  
   for (const keyword of keywords) {
-    if (lowerContent.includes(keyword.zh) || lowerContent.includes(keyword.en)) {
-      return keyword.zh;
+    if (content.includes(keyword)) {
+      return keyword;
     }
   }
   
