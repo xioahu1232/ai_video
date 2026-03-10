@@ -9,7 +9,7 @@ export const healthCheck = pgTable("health_check", {
 });
 
 export const userTasks = pgTable("user_tasks", {
-	id: varchar({ length: 36 }).default(gen_random_uuid()).primaryKey().notNull(),
+	id: varchar({ length: 36 }).default(sql`gen_random_uuid()`).primaryKey().notNull(),
 	userId: varchar("user_id", { length: 36 }).notNull(),
 	coreSellingPoint: text("core_selling_point").notNull(),
 	imageUrl: text("image_url"),
@@ -31,7 +31,7 @@ export const userTasks = pgTable("user_tasks", {
 ]);
 
 export const redemptionCodes = pgTable("redemption_codes", {
-	id: varchar({ length: 36 }).default(gen_random_uuid()).primaryKey().notNull(),
+	id: varchar({ length: 36 }).default(sql`gen_random_uuid()`).primaryKey().notNull(),
 	code: varchar({ length: 32 }).notNull(),
 	amount: integer().notNull(),
 	batchId: varchar("batch_id", { length: 36 }),
@@ -49,7 +49,7 @@ export const redemptionCodes = pgTable("redemption_codes", {
 ]);
 
 export const inviteCodes = pgTable("invite_codes", {
-	id: varchar({ length: 36 }).default(gen_random_uuid()).primaryKey().notNull(),
+	id: varchar({ length: 36 }).default(sql`gen_random_uuid()`).primaryKey().notNull(),
 	code: varchar({ length: 32 }).notNull(),
 	batchId: varchar("batch_id", { length: 36 }),
 	description: text(),
@@ -67,7 +67,7 @@ export const inviteCodes = pgTable("invite_codes", {
 ]);
 
 export const userBalances = pgTable("user_balances", {
-	id: varchar({ length: 36 }).default(gen_random_uuid()).primaryKey().notNull(),
+	id: varchar({ length: 36 }).default(sql`gen_random_uuid()`).primaryKey().notNull(),
 	userId: varchar("user_id", { length: 36 }).notNull(),
 	balance: numeric({ precision: 10, scale:  2 }).default('0').notNull(),
 	totalUsed: numeric("total_used", { precision: 10, scale:  2 }).default('0').notNull(),
