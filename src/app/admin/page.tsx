@@ -183,7 +183,7 @@ interface Stats {
 // 管理员仪表盘
 function AdminDashboard({ token, user, onLogout }: { token: string; user: AdminUser; onLogout: () => void }) {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'overview' | 'analytics' | 'invites' | 'redemption' | 'users' | 'health'>('analytics');
+  const [activeTab, setActiveTab] = useState<'overview' | 'analytics' | 'invites' | 'redemption' | 'users' | 'health' | 'config'>('analytics');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [stats, setStats] = useState<Stats | null>(null);
   const [inviteCodes, setInviteCodes] = useState<InviteCode[]>([]);
@@ -332,6 +332,7 @@ function AdminDashboard({ token, user, onLogout }: { token: string; user: AdminU
     { id: 'invites', icon: Gift, label: '邀请码管理' },
     { id: 'redemption', icon: Ticket, label: '兑换码管理' },
     { id: 'users', icon: Users, label: '用户管理' },
+    { id: 'config', icon: Database, label: '系统配置' },
     { id: 'health', icon: Activity, label: '系统健康' },
   ] as const;
 
@@ -852,6 +853,11 @@ function AdminDashboard({ token, user, onLogout }: { token: string; user: AdminU
           </div>
         )}
 
+        {/* 系统配置 */}
+        {activeTab === 'config' && (
+          <ConfigPanel token={token} />
+        )}
+
         {/* 系统健康监控 */}
         {activeTab === 'health' && (
           <HealthMonitor token={token} />
@@ -1165,6 +1171,170 @@ function HealthMonitor({ token }: { token: string }) {
             </ul>
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+// 系统配置面板组件
+function ConfigPanel({ token }: { token: string }) {
+  const [configs, setConfigs] = useState<Array<{ key: string; value: string; description?: string; hasValue?: boolean }>>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState<string | null>(null);
+  const [editKey, setEditKey] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState('');
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const fetchConfigs = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/admin/config', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (data.configs) {
+        setConfigs(data.configs);
+      }
+    } catch (err) {
+      console.error('Failed to fetch configs:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchConfigs();
+  }, [token]);
+
+  const handleSave = async (key: string, value: string, description?: string) => {
+    setSaving(key);
+    setMessage(null);
+    try {
+      const res = await fetch('/api/admin/config', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ key, value, description }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setMessage({ type: 'success', text: '配置已保存' });
+        setEditKey(null);
+        setEditValue('');
+        fetchConfigs();
+      } else {
+        setMessage({ type: 'error', text: data.error || '保存失败' });
+      }
+    } catch (err) {
+      setMessage({ type: 'error', text: '保存失败，请重试' });
+    } finally {
+      setSaving(null);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 text-white animate-spin" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold text-white">系统配置</h2>
+        <button
+          onClick={fetchConfigs}
+          className="flex items-center gap-2 px-4 py-2 bg-white/10 rounded-lg text-white hover:bg-white/20 transition-colors"
+        >
+          <RefreshCw className="w-4 h-4" />
+          刷新
+        </button>
+      </div>
+
+      {message && (
+        <div className={`p-4 rounded-lg ${message.type === 'success' ? 'bg-green-500/20 text-green-300' : 'bg-red-500/20 text-red-300'}`}>
+          {message.text}
+        </div>
+      )}
+
+      <div className="bg-white/10 backdrop-blur-sm rounded-2xl border border-white/10 overflow-hidden">
+        <div className="p-4 border-b border-white/10">
+          <h3 className="text-lg font-semibold text-white">API 配置</h3>
+          <p className="text-white/50 text-sm mt-1">配置 Coze API Key 和工作流 ID，配置后立即生效</p>
+        </div>
+        
+        <div className="divide-y divide-white/10">
+          {configs.map((config) => (
+            <div key={config.key} className="p-4">
+              <div className="flex items-center justify-between mb-2">
+                <div>
+                  <p className="text-white font-medium">{config.key === 'coze_api_key' ? 'Coze API Key' : config.key}</p>
+                  <p className="text-white/50 text-sm">{config.description}</p>
+                </div>
+                {config.hasValue && (
+                  <span className="px-2 py-1 bg-green-500/20 text-green-300 text-xs rounded-full">已配置</span>
+                )}
+              </div>
+              
+              {editKey === config.key ? (
+                <div className="space-y-3">
+                  <input
+                    type={config.key === 'coze_api_key' ? 'password' : 'text'}
+                    value={editValue}
+                    onChange={(e) => setEditValue(e.target.value)}
+                    placeholder={`请输入${config.key === 'coze_api_key' ? 'API Key' : config.key}`}
+                    className="w-full h-10 px-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#4fa3d1]"
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleSave(config.key, editValue, config.description)}
+                      disabled={saving === config.key}
+                      className="px-4 py-2 bg-[#4fa3d1] text-white rounded-lg hover:bg-[#3d8ab8] transition-colors disabled:opacity-50"
+                    >
+                      {saving === config.key ? '保存中...' : '保存'}
+                    </button>
+                    <button
+                      onClick={() => { setEditKey(null); setEditValue(''); }}
+                      className="px-4 py-2 bg-white/10 text-white rounded-lg hover:bg-white/20 transition-colors"
+                    >
+                      取消
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <p className="text-white/70 text-sm flex-1">
+                    {config.hasValue ? `当前值: ${config.value}` : '未配置'}
+                  </p>
+                  <button
+                    onClick={() => { setEditKey(config.key); setEditValue(''); }}
+                    className="px-3 py-1.5 bg-white/10 text-white text-sm rounded-lg hover:bg-white/20 transition-colors"
+                  >
+                    {config.hasValue ? '修改' : '配置'}
+                  </button>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-4">
+        <div className="flex items-start gap-3">
+          <AlertTriangle className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="text-yellow-300 font-medium">注意事项</p>
+            <ul className="text-yellow-200/70 text-sm mt-1 space-y-1">
+              <li>• API Key 配置后立即生效，无需重启服务</li>
+              <li>• 数据库配置优先级高于环境变量配置</li>
+              <li>• 请妥善保管 API Key，不要泄露给他人</li>
+            </ul>
+          </div>
+        </div>
       </div>
     </div>
   );

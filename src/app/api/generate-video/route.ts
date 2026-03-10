@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseClient } from '@/storage/database/supabase-client';
 import { checkRateLimit, generateRateLimiter, userRateLimiter } from '@/lib/rate-limiter';
 import { deductBalance, getBalanceInfo } from '@/lib/balance-service';
+import { getCozeApiKey, getWorkflowId } from '@/lib/config-service';
 
 // Coze 工作流配置
-const WORKFLOW_ID = '7601074566710444095';
 const COZE_API_URL = 'https://api.coze.cn/v1/workflow/run';
 // 工作流超时时间：5分钟
 const WORKFLOW_TIMEOUT = 300000;
@@ -118,14 +118,19 @@ export async function POST(request: NextRequest): Promise<NextResponse<TaskRespo
       );
     }
 
-    // 获取 API Key
-    const apiKey = process.env.COZE_API_KEY;
+    // 获取 API Key（优先数据库配置，其次环境变量）
+    const apiKey = await getCozeApiKey();
     if (!apiKey) {
+      console.log(`[${requestId}] Error: API Key not configured`);
       return NextResponse.json(
-        { success: false, error: 'API Key 未配置，请联系管理员' },
+        { success: false, error: 'API Key 未配置，请在管理后台设置' },
         { status: 500 }
       );
     }
+    
+    // 获取工作流 ID
+    const workflowId = await getWorkflowId();
+    console.log(`[${requestId}] Using workflow ID: ${workflowId}`);
 
     // 🛡️ 先扣减余额（并发安全）
     // 这样可以防止用户在余额不足时仍然调用工作流
@@ -152,7 +157,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<TaskRespo
     };
 
     console.log('Calling Coze Workflow:', {
-      workflow_id: WORKFLOW_ID,
+      workflow_id: workflowId,
       params: workflowParams,
       userId: user.id,
       previousBalance: deductResult.previousBalance,
@@ -170,7 +175,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<TaskRespo
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          workflow_id: WORKFLOW_ID,
+          workflow_id: workflowId,
           parameters: workflowParams,
         }),
         signal: controller.signal,
