@@ -17,7 +17,19 @@ interface UploadResponse {
   error?: string;
 }
 
+// API Route 配置
 export const maxDuration = 60; // 增加API路由超时时间到60秒
+export const dynamic = 'force-dynamic'; // 强制动态渲染
+
+// 请求体大小限制（Next.js 15+ 方式）
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '50mb',
+    },
+    responseLimit: false,
+  },
+};
 
 export async function POST(request: NextRequest): Promise<NextResponse<UploadResponse>> {
   const requestId = Date.now().toString();

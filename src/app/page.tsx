@@ -380,13 +380,15 @@ export default function Home() {
   }, [isSubmitting, currentStepIndex, stepProgress]);
 
   // 处理文件选择
-  // 图片压缩函数 - 支持5MB高清图片
+  // 图片压缩函数 - 确保上传文件大小在安全范围内
+  // 关键：Base64编码会增加33%大小，所以需要预留空间
   const compressImage = async (file: File): Promise<File> => {
-    const MAX_SIZE = 5 * 1024 * 1024; // 5MB上限
-    const HIGH_QUALITY_MAX_WIDTH = 2048; // 高清模式下最大宽度
+    // 安全上传大小：2.5MB（Base64后约3.3MB，可通过大部分代理层限制）
+    const SAFE_UPLOAD_SIZE = 2.5 * 1024 * 1024;
+    const HIGH_QUALITY_MAX_WIDTH = 1920; // 高清模式下最大宽度
     const COMPRESSED_MAX_WIDTH = 1280; // 压缩模式下最大宽度
     const HIGH_QUALITY = 0.85; // 高清模式质量
-    const COMPRESSED_QUALITY = 0.75; // 压缩模式质量
+    const COMPRESSED_QUALITY = 0.7; // 压缩模式质量
     
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -395,33 +397,36 @@ export default function Home() {
         img.onload = () => {
           const fileSizeMB = file.size / (1024 * 1024);
           
-          // 5MB以内的图片：宽度不超过2048px则不压缩，保留高清画质
-          if (file.size <= MAX_SIZE && img.width <= HIGH_QUALITY_MAX_WIDTH) {
-            console.log(`高清图片无需压缩: ${fileSizeMB.toFixed(2)}MB, ${img.width}x${img.height}`);
+          // 2.5MB以内且宽度≤1920px：保留高清，不压缩
+          if (file.size <= SAFE_UPLOAD_SIZE && img.width <= HIGH_QUALITY_MAX_WIDTH) {
+            console.log(`[压缩] 高清图片无需压缩: ${fileSizeMB.toFixed(2)}MB, ${img.width}x${img.height}`);
             resolve(file);
             return;
           }
           
-          // 超过5MB或宽度超过2048px：需要压缩
+          // 需要压缩的情况
           let newWidth = img.width;
           let newHeight = img.height;
           let quality: number;
+          let reason: string;
           
-          if (file.size <= MAX_SIZE) {
-            // 5MB以内但宽度超大：压缩到2048px，高质量
+          if (file.size <= SAFE_UPLOAD_SIZE) {
+            // 大小OK但宽度超标：压缩到1920px
             newWidth = HIGH_QUALITY_MAX_WIDTH;
             newHeight = (img.height * HIGH_QUALITY_MAX_WIDTH) / img.width;
             quality = HIGH_QUALITY;
-            console.log(`宽度超标压缩: ${img.width}px → ${newWidth}px, 质量${quality}`);
+            reason = `宽度超标(${img.width}px>${HIGH_QUALITY_MAX_WIDTH}px)`;
           } else {
-            // 超过5MB：压缩到1280px，中等质量
+            // 大小超标：需要更激进的压缩
             if (img.width > COMPRESSED_MAX_WIDTH) {
               newWidth = COMPRESSED_MAX_WIDTH;
               newHeight = (img.height * COMPRESSED_MAX_WIDTH) / img.width;
             }
             quality = COMPRESSED_QUALITY;
-            console.log(`大文件压缩: ${fileSizeMB.toFixed(2)}MB, ${img.width}px → ${newWidth}px, 质量${quality}`);
+            reason = `大小超标(${fileSizeMB.toFixed(2)}MB>${(SAFE_UPLOAD_SIZE/1024/1024).toFixed(1)}MB)`;
           }
+          
+          console.log(`[压缩] ${reason}: ${img.width}x${img.height} → ${Math.round(newWidth)}x${Math.round(newHeight)}, 质量${quality}`);
           
           // 创建 canvas 压缩
           const canvas = document.createElement('canvas');
@@ -430,7 +435,8 @@ export default function Home() {
           const ctx = canvas.getContext('2d');
           
           if (!ctx) {
-            resolve(file); // 压缩失败，返回原文件
+            console.log('[压缩] Canvas创建失败，返回原文件');
+            resolve(file);
             return;
           }
           
@@ -439,12 +445,13 @@ export default function Home() {
           canvas.toBlob(
             (blob) => {
               if (!blob) {
+                console.log('[压缩] Blob创建失败，返回原文件');
                 resolve(file);
                 return;
               }
               // 如果压缩后更大，返回原文件
               if (blob.size >= file.size) {
-                console.log('压缩后更大，保留原文件');
+                console.log('[压缩] 压缩后更大，保留原文件');
                 resolve(file);
                 return;
               }
@@ -452,17 +459,23 @@ export default function Home() {
                 type: 'image/jpeg',
                 lastModified: Date.now(),
               });
-              console.log(`压缩完成: ${(file.size / 1024 / 1024).toFixed(2)}MB → ${(compressedFile.size / 1024 / 1024).toFixed(2)}MB (节省${Math.round((1 - compressedFile.size / file.size) * 100)}%)`);
+              console.log(`[压缩] 完成: ${(file.size / 1024 / 1024).toFixed(2)}MB → ${(compressedFile.size / 1024 / 1024).toFixed(2)}MB (节省${Math.round((1 - compressedFile.size / file.size) * 100)}%)`);
               resolve(compressedFile);
             },
             'image/jpeg',
             quality
           );
         };
-        img.onerror = () => resolve(file);
+        img.onerror = () => {
+          console.log('[压缩] 图片加载失败，返回原文件');
+          resolve(file);
+        };
         img.src = e.target?.result as string;
       };
-      reader.onerror = () => resolve(file);
+      reader.onerror = () => {
+        console.log('[压缩] 文件读取失败，返回原文件');
+        resolve(file);
+      };
       reader.readAsDataURL(file);
     });
   };
@@ -625,21 +638,30 @@ export default function Home() {
     });
   };
 
-  const uploadImage = async (file: File, retryCount = 0, useBase64 = false): Promise<string> => {
-    // 如果之前FormData失败，切换到Base64模式
-    if (useBase64) {
+  // 检测是否为移动端
+  const isMobile = () => {
+    if (typeof window === 'undefined') return false;
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  };
+
+  const uploadImage = async (file: File, retryCount = 0, forceBase64 = false): Promise<string> => {
+    // 移动端优先使用Base64方式（绕过代理层对FormData的限制）
+    const shouldUseBase64 = forceBase64 || isMobile();
+    
+    if (shouldUseBase64) {
+      console.log('[Upload] Using Base64 mode (mobile/forced)');
       return uploadImageBase64(file);
     }
 
     const formData = new FormData();
     formData.append('file', file);
 
-    // 移动端网络较慢，超时时间设置为90秒
+    // 网页端使用FormData
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 90000);
+    const timeoutId = setTimeout(() => controller.abort(), 60000);
 
     try {
-      console.log('[Upload] Starting FormData upload...');
+      console.log('[Upload] Starting FormData upload (desktop)...');
       const response = await fetch('/api/upload-image', {
         method: 'POST',
         body: formData,
@@ -652,31 +674,16 @@ export default function Home() {
         const errorText = await response.text().catch(() => 'Unknown error');
         console.error('[Upload] FormData failed:', response.status, errorText);
         
-        // 服务器错误或网络问题时，尝试Base64方式
-        if (response.status >= 500 || response.status === 0) {
-          console.log('[Upload] Switching to Base64 mode...');
-          return uploadImageBase64(file);
-        }
-        
-        // 其他错误重试
-        if (retryCount < 2) {
-          console.log(`[Upload] Retrying FormData (${retryCount + 1}/2)...`);
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          return uploadImage(file, retryCount + 1);
-        }
-        
-        throw new Error(`上传失败 (HTTP ${response.status})，请稍后重试`);
+        // 任何错误都切换到Base64
+        console.log('[Upload] Switching to Base64 mode...');
+        return uploadImageBase64(file);
       }
 
       const data = await response.json();
       
       if (!data.success) {
-        // 业务错误时尝试Base64
-        if (retryCount < 1) {
-          console.log('[Upload] Business error, trying Base64 mode...');
-          return uploadImageBase64(file);
-        }
-        throw new Error(data.error || '图片上传失败，请稍后重试');
+        console.log('[Upload] Business error, trying Base64 mode...');
+        return uploadImageBase64(file);
       }
 
       console.log('[Upload] FormData upload successful:', data.url);
@@ -684,26 +691,14 @@ export default function Home() {
     } catch (error) {
       clearTimeout(timeoutId);
       
-      // 超时或网络错误时，尝试Base64方式
-      if (error instanceof Error && (error.name === 'AbortError' || error.message === 'Failed to fetch')) {
-        console.log('[Upload] Network issue, switching to Base64 mode...');
-        try {
-          return await uploadImageBase64(file);
-        } catch (base64Error) {
-          throw new Error('图片上传失败，请检查网络连接后重试');
-        }
+      // 任何错误都切换到Base64
+      console.log('[Upload] Error occurred, switching to Base64 mode...');
+      try {
+        return await uploadImageBase64(file);
+      } catch (base64Error) {
+        console.error('[Upload] Both FormData and Base64 failed');
+        throw new Error('图片上传失败，请检查网络连接后重试');
       }
-      
-      if (error instanceof TypeError) {
-        console.log('[Upload] TypeError, switching to Base64 mode...');
-        try {
-          return await uploadImageBase64(file);
-        } catch (base64Error) {
-          throw new Error('网络连接失败，请检查网络后重试');
-        }
-      }
-      
-      throw error;
     }
   };
 
