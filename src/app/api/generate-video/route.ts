@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseClient } from '@/storage/database/supabase-client';
+import { getUserClient, withRetry } from '@/lib/db-pool';
 import { checkRateLimit, generateRateLimiter, userRateLimiter } from '@/lib/rate-limiter';
 import { deductBalance, getBalanceInfo } from '@/lib/balance-service';
-import { getCozeApiKey, getWorkflowId } from '@/lib/config-service';
+import { getCozeApiKey, getWorkflowId } from '@/lib/stable-config';
 
 // Coze 工作流配置
 const COZE_API_URL = 'https://api.coze.cn/v1/workflow/run';
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<TaskRespo
     
     let supabase;
     try {
-      supabase = getSupabaseClient(token);
+      supabase = getUserClient(token);
       console.log(`[${requestId}] Supabase client created`);
     } catch (dbError) {
       console.error(`[${requestId}] Database connection error:`, dbError);
@@ -275,7 +275,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<TaskRespo
  * 返还余额（用于失败时回滚）
  */
 async function refundBalance(
-  supab: ReturnType<typeof getSupabaseClient>,
+  supab: ReturnType<typeof getUserClient>,
   userId: string,
   amount: number
 ): Promise<void> {

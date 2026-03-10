@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseClient } from '@/storage/database/supabase-client';
+import { getUserClient } from '@/lib/db-pool';
+import { getSystemHealth } from '@/lib/health-monitor';
 
 /**
  * 系统健康检查接口
@@ -11,6 +12,7 @@ import { getSupabaseClient } from '@/storage/database/supabase-client';
  * - 各表记录数和存储大小
  * - 限流状态
  * - 系统资源使用情况
+ * - Coze API 状态
  */
 export async function GET(request: NextRequest) {
   try {
@@ -21,7 +23,7 @@ export async function GET(request: NextRequest) {
     }
 
     const token = authHeader.substring(7);
-    const supabase = getSupabaseClient(token);
+    const supabase = getUserClient(token);
 
     // 验证用户
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -39,6 +41,9 @@ export async function GET(request: NextRequest) {
     if (!userBalance || userBalance.role !== 'admin') {
       return NextResponse.json({ error: '需要管理员权限' }, { status: 403 });
     }
+
+    // 获取系统健康状态
+    const systemHealth = await getSystemHealth();
 
     // 获取各表统计信息
     const [
@@ -85,10 +90,13 @@ export async function GET(request: NextRequest) {
 
     // 构建健康报告
     const healthReport = {
-      status: 'healthy',
+      status: systemHealth.status,
       timestamp: new Date().toISOString(),
+      uptime: systemHealth.uptime,
+      checks: systemHealth.checks,
       database: {
-        connected: true,
+        connected: systemHealth.checks.database.healthy,
+        latency: systemHealth.checks.database.latency,
         tables: {
           users: {
             count: usersResult.count || 0,
@@ -129,9 +137,9 @@ export async function GET(request: NextRequest) {
       }),
     };
 
-    // 如果存储超过阈值，标记为 warning
+    // 如果存储超过阈值，标记为 degraded
     if (storageUsagePercent > 90) {
-      healthReport.status = 'warning';
+      healthReport.status = 'degraded';
     }
 
     return NextResponse.json(healthReport);
