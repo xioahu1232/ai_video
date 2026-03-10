@@ -1,9 +1,10 @@
 {
-  "name": "projects",
+  "name": "ai-video-prompt-generator",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "build": "bash ./scripts/build.sh",
+    "vercel-build": "pnpm install && npx next build",
     "dev": "bash ./scripts/dev.sh",
     "preinstall": "npx only-allow pnpm",
     "lint": "eslint",
