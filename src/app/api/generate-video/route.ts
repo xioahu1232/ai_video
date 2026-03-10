@@ -156,7 +156,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<TaskRespo
       'time': videoDuration,            // 视频时长
       'yuyan': language,                // 语言
       'koubo': speechDuration,          // 口播时长
-      'str.yaoqiu': specialRequirements || '', // 特殊要求
+      'yaoqiu': specialRequirements || '', // 特殊要求
     };
 
     console.log('Calling Coze Workflow:', {

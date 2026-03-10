@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
     'time': videoDuration,
     'yuyan': language,
     'koubo': speechDuration,
-    'str.yaoqiu': specialRequirements || '', // 特殊要求
+    'yaoqiu': specialRequirements || '', // 特殊要求
   };
 
   console.log(`[${requestId}] Starting stream workflow with params:`, workflowParams);
