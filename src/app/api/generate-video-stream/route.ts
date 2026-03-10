@@ -13,6 +13,7 @@ interface GenerateVideoRequest {
   speechDuration: string;
   videoDuration: string;
   language: string;
+  specialRequirements?: string; // 特殊要求
   taskId: string; // 前端传入的任务ID
 }
 
@@ -69,7 +70,7 @@ export async function POST(request: NextRequest) {
 
   // 解析请求体
   const body: GenerateVideoRequest = await request.json();
-  const { coreSellingPoint, productImageUrl, speechDuration, videoDuration, language, taskId } = body;
+  const { coreSellingPoint, productImageUrl, speechDuration, videoDuration, language, specialRequirements, taskId } = body;
 
   // 参数验证
   if (!coreSellingPoint || !productImageUrl) {
@@ -108,6 +109,7 @@ export async function POST(request: NextRequest) {
     'time': videoDuration,
     'yuyan': language,
     'koubo': speechDuration,
+    'str.yaoqiu': specialRequirements || '', // 特殊要求
   };
 
   console.log(`[${requestId}] Starting stream workflow with params:`, workflowParams);

@@ -105,6 +105,7 @@ interface Task {
   id: string;
   status: TaskStatus;
   coreSellingPoint: string;
+  specialRequirements?: string; // 特殊要求
   language: string;
   createdAt: string;
   progress?: number;
@@ -144,6 +145,7 @@ export default function Home() {
   const [speechDuration, setSpeechDuration] = useState('12');
   const [videoDuration, setVideoDuration] = useState('15');
   const [language, setLanguage] = useState('es');
+  const [specialRequirements, setSpecialRequirements] = useState(''); // 特殊要求
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   // AI 建议卖点状态
@@ -253,6 +255,7 @@ export default function Home() {
           id: t.id as string,
           status: t.status as TaskStatus,
           coreSellingPoint: t.core_selling_point as string,
+          specialRequirements: t.special_requirements as string | undefined, // 特殊要求
           language: t.language as string,
           createdAt: t.created_at as string,
           sora: t.sora as string | undefined,
@@ -483,6 +486,7 @@ export default function Home() {
         },
         body: JSON.stringify({
           coreSellingPoint: task.coreSellingPoint,
+          specialRequirements: task.specialRequirements, // 特殊要求
           imageUrl: task.imageUrl,
           imageKey: task.imageKey, // 存储 S3 key
           videoDuration: task.videoDuration,
@@ -1019,6 +1023,7 @@ export default function Home() {
     speechDur: string,
     videoDur: string,
     lang: string,
+    specialReq: string,
     taskId: string,
     onProgress: (message: string, progress?: number) => void
   ): Promise<{ sora?: string; seedance?: string }> => {
@@ -1037,6 +1042,7 @@ export default function Home() {
         speechDuration: speechDur,
         videoDuration: videoDur,
         language: lang,
+        specialRequirements: specialReq,
         taskId,
       }),
     });
@@ -1124,7 +1130,8 @@ export default function Home() {
     sellingPoint: string,
     speechDur: string,
     videoDur: string,
-    lang: string
+    lang: string,
+    specialReq: string
   ): Promise<{ sora?: string; seedance?: string; balance?: number }> => {
     const controller = new AbortController();
     // 增加超时时间到 5 分钟，Coze 工作流可能需要较长时间
@@ -1145,6 +1152,7 @@ export default function Home() {
           speechDuration: speechDur,
           videoDuration: videoDur,
           language: lang,
+          specialRequirements: specialReq,
         }),
         signal: controller.signal,
       });
@@ -1236,6 +1244,7 @@ export default function Home() {
       id: Date.now().toString(),
       status: 'uploading',
       coreSellingPoint,
+      specialRequirements, // 特殊要求
       language,
       createdAt: new Date().toISOString(),
       progress: 0,
@@ -1273,6 +1282,7 @@ export default function Home() {
 
     // 立即重置表单，允许用户输入新内容（保留时长和语言偏好）
     setCoreSellingPoint('');
+    setSpecialRequirements(''); // 清空特殊要求
     setProductImage(null);
     setImagePreview(null);
     // 不重置 speechDuration、videoDuration、language，保留用户偏好
@@ -1378,6 +1388,7 @@ export default function Home() {
           speechDuration,
           videoDuration,
           language,
+          specialRequirements,
           taskId,
           onStreamProgress
         );
@@ -1392,7 +1403,8 @@ export default function Home() {
           coreSellingPoint,
           speechDuration,
           videoDuration,
-          language
+          language,
+          specialRequirements
         );
         console.log('[Generate] Normal mode success:', result);
       }
@@ -1942,6 +1954,20 @@ ${'='.repeat(50)}`;
                   </select>
                   <ChevronDown className="absolute right-4 sm:right-5 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-400 pointer-events-none" />
                 </div>
+              </div>
+
+              {/* 特殊要求 */}
+              <div className="space-y-2 sm:space-y-3">
+                <label className="text-sm font-semibold text-gray-700">
+                  特殊要求 <span className="text-gray-400 text-xs font-normal">(选填)</span>
+                </label>
+                <textarea
+                  placeholder="如：需要强调产品安全认证、突出价格优势、增加情感化表达..."
+                  value={specialRequirements}
+                  onChange={(e) => setSpecialRequirements(e.target.value)}
+                  rows={3}
+                  className="w-full px-4 sm:px-5 py-3 input-field text-gray-800 text-sm sm:text-base resize-none"
+                />
               </div>
 
               {/* 提交按钮 */}

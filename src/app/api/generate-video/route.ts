@@ -15,6 +15,7 @@ interface GenerateVideoRequest {
   speechDuration: string;
   videoDuration: string;
   language: string;
+  specialRequirements?: string; // 特殊要求
 }
 
 interface TaskResponse {
@@ -108,7 +109,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<TaskRespo
     }
 
     const body: GenerateVideoRequest = await request.json();
-    const { coreSellingPoint, productImageUrl, speechDuration, videoDuration, language } = body;
+    const { coreSellingPoint, productImageUrl, speechDuration, videoDuration, language, specialRequirements } = body;
 
     // 参数验证
     if (!coreSellingPoint || !productImageUrl) {
@@ -155,6 +156,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<TaskRespo
       'time': videoDuration,            // 视频时长
       'yuyan': language,                // 语言
       'koubo': speechDuration,          // 口播时长
+      'str.yaoqiu': specialRequirements || '', // 特殊要求
     };
 
     console.log('Calling Coze Workflow:', {
