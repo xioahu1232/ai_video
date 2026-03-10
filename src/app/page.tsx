@@ -19,7 +19,6 @@ import Confetti from '@/components/Confetti';
 import ContactButton from '@/components/ContactButton';
 import Footer from '@/components/Footer';
 import { SmartBlessing } from '@/components/BlessingToast';
-import { TourGuide, TourHelpButton } from '@/components/TourGuide';
 
 // 语言选项
 const LANGUAGES = [
@@ -2148,14 +2147,8 @@ ${'='.repeat(50)}`;
         autoCloseDelay={5000}
       />
 
-      {/* 新手引导 */}
-      <TourGuide />
-      
       {/* 联系客服悬浮按钮 */}
       <ContactButton />
-
-      {/* 新手引导帮助按钮 */}
-      <TourHelpButton />
 
       {/* 页脚 */}
       <Footer />
