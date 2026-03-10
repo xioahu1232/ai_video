@@ -642,6 +642,8 @@ export default function Home() {
     const timeoutId = setTimeout(() => controller.abort(), 300000);
 
     try {
+      console.log('[Generate] Calling API with token:', token ? 'present' : 'missing');
+      
       const response = await fetch('/api/generate-video', {
         method: 'POST',
         headers: {
@@ -660,8 +662,19 @@ export default function Home() {
 
       clearTimeout(timeoutId);
 
+      console.log('[Generate] API response:', response.status, response.statusText);
+
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
+        // 尝试解析错误信息
+        let errorDetail = `HTTP ${response.status}`;
+        try {
+          const errorData = await response.json();
+          errorDetail = errorData.error || errorDetail;
+          console.error('[Generate] API error:', errorData);
+        } catch {
+          // 无法解析JSON
+        }
+        throw new Error(errorDetail);
       }
 
       const data = await response.json();
@@ -669,6 +682,8 @@ export default function Home() {
       if (!data.success) {
         throw new Error(data.error || '提示词生成失败');
       }
+
+      console.log('[Generate] Success:', { hasSora: !!data.sora, hasSeedance: !!data.seedance });
 
       return {
         sora: data.sora,
@@ -784,7 +799,15 @@ export default function Home() {
       // 步骤1：上传
       updateProgress(0, 0);
       
+      console.log('[Upload] Starting image upload...', { 
+        fileName: productImage.name, 
+        fileSize: `${(productImage.size / 1024).toFixed(1)}KB`,
+        fileType: productImage.type 
+      });
+      
       const imageUrl = await uploadImage(productImage);
+      
+      console.log('[Upload] Image uploaded successfully:', imageUrl);
       
       setTasks(prev => 
         prev.map(task => 
@@ -796,6 +819,13 @@ export default function Home() {
 
       // 步骤2-6：AI处理
       updateProgress(1, 0);
+      
+      console.log('[Generate] Starting prompt generation...', {
+        sellingPoint: coreSellingPoint,
+        language,
+        videoDuration,
+        speechDuration
+      });
 
       const result = await generatePrompt(
         imageUrl,
@@ -851,13 +881,37 @@ export default function Home() {
       console.error('Submit error:', error);
       clearInterval(stepInterval);
       
+      // 提取更详细的错误信息
+      let errorMessage = '未知错误';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+        console.error('[Error Details]', {
+          message: error.message,
+          name: error.name,
+          stack: error.stack?.split('\n').slice(0, 3).join('\n')
+        });
+      }
+      
+      // 针对常见错误提供友好提示
+      if (errorMessage.includes('401') || errorMessage.includes('登录')) {
+        errorMessage = '登录已过期，请刷新页面重新登录';
+      } else if (errorMessage.includes('429') || errorMessage.includes('频繁')) {
+        errorMessage = '操作过于频繁，请稍后再试';
+      } else if (errorMessage.includes('network',) || errorMessage.includes('网络')) {
+        errorMessage = '网络连接失败，请检查网络后重试';
+      } else if (errorMessage.includes('timeout') || errorMessage.includes('超时')) {
+        errorMessage = '请求超时，请检查网络后重试';
+      } else if (errorMessage.includes('500')) {
+        errorMessage = '服务器繁忙，请稍后重试';
+      }
+      
       setTasks(prev => 
         prev.map(task => 
           task.id === newTask.id 
             ? { 
                 ...task, 
                 status: 'failed', 
-                error: error instanceof Error ? error.message : '未知错误' 
+                error: errorMessage
               }
             : task
         )
