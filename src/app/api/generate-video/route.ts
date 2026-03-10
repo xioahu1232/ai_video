@@ -30,10 +30,16 @@ interface TaskResponse {
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse<TaskResponse>> {
+  const requestId = Date.now().toString();
+  console.log(`[${requestId}] Generate video request started`);
+  
   try {
     // 验证用户登录状态
     const authHeader = request.headers.get('authorization');
+    console.log(`[${requestId}] Auth header:`, authHeader ? 'present' : 'missing');
+    
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.log(`[${requestId}] Error: No auth header`);
       return NextResponse.json(
         { success: false, error: '请先登录' },
         { status: 401 }
@@ -41,10 +47,23 @@ export async function POST(request: NextRequest): Promise<NextResponse<TaskRespo
     }
 
     const token = authHeader.substring(7);
-    const supabase = getSupabaseClient(token);
+    
+    let supabase;
+    try {
+      supabase = getSupabaseClient(token);
+      console.log(`[${requestId}] Supabase client created`);
+    } catch (dbError) {
+      console.error(`[${requestId}] Database connection error:`, dbError);
+      return NextResponse.json(
+        { success: false, error: '数据库连接失败，请联系管理员' },
+        { status: 500 }
+      );
+    }
 
     // 验证用户
     const { data: { user }, error: authError } = await supabase.auth.getUser();
+    console.log(`[${requestId}] User auth:`, user ? user.id : 'null', authError ? authError.message : 'ok');
+    
     if (authError || !user) {
       return NextResponse.json(
         { success: false, error: '登录已过期，请重新登录' },
