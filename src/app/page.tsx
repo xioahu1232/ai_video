@@ -224,7 +224,41 @@ export default function Home() {
           videoDuration: t.video_duration as string | undefined,
           expiresAt: t.expires_at as string | undefined,
         }));
-        setTasks(formattedTasks);
+        
+        // 【任务恢复】检查是否有进行中的任务
+        const pendingTasks = formattedTasks.filter(
+          t => t.status === 'uploading' || t.status === 'processing'
+        );
+        
+        if (pendingTasks.length > 0) {
+          console.log('[TaskRecovery] Found pending tasks:', pendingTasks.length);
+          
+          // 将进行中的任务标记为中断（因为刷新后无法恢复处理）
+          await Promise.all(pendingTasks.map(task => 
+            fetch(`/api/tasks/${task.id}`, {
+              method: 'PATCH',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify({
+                status: 'failed',
+                error: '任务因页面刷新而中断，请重新提交'
+              }),
+            })
+          ));
+          
+          // 更新本地状态
+          const updatedTasks = formattedTasks.map(t => {
+            if (t.status === 'uploading' || t.status === 'processing') {
+              return { ...t, status: 'failed' as TaskStatus, error: '任务因页面刷新而中断，请重新提交' };
+            }
+            return t;
+          });
+          setTasks(updatedTasks);
+        } else {
+          setTasks(formattedTasks);
+        }
       }
     } catch (error) {
       console.error('加载任务失败:', error);
@@ -864,6 +898,22 @@ export default function Home() {
 
     setTasks(prev => [newTask, ...prev]);
 
+    // 【乐观保存】立即保存任务到数据库，防止刷新丢失
+    // 任务状态为 uploading，后续会更新
+    const savedTask = await saveTaskToDB(newTask);
+    const taskId = savedTask?.id || newTask.id;
+    
+    // 如果数据库返回了新ID，更新本地任务
+    if (savedTask && savedTask.id !== newTask.id) {
+      setTasks(prev => 
+        prev.map(task => 
+          task.id === newTask.id 
+            ? { ...task, id: savedTask.id, dbId: savedTask.id }
+            : task
+        )
+      );
+    }
+
     // 保存用户偏好设置
     saveUserPrefs();
 
@@ -921,11 +971,14 @@ export default function Home() {
       
       setTasks(prev => 
         prev.map(task => 
-          task.id === newTask.id 
+          task.id === taskId
             ? { ...task, imageUrl: imageUrl, status: 'processing' }
             : task
         )
       );
+      
+      // 更新数据库中的任务状态
+      await updateTaskInDB(taskId, { imageUrl, status: 'processing' });
 
       // 步骤2-6：AI处理
       updateProgress(1, 0);
@@ -951,9 +1004,8 @@ export default function Home() {
       setStepProgress(100);
       setOverallProgress(100);
 
-      // 更新任务状态并保存到数据库
+      // 更新任务为完成状态
       const completedTask = {
-        ...newTask,
         status: 'completed' as TaskStatus,
         progress: 100,
         sora: result.sora,
@@ -961,8 +1013,8 @@ export default function Home() {
         imageUrl: imageUrl,
       };
 
-      // 保存到数据库
-      const savedTask = await saveTaskToDB(completedTask);
+      // 更新数据库中的任务
+      await updateTaskInDB(taskId, completedTask);
 
       // 更新本地余额显示（API已经扣减了余额）
       if (result.balance !== undefined) {
@@ -971,18 +1023,13 @@ export default function Home() {
         setBalance(prev => Math.max(0, prev - 1));
       }
 
-      setTasks(prev => {
-        if (savedTask) {
-          return prev.map(task => 
-            task.id === newTask.id 
-              ? { ...completedTask, id: savedTask.id }
-              : task
-          );
-        }
-        return prev.map(task => 
-          task.id === newTask.id ? completedTask : task
-        );
-      });
+      setTasks(prev => 
+        prev.map(task => 
+          task.id === taskId
+            ? { ...task, ...completedTask }
+            : task
+        )
+      );
 
       // 触发小帆帆祝福
       setShowBlessing(true);
@@ -1015,9 +1062,12 @@ export default function Home() {
         errorMessage = '服务器繁忙，请稍后重试';
       }
       
+      // 更新数据库中的失败状态
+      await updateTaskInDB(taskId, { status: 'failed', error: errorMessage });
+      
       setTasks(prev => 
         prev.map(task => 
-          task.id === newTask.id 
+          task.id === taskId
             ? { 
                 ...task, 
                 status: 'failed', 
