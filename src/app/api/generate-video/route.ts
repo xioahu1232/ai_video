@@ -130,7 +130,8 @@ export async function POST(request: NextRequest): Promise<NextResponse<TaskRespo
     
     // 获取工作流 ID
     const workflowId = await getWorkflowId();
-    console.log(`[${requestId}] Using workflow ID: ${workflowId}`);
+    console.log(`[${requestId}] Using workflow ID: "${workflowId}" (length: ${workflowId?.length})`);
+    console.log(`[${requestId}] Using API Key: ${apiKey?.substring(0, 15)}... (length: ${apiKey?.length})`);
 
     // 🛡️ 先扣减余额（并发安全）
     // 这样可以防止用户在余额不足时仍然调用工作流

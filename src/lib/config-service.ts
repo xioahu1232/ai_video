@@ -26,11 +26,14 @@ export async function getSystemConfig(key: string): Promise<string | null> {
       .single();
     
     if (error || !data) {
+      console.log(`[Config] No config found for key: ${key}, error:`, error?.message || 'no data');
       return null;
     }
     
-    return data.value;
-  } catch {
+    console.log(`[Config] Got config for ${key}: "${data.value}" (length: ${data.value?.length})`);
+    return data.value?.trim() || null;
+  } catch (e) {
+    console.error(`[Config] Error getting config for ${key}:`, e);
     return null;
   }
 }

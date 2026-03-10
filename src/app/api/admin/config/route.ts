@@ -118,12 +118,31 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: '缺少配置键名' }, { status: 400 });
     }
 
+    // 清理配置值
+    let cleanValue = value || '';
+    
+    // 特殊处理：工作流ID 去除可能的 "id=" 前缀
+    if (key === 'coze_workflow_id') {
+      cleanValue = cleanValue.replace(/^id=/i, '').trim();
+      // 验证是否为纯数字
+      if (cleanValue && !/^\d+$/.test(cleanValue)) {
+        return NextResponse.json({ 
+          error: '工作流 ID 格式错误，应为纯数字，例如：7504252811677974554' 
+        }, { status: 400 });
+      }
+    }
+    
+    // 特殊处理：API Key 去除可能的 "Bearer " 前缀和多余空格
+    if (key === 'coze_api_key') {
+      cleanValue = cleanValue.replace(/^Bearer\s+/i, '').trim();
+    }
+
     // 更新或插入配置
     const { error } = await supabase
       .from('system_config')
       .upsert({
         key,
-        value: value || '',
+        value: cleanValue,
         description,
         updated_at: new Date().toISOString(),
       }, {
