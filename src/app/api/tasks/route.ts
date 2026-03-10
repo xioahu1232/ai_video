@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { coreSellingPoint, imageUrl, videoDuration, language, sora, seedance, status, error: taskError, starred } = body;
+    const { coreSellingPoint, imageUrl, imageKey, videoDuration, language, sora, seedance, status, error: taskError, starred } = body;
 
     if (!coreSellingPoint || !language) {
       return NextResponse.json(
@@ -106,6 +106,7 @@ export async function POST(request: NextRequest) {
         user_id: user.id,
         core_selling_point: coreSellingPoint,
         image_url: imageUrl,
+        image_key: imageKey, // 存储 S3 key，用于生成永久有效的预签名 URL
         video_duration: videoDuration,
         language,
         sora,

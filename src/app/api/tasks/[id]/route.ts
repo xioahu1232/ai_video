@@ -39,6 +39,8 @@ export async function PATCH(
     if (body.seedance !== undefined) updateData.seedance = body.seedance;
     if (body.status !== undefined) updateData.status = body.status;
     if (body.error !== undefined) updateData.error = body.error;
+    if (body.imageUrl !== undefined) updateData.image_url = body.imageUrl;
+    if (body.imageKey !== undefined) updateData.image_key = body.imageKey;
     
     // 收藏状态变化时，同步更新过期时间
     if (body.starred !== undefined) {

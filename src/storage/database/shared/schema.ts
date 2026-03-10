@@ -13,6 +13,7 @@ export const userTasks = pgTable("user_tasks", {
 	userId: varchar("user_id", { length: 36 }).notNull(),
 	coreSellingPoint: text("core_selling_point").notNull(),
 	imageUrl: text("image_url"),
+	imageKey: text("image_key"), // S3 存储的 key，用于生成永久有效的预签名 URL
 	videoDuration: varchar("video_duration", { length: 50 }),
 	language: varchar({ length: 50 }).notNull(),
 	sora: text(),

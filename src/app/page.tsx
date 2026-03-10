@@ -113,6 +113,7 @@ interface Task {
   error?: string;
   expanded?: boolean;
   imageUrl?: string;
+  imageKey?: string; // S3 存储的 key，用于生成永久有效的预签名 URL
   imagePreview?: string;
   starred?: boolean;
   videoDuration?: string;
@@ -221,9 +222,37 @@ export default function Home() {
           expanded: false,
           starred: t.starred as boolean,
           imageUrl: t.image_url as string | undefined,
+          imageKey: t.image_key as string | undefined, // S3 key
           videoDuration: t.video_duration as string | undefined,
           expiresAt: t.expires_at as string | undefined,
         }));
+        
+        // 【批量获取图片 URL】后台获取图片预签名 URL
+        const tasksWithImageKeys = formattedTasks.filter(t => t.imageKey);
+        if (tasksWithImageKeys.length > 0) {
+          const keys = tasksWithImageKeys.map(t => t.imageKey as string);
+          
+          fetch('/api/get-image-url', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ keys }),
+          })
+            .then(res => res.json())
+            .then(urlData => {
+              if (urlData.success && urlData.urls) {
+                // 更新任务的 imagePreview 字段
+                setTasks(prev => 
+                  prev.map(task => {
+                    if (task.imageKey && urlData.urls[task.imageKey]) {
+                      return { ...task, imagePreview: urlData.urls[task.imageKey] };
+                    }
+                    return task;
+                  })
+                );
+              }
+            })
+            .catch(err => console.error('批量获取图片 URL 失败:', err));
+        }
         
         // 【任务恢复】检查是否有进行中的任务
         const pendingTasks = formattedTasks.filter(
@@ -307,6 +336,62 @@ export default function Home() {
     }
   }, [token, user, loadTasksFromDB, loadBalance, isNewUser]);
 
+  // 图片 URL 缓存（避免重复请求）
+  const imageUrlCache = useRef<Record<string, string>>({});
+
+  // 获取图片 URL（优先使用 imageKey 获取新的预签名 URL）
+  const getImageUrl = useCallback(async (task: Task): Promise<string | null> => {
+    // 如果有 imageKey，优先使用它获取新的预签名 URL
+    if (task.imageKey) {
+      // 检查缓存
+      if (imageUrlCache.current[task.imageKey]) {
+        return imageUrlCache.current[task.imageKey];
+      }
+      
+      try {
+        const res = await fetch(`/api/get-image-url?key=${encodeURIComponent(task.imageKey)}`);
+        const data = await res.json();
+        
+        if (data.success && data.url) {
+          // 缓存 URL
+          imageUrlCache.current[task.imageKey] = data.url;
+          return data.url;
+        }
+      } catch (error) {
+        console.error('获取图片 URL 失败:', error);
+      }
+    }
+    
+    // 降级使用 imageUrl（可能已过期）
+    return task.imageUrl || null;
+  }, []);
+
+  // 批量获取图片 URL
+  const batchGetImageUrls = useCallback(async (tasks: Task[]): Promise<Record<string, string>> => {
+    const keys = tasks.filter(t => t.imageKey).map(t => t.imageKey as string);
+    
+    if (keys.length === 0) return {};
+    
+    try {
+      const res = await fetch('/api/get-image-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ keys }),
+      });
+      const data = await res.json();
+      
+      if (data.success && data.urls) {
+        // 更新缓存
+        Object.assign(imageUrlCache.current, data.urls);
+        return data.urls;
+      }
+    } catch (error) {
+      console.error('批量获取图片 URL 失败:', error);
+    }
+    
+    return {};
+  }, []);
+
   // 保存任务到数据库
   const saveTaskToDB = useCallback(async (task: Task) => {
     if (!token) return;
@@ -321,6 +406,7 @@ export default function Home() {
         body: JSON.stringify({
           coreSellingPoint: task.coreSellingPoint,
           imageUrl: task.imageUrl,
+          imageKey: task.imageKey, // 存储 S3 key
           videoDuration: task.videoDuration,
           language: task.language,
           sora: task.sora,
@@ -666,7 +752,7 @@ export default function Home() {
 
   // 上传图片到对象存储
   // Base64上传方式（移动端备用方案）
-  const uploadImageBase64 = async (file: File): Promise<string> => {
+  const uploadImageBase64 = async (file: File): Promise<{ url: string; key?: string }> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = async (e) => {
@@ -698,8 +784,8 @@ export default function Home() {
             throw new Error(data.error || '上传失败');
           }
           
-          console.log('[Upload] Base64 upload successful:', data.url);
-          resolve(data.url);
+          console.log('[Upload] Base64 upload successful:', { url: data.url, key: data.key });
+          resolve({ url: data.url, key: data.key });
         } catch (error) {
           reject(error);
         }
@@ -715,7 +801,7 @@ export default function Home() {
     return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
   };
 
-  const uploadImage = async (file: File, retryCount = 0, forceBase64 = false): Promise<string> => {
+  const uploadImage = async (file: File, retryCount = 0, forceBase64 = false): Promise<{ url: string; key?: string }> => {
     // 移动端优先使用Base64方式（绕过代理层对FormData的限制）
     const shouldUseBase64 = forceBase64 || isMobile();
     
@@ -757,8 +843,8 @@ export default function Home() {
         return uploadImageBase64(file);
       }
 
-      console.log('[Upload] FormData upload successful:', data.url);
-      return data.url;
+      console.log('[Upload] FormData upload successful:', { url: data.url, key: data.key });
+      return { url: data.url, key: data.key };
     } catch (error) {
       clearTimeout(timeoutId);
       
@@ -965,20 +1051,20 @@ export default function Home() {
         fileType: productImage.type 
       });
       
-      const imageUrl = await uploadImage(productImage);
+      const { url: imageUrl, key: imageKey } = await uploadImage(productImage);
       
-      console.log('[Upload] Image uploaded successfully:', imageUrl);
+      console.log('[Upload] Image uploaded successfully:', { imageUrl, imageKey });
       
       setTasks(prev => 
         prev.map(task => 
           task.id === taskId
-            ? { ...task, imageUrl: imageUrl, status: 'processing' }
+            ? { ...task, imageUrl, imageKey, status: 'processing' }
             : task
         )
       );
       
       // 更新数据库中的任务状态
-      await updateTaskInDB(taskId, { imageUrl, status: 'processing' });
+      await updateTaskInDB(taskId, { imageUrl, imageKey, status: 'processing' });
 
       // 步骤2-6：AI处理
       updateProgress(1, 0);
