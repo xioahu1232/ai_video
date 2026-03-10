@@ -147,7 +147,7 @@ export default function Home() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   // AI 建议卖点状态
-  const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
+  const [aiSuggestions, setAiSuggestions] = useState<{ zh: string; en: string }[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [productType, setProductType] = useState<string>('');
   
@@ -778,7 +778,7 @@ export default function Home() {
         },
         body: JSON.stringify({
           imageBase64: base64,
-          language,
+          language: 'zh', // 始终使用中文分析
         }),
       });
 
@@ -798,13 +798,16 @@ export default function Home() {
     }
   };
 
-  // 采纳 AI 建议的卖点
-  const adoptSuggestion = (suggestion: string) => {
+  // 采纳 AI 建议的卖点（使用中文版本）
+  const adoptSuggestion = (suggestion: { zh: string; en: string }) => {
+    // 使用中文版本填入输入框
+    const textToUse = suggestion.zh;
+    
     // 如果已有内容，追加；否则直接替换
     if (coreSellingPoint.trim()) {
-      setCoreSellingPoint(prev => prev + '，' + suggestion);
+      setCoreSellingPoint(prev => prev + '，' + textToUse);
     } else {
-      setCoreSellingPoint(suggestion);
+      setCoreSellingPoint(textToUse);
     }
     // 清空建议列表
     setAiSuggestions([]);
@@ -1860,7 +1863,16 @@ ${'='.repeat(50)}`;
                         >
                           <div className="flex items-start gap-2">
                             <Lightbulb className="w-4 h-4 text-purple-500 flex-shrink-0 mt-0.5 group-hover:scale-110 transition-transform" />
-                            <span className="text-sm text-gray-700 group-hover:text-purple-700">{suggestion}</span>
+                            <div className="flex-1">
+                              {/* 中文卖点 - 主要显示 */}
+                              <p className="text-sm text-gray-800 font-medium group-hover:text-purple-700">
+                                {suggestion.zh}
+                              </p>
+                              {/* 英文版本 - 辅助显示 */}
+                              <p className="text-xs text-gray-500 mt-1 italic">
+                                {suggestion.en}
+                              </p>
+                            </div>
                           </div>
                         </button>
                       ))}

@@ -7,9 +7,14 @@ interface AnalyzeRequest {
   language?: string;
 }
 
+interface SellingPoint {
+  zh: string;  // 中文版本
+  en: string;  // 英文版本（用于后续生成）
+}
+
 interface AnalyzeResponse {
   success: boolean;
-  suggestions?: string[];
+  suggestions?: SellingPoint[];
   productType?: string;
   error?: string;
 }
@@ -53,9 +58,8 @@ export async function POST(request: NextRequest): Promise<NextResponse<AnalyzeRe
     const config = new Config();
     const client = new LLMClient(config, customHeaders);
 
-    // 构建分析提示词
-    const systemPrompt = language === 'zh' 
-      ? `你是一位专业的电商文案专家和产品分析师。你的任务是分析产品图片，提取产品卖点。
+    // 构建分析提示词 - 要求同时输出中英文
+    const systemPrompt = `你是一位专业的电商文案专家和产品分析师。你的任务是分析产品图片，提取产品卖点。
 
 请仔细观察图片中的产品，从以下维度进行分析：
 1. **产品类型**：这是什么类型的产品？
@@ -65,24 +69,22 @@ export async function POST(request: NextRequest): Promise<NextResponse<AnalyzeRe
 5. **使用场景**：在什么场景下使用？
 6. **差异化优势**：与同类产品相比有什么独特之处？
 
-请用简洁有力的营销语言，提炼出 3-5 个核心卖点，每个卖点控制在 15-30 字。
-卖点要突出产品的独特价值，避免空洞的形容词。`
-      : `You are a professional e-commerce copywriting expert. Analyze the product image and extract key selling points.
+**重要**：你的输出必须同时包含中文和英文版本，方便中国用户理解。
 
-Please analyze from these dimensions:
-1. **Product Type**: What type of product is this?
-2. **Design**: Color, shape, material, design style
-3. **Features**: What features can be inferred?
-4. **Target Users**: Who is this product for?
-5. **Use Cases**: Where/when would this be used?
-6. **Unique Advantages**: What makes it stand out?
+请按以下 JSON 格式输出（不要添加任何其他文字）：
+[
+  {"zh": "中文卖点描述", "en": "English selling point"},
+  {"zh": "中文卖点描述", "en": "English selling point"},
+  ...
+]
 
-Provide 3-5 concise selling points, each 10-25 words.
-Focus on unique value, avoid empty adjectives.`;
+要求：
+- 提供 3-5 个核心卖点
+- 中文卖点：15-30 字，简洁有力的营销语言
+- 英文卖点：对应的英文翻译，10-25 words
+- 突出产品的独特价值，避免空洞的形容词`;
 
-    const userPrompt = language === 'zh'
-      ? '请分析这张产品图片，提取核心卖点。直接输出卖点列表，每个卖点一行，不需要序号或其他格式。'
-      : 'Analyze this product image and extract key selling points. Output one selling point per line, no numbering needed.';
+    const userPrompt = '请分析这张产品图片，提取核心卖点。按 JSON 格式输出，同时包含中文和英文版本。';
 
     // 构建多模态消息
     const messages = [
@@ -114,31 +116,49 @@ Focus on unique value, avoid empty adjectives.`;
 
     // 解析结果
     const content = response.content.trim();
+    console.log(`[${requestId}] Raw response:`, content);
     
-    // 将内容分割成行，过滤空行
-    const suggestions = content
-      .split('\n')
-      .map(line => line.trim())
-      .filter(line => line.length > 0 && !line.startsWith('【') && !line.startsWith('**'))
-      .map(line => {
-        // 移除可能的序号前缀（如 "1. ", "- ", "• " 等）
-        return line.replace(/^[\d\-\•\*\•]+\s*/, '').trim();
-      })
-      .filter(line => line.length >= 5 && line.length <= 100); // 过滤过长或过短的行
+    // 尝试解析 JSON
+    let suggestions: SellingPoint[] = [];
+    
+    try {
+      // 尝试提取 JSON 数组
+      const jsonMatch = content.match(/\[[\s\S]*\]/);
+      if (jsonMatch) {
+        suggestions = JSON.parse(jsonMatch[0]);
+      }
+    } catch (parseError) {
+      console.log(`[${requestId}] JSON parse failed, trying alternative parsing`);
+      
+      // 如果 JSON 解析失败，尝试从文本中提取
+      const lines = content.split('\n').filter(line => line.trim());
+      for (const line of lines) {
+        // 尝试匹配中英文格式
+        const match = line.match(/["']zh["']\s*:\s*["']([^"']+)["'].*["']en["']\s*:\s*["']([^"']+)["']/);
+        if (match) {
+          suggestions.push({ zh: match[1], en: match[2] });
+        }
+      }
+    }
 
-    // 如果没有提取到有效的卖点，使用原始内容
-    const finalSuggestions = suggestions.length > 0 
-      ? suggestions.slice(0, 5) // 最多返回5个
-      : [content.substring(0, 100)];
+    // 如果仍然没有提取到，创建默认格式
+    if (suggestions.length === 0) {
+      // 将原始内容作为中文，生成简单英文
+      const lines = content.split('\n').filter(line => line.trim() && line.length > 5);
+      suggestions = lines.slice(0, 5).map(line => ({
+        zh: line.replace(/^[\d\-\•\*\•]+\s*/, '').trim(),
+        en: line.replace(/^[\d\-\•\*\•]+\s*/, '').trim() // 如果没有英文，暂时用中文
+      }));
+    }
 
-    // 尝试识别产品类型（从第一个建议中提取关键词）
-    const productType = extractProductType(content, language);
+    // 尝试识别产品类型
+    const productType = extractProductType(content);
 
-    console.log(`[${requestId}] Analysis complete: ${finalSuggestions.length} suggestions, product type: ${productType}`);
+    console.log(`[${requestId}] Analysis complete: ${suggestions.length} suggestions`);
 
     return NextResponse.json({
       success: true,
-      suggestions: finalSuggestions,
+      suggestions: suggestions.slice(0, 5), // 最多返回5个
       productType,
     });
 
@@ -159,18 +179,35 @@ Focus on unique value, avoid empty adjectives.`;
 /**
  * 从分析结果中提取产品类型
  */
-function extractProductType(content: string, language: string): string {
-  const keywords = language === 'zh'
-    ? ['手机', '耳机', '手表', '包', '鞋', '服装', '化妆品', '食品', '饮料', '电子产品', '家居', '玩具', '书籍', '运动']
-    : ['phone', 'earphone', 'watch', 'bag', 'shoes', 'clothing', 'cosmetics', 'food', 'drink', 'electronics', 'home', 'toy', 'book', 'sports'];
+function extractProductType(content: string): string {
+  const keywords = [
+    { zh: '手机', en: 'phone' },
+    { zh: '耳机', en: 'earphone' },
+    { zh: '手表', en: 'watch' },
+    { zh: '包', en: 'bag' },
+    { zh: '鞋', en: 'shoes' },
+    { zh: '服装', en: 'clothing' },
+    { zh: '化妆品', en: 'cosmetics' },
+    { zh: '食品', en: 'food' },
+    { zh: '饮料', en: 'drink' },
+    { zh: '电子产品', en: 'electronics' },
+    { zh: '家居', en: 'home' },
+    { zh: '玩具', en: 'toy' },
+    { zh: '书籍', en: 'book' },
+    { zh: '运动', en: 'sports' },
+    { zh: '首饰', en: 'jewelry' },
+    { zh: '眼镜', en: 'glasses' },
+    { zh: '灯具', en: 'lamp' },
+    { zh: '家具', en: 'furniture' },
+  ];
   
   const lowerContent = content.toLowerCase();
   
   for (const keyword of keywords) {
-    if (lowerContent.includes(keyword.toLowerCase())) {
-      return keyword;
+    if (lowerContent.includes(keyword.zh) || lowerContent.includes(keyword.en)) {
+      return keyword.zh;
     }
   }
   
-  return language === 'zh' ? '产品' : 'Product';
+  return '产品';
 }
