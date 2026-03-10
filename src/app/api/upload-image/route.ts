@@ -24,58 +24,115 @@ export async function POST(request: NextRequest): Promise<NextResponse<UploadRes
   console.log(`[${requestId}] Upload request started`);
 
   try {
-    const formData = await request.formData();
-    const file = formData.get('file') as File | null;
+    // 检查Content-Type判断上传方式
+    const contentType = request.headers.get('content-type') || '';
+    console.log(`[${requestId}] Content-Type: ${contentType.substring(0, 100)}`);
+    
+    let buffer: Buffer;
+    let fileType = 'image/jpeg';
+    let fileName = 'image.jpg';
+    
+    // 支持两种上传方式：FormData 和 JSON(Base64)
+    if (contentType.includes('multipart/form-data')) {
+      // 传统FormData方式
+      console.log(`[${requestId}] Using FormData mode`);
+      const formData = await request.formData();
+      const file = formData.get('file') as File | null;
 
-    if (!file) {
-      console.log(`[${requestId}] Error: No file found`);
+      if (!file) {
+        console.log(`[${requestId}] Error: No file found`);
+        return NextResponse.json(
+          { success: false, error: '未找到上传文件' },
+          { status: 400 }
+        );
+      }
+
+      console.log(`[${requestId}] File info:`, {
+        name: file.name,
+        type: file.type,
+        size: `${(file.size / 1024).toFixed(1)}KB`
+      });
+
+      if (!file.type.startsWith('image/')) {
+        return NextResponse.json(
+          { success: false, error: '只支持图片文件' },
+          { status: 400 }
+        );
+      }
+
+      if (file.size > 10 * 1024 * 1024) {
+        return NextResponse.json(
+          { success: false, error: '图片大小不能超过 10MB' },
+          { status: 400 }
+        );
+      }
+
+      const arrayBuffer = await file.arrayBuffer();
+      buffer = Buffer.from(arrayBuffer);
+      fileType = file.type;
+      fileName = file.name;
+    } else if (contentType.includes('application/json')) {
+      // Base64 JSON方式（移动端备用方案）
+      console.log(`[${requestId}] Using Base64 JSON mode`);
+      const body = await request.json();
+      
+      if (!body.fileBase64) {
+        return NextResponse.json(
+          { success: false, error: '未找到文件数据' },
+          { status: 400 }
+        );
+      }
+      
+      // 解析Base64数据
+      const matches = body.fileBase64.match(/^data:(.+);base64,(.+)$/);
+      if (!matches) {
+        // 尝试直接解码（不带data:前缀）
+        try {
+          buffer = Buffer.from(body.fileBase64, 'base64');
+          fileType = body.fileType || 'image/jpeg';
+          fileName = body.fileName || 'image.jpg';
+        } catch {
+          return NextResponse.json(
+            { success: false, error: '无效的Base64数据' },
+            { status: 400 }
+          );
+        }
+      } else {
+        fileType = matches[1] || 'image/jpeg';
+        const base64Data = matches[2];
+        buffer = Buffer.from(base64Data, 'base64');
+        fileName = body.fileName || 'image.jpg';
+      }
+      
+      console.log(`[${requestId}] Base64 file info:`, {
+        type: fileType,
+        size: `${(buffer.length / 1024).toFixed(1)}KB`
+      });
+      
+      if (buffer.length > 10 * 1024 * 1024) {
+        return NextResponse.json(
+          { success: false, error: '图片大小不能超过 10MB' },
+          { status: 400 }
+        );
+      }
+    } else {
       return NextResponse.json(
-        { success: false, error: '未找到上传文件' },
+        { success: false, error: '不支持的Content-Type' },
         { status: 400 }
       );
     }
-
-    console.log(`[${requestId}] File info:`, {
-      name: file.name,
-      type: file.type,
-      size: `${(file.size / 1024).toFixed(1)}KB`
-    });
-
-    // 验证文件类型
-    if (!file.type.startsWith('image/')) {
-      console.log(`[${requestId}] Error: Invalid file type: ${file.type}`);
-      return NextResponse.json(
-        { success: false, error: '只支持图片文件' },
-        { status: 400 }
-      );
-    }
-
-    // 验证文件大小（最大 10MB）
-    if (file.size > 10 * 1024 * 1024) {
-      console.log(`[${requestId}] Error: File too large: ${file.size}`);
-      return NextResponse.json(
-        { success: false, error: '图片大小不能超过 10MB' },
-        { status: 400 }
-      );
-    }
-
-    // 读取文件内容
-    console.log(`[${requestId}] Reading file content...`);
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-    console.log(`[${requestId}] File content read: ${buffer.length} bytes`);
 
     // 生成文件名
     const timestamp = Date.now();
-    const originalName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-    const fileName = `video-generator/${timestamp}_${originalName}`;
+    const safeName = fileName.replace(/[^a-zA-Z0-9.-]/g, '_');
+    const storageFileName = `video-generator/${timestamp}_${safeName}`;
 
     // 上传到对象存储
-    console.log(`[${requestId}] Uploading to S3: ${fileName}`);
+    console.log(`[${requestId}] Uploading to S3: ${storageFileName}`);
     const key = await storage.uploadFile({
       fileContent: buffer,
-      fileName: fileName,
-      contentType: file.type || 'image/jpeg',
+      fileName: storageFileName,
+      contentType: fileType,
     });
     console.log(`[${requestId}] S3 upload complete: ${key}`);
 
@@ -96,7 +153,6 @@ export async function POST(request: NextRequest): Promise<NextResponse<UploadRes
   } catch (error) {
     console.error(`[${requestId}] Upload Error:`, error);
     
-    // 更详细的错误信息
     const errorMessage = error instanceof Error 
       ? error.message 
       : '图片上传失败，请稍后重试';

@@ -558,7 +558,56 @@ export default function Home() {
   };
 
   // 上传图片到对象存储
-  const uploadImage = async (file: File, retryCount = 0): Promise<string> => {
+  // Base64上传方式（移动端备用方案）
+  const uploadImageBase64 = async (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const base64 = e.target?.result as string;
+          console.log('[Upload] Using Base64 mode, size:', `${(base64.length / 1024).toFixed(1)}KB`);
+          
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 90000);
+          
+          const response = await fetch('/api/upload-image', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              fileBase64: base64,
+              fileName: file.name,
+              fileType: file.type,
+            }),
+            signal: controller.signal,
+          });
+          
+          clearTimeout(timeoutId);
+          
+          const data = await response.json();
+          
+          if (!data.success) {
+            throw new Error(data.error || '上传失败');
+          }
+          
+          console.log('[Upload] Base64 upload successful:', data.url);
+          resolve(data.url);
+        } catch (error) {
+          reject(error);
+        }
+      };
+      reader.onerror = () => reject(new Error('文件读取失败'));
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const uploadImage = async (file: File, retryCount = 0, useBase64 = false): Promise<string> => {
+    // 如果之前FormData失败，切换到Base64模式
+    if (useBase64) {
+      return uploadImageBase64(file);
+    }
+
     const formData = new FormData();
     formData.append('file', file);
 
@@ -567,6 +616,7 @@ export default function Home() {
     const timeoutId = setTimeout(() => controller.abort(), 90000);
 
     try {
+      console.log('[Upload] Starting FormData upload...');
       const response = await fetch('/api/upload-image', {
         method: 'POST',
         body: formData,
@@ -577,12 +627,18 @@ export default function Home() {
 
       if (!response.ok) {
         const errorText = await response.text().catch(() => 'Unknown error');
-        console.error('Upload failed:', response.status, errorText);
+        console.error('[Upload] FormData failed:', response.status, errorText);
         
-        // 服务器错误时重试（最多2次）
-        if (response.status >= 500 && retryCount < 2) {
-          console.log(`Retrying upload (${retryCount + 1}/2)...`);
-          await new Promise(resolve => setTimeout(resolve, 1000)); // 等待1秒后重试
+        // 服务器错误或网络问题时，尝试Base64方式
+        if (response.status >= 500 || response.status === 0) {
+          console.log('[Upload] Switching to Base64 mode...');
+          return uploadImageBase64(file);
+        }
+        
+        // 其他错误重试
+        if (retryCount < 2) {
+          console.log(`[Upload] Retrying FormData (${retryCount + 1}/2)...`);
+          await new Promise(resolve => setTimeout(resolve, 1000));
           return uploadImage(file, retryCount + 1);
         }
         
@@ -592,37 +648,36 @@ export default function Home() {
       const data = await response.json();
       
       if (!data.success) {
-        // 业务错误时重试（最多1次）
+        // 业务错误时尝试Base64
         if (retryCount < 1) {
-          console.log(`Retrying upload due to business error (${retryCount + 1}/1)...`);
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          return uploadImage(file, retryCount + 1);
+          console.log('[Upload] Business error, trying Base64 mode...');
+          return uploadImageBase64(file);
         }
         throw new Error(data.error || '图片上传失败，请稍后重试');
       }
 
-      console.log('Image uploaded successfully:', data.url);
+      console.log('[Upload] FormData upload successful:', data.url);
       return data.url;
     } catch (error) {
       clearTimeout(timeoutId);
       
-      if (error instanceof Error && error.name === 'AbortError') {
-        // 超时时重试
-        if (retryCount < 1) {
-          console.log(`Retrying upload due to timeout (${retryCount + 1}/1)...`);
-          return uploadImage(file, retryCount + 1);
+      // 超时或网络错误时，尝试Base64方式
+      if (error instanceof Error && (error.name === 'AbortError' || error.message === 'Failed to fetch')) {
+        console.log('[Upload] Network issue, switching to Base64 mode...');
+        try {
+          return await uploadImageBase64(file);
+        } catch (base64Error) {
+          throw new Error('图片上传失败，请检查网络连接后重试');
         }
-        throw new Error('图片上传超时，请检查网络连接后重试');
       }
       
-      if (error instanceof TypeError && error.message === 'Failed to fetch') {
-        // 网络错误时重试
-        if (retryCount < 2) {
-          console.log(`Retrying upload due to network error (${retryCount + 1}/2)...`);
-          await new Promise(resolve => setTimeout(resolve, 2000));
-          return uploadImage(file, retryCount + 1);
+      if (error instanceof TypeError) {
+        console.log('[Upload] TypeError, switching to Base64 mode...');
+        try {
+          return await uploadImageBase64(file);
+        } catch (base64Error) {
+          throw new Error('网络连接失败，请检查网络后重试');
         }
-        throw new Error('网络连接失败，请检查网络后重试');
       }
       
       throw error;
