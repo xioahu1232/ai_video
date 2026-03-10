@@ -1198,7 +1198,7 @@ ${'='.repeat(50)}`;
             {user ? (
               <>
                 {/* 余额显示 */}
-                <div data-tour="balance" className="flex items-center gap-2">
+                <div className="flex items-center gap-2">
                 <button
                   onClick={() => setShowRedeemModal(true)}
                   className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-gradient-to-r from-[#4fa3d1]/10 to-[#1a3a6b]/10 rounded-lg sm:rounded-xl border border-[#4fa3d1]/20 hover:border-[#4fa3d1]/40 transition-colors"
@@ -1291,7 +1291,7 @@ ${'='.repeat(50)}`;
 
             <div className="space-y-5 sm:space-y-6 md:space-y-7">
               {/* 核心卖点 */}
-              <div data-tour="selling-point" className="space-y-2 sm:space-y-3">
+              <div className="space-y-2 sm:space-y-3">
                 <label className="text-sm font-semibold text-gray-700">
                   核心卖点 <span className="text-red-400">*</span>
                 </label>
@@ -1305,7 +1305,7 @@ ${'='.repeat(50)}`;
               </div>
 
               {/* 产品图片 */}
-              <div data-tour="product-image" className="space-y-2 sm:space-y-3">
+              <div className="space-y-2 sm:space-y-3">
                 <label className="text-sm font-semibold text-gray-700">
                   产品图片 <span className="text-red-400">*</span>
                 </label>
@@ -1353,7 +1353,7 @@ ${'='.repeat(50)}`;
               </div>
 
               {/* 时长预设 */}
-              <div data-tour="duration" className="space-y-2 sm:space-y-3 md:space-y-4">
+              <div className="space-y-2 sm:space-y-3 md:space-y-4">
                 <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
                   <Clock className="w-4 h-4" />
                   时长预设
@@ -1405,7 +1405,7 @@ ${'='.repeat(50)}`;
               </div>
 
               {/* 语言选择 */}
-              <div data-tour="language" className="space-y-2 sm:space-y-3">
+              <div className="space-y-2 sm:space-y-3">
                 <label className="text-sm font-semibold text-gray-700">
                   语言 <span className="text-red-400">*</span>
                 </label>
@@ -1426,7 +1426,7 @@ ${'='.repeat(50)}`;
               </div>
 
               {/* 提交按钮 */}
-              <div data-tour="submit">
+              <div>
               {user && balance <= 0 ? (
                 <div className="space-y-3">
                   <div className="flex items-center gap-2 p-3 sm:p-4 bg-red-50 rounded-lg sm:rounded-xl text-red-500 text-xs sm:text-sm">
@@ -1462,7 +1462,7 @@ ${'='.repeat(50)}`;
           </div>
 
           {/* 右侧：结果卡片 */}
-          <div data-tour="history" className="card overflow-hidden flex flex-col">
+          <div className="card overflow-hidden flex flex-col">
             <div className="p-4 sm:p-6 md:p-8 border-b border-gray-100">
               {/* 标题行 */}
               <div className="flex items-center justify-between mb-4">
