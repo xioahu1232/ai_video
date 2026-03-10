@@ -381,25 +381,29 @@ export default function Home() {
 
   // 处理文件选择
   // 图片压缩函数 - 确保上传文件大小在安全范围内
-  // 关键：Base64编码会增加33%大小，所以需要预留空间
+  // 关键：沙箱代理层对请求体有限制，需要确保Base64编码后不超过限制
+  // Base64编码会增加33%大小，所以500KB文件→约650KB请求体
   const compressImage = async (file: File): Promise<File> => {
-    // 安全上传大小：2.5MB（Base64后约3.3MB，可通过大部分代理层限制）
-    const SAFE_UPLOAD_SIZE = 2.5 * 1024 * 1024;
+    // 安全上传大小：800KB（Base64后约1MB，确保能通过代理层）
+    // 代理层通常限制1MB-10MB，我们用1MB作为安全线
+    const SAFE_UPLOAD_SIZE = 800 * 1024; // 800KB
     const HIGH_QUALITY_MAX_WIDTH = 1920; // 高清模式下最大宽度
     const COMPRESSED_MAX_WIDTH = 1280; // 压缩模式下最大宽度
+    const AGGRESSIVE_MAX_WIDTH = 960; // 激进压缩模式最大宽度
     const HIGH_QUALITY = 0.85; // 高清模式质量
-    const COMPRESSED_QUALITY = 0.7; // 压缩模式质量
+    const COMPRESSED_QUALITY = 0.75; // 压缩模式质量
+    const AGGRESSIVE_QUALITY = 0.65; // 激进压缩模式质量
     
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = (e) => {
         const img = new window.Image();
         img.onload = () => {
-          const fileSizeMB = file.size / (1024 * 1024);
+          const fileSizeKB = file.size / 1024;
           
-          // 2.5MB以内且宽度≤1920px：保留高清，不压缩
+          // 800KB以内且宽度≤1920px：保留高清，不压缩
           if (file.size <= SAFE_UPLOAD_SIZE && img.width <= HIGH_QUALITY_MAX_WIDTH) {
-            console.log(`[压缩] 高清图片无需压缩: ${fileSizeMB.toFixed(2)}MB, ${img.width}x${img.height}`);
+            console.log(`[压缩] 高清图片无需压缩: ${fileSizeKB.toFixed(0)}KB, ${img.width}x${img.height}`);
             resolve(file);
             return;
           }
@@ -411,19 +415,27 @@ export default function Home() {
           let reason: string;
           
           if (file.size <= SAFE_UPLOAD_SIZE) {
-            // 大小OK但宽度超标：压缩到1920px
+            // 大小OK但宽度超标：压缩到1920px，高质量
             newWidth = HIGH_QUALITY_MAX_WIDTH;
             newHeight = (img.height * HIGH_QUALITY_MAX_WIDTH) / img.width;
             quality = HIGH_QUALITY;
             reason = `宽度超标(${img.width}px>${HIGH_QUALITY_MAX_WIDTH}px)`;
-          } else {
-            // 大小超标：需要更激进的压缩
+          } else if (file.size <= 2 * 1024 * 1024) {
+            // 800KB-2MB：压缩到1280px，中等质量
             if (img.width > COMPRESSED_MAX_WIDTH) {
               newWidth = COMPRESSED_MAX_WIDTH;
               newHeight = (img.height * COMPRESSED_MAX_WIDTH) / img.width;
             }
             quality = COMPRESSED_QUALITY;
-            reason = `大小超标(${fileSizeMB.toFixed(2)}MB>${(SAFE_UPLOAD_SIZE/1024/1024).toFixed(1)}MB)`;
+            reason = `大小超标(${fileSizeKB.toFixed(0)}KB>800KB)`;
+          } else {
+            // 超过2MB：激进压缩到960px，低质量
+            if (img.width > AGGRESSIVE_MAX_WIDTH) {
+              newWidth = AGGRESSIVE_MAX_WIDTH;
+              newHeight = (img.height * AGGRESSIVE_MAX_WIDTH) / img.width;
+            }
+            quality = AGGRESSIVE_QUALITY;
+            reason = `大文件(${(fileSizeKB/1024).toFixed(1)}MB>2MB)`;
           }
           
           console.log(`[压缩] ${reason}: ${img.width}x${img.height} → ${Math.round(newWidth)}x${Math.round(newHeight)}, 质量${quality}`);
@@ -442,29 +454,45 @@ export default function Home() {
           
           // 绘制并压缩
           ctx.drawImage(img, 0, 0, newWidth, newHeight);
-          canvas.toBlob(
-            (blob) => {
-              if (!blob) {
-                console.log('[压缩] Blob创建失败，返回原文件');
-                resolve(file);
-                return;
-              }
-              // 如果压缩后更大，返回原文件
-              if (blob.size >= file.size) {
-                console.log('[压缩] 压缩后更大，保留原文件');
-                resolve(file);
-                return;
-              }
-              const compressedFile = new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), {
-                type: 'image/jpeg',
-                lastModified: Date.now(),
-              });
-              console.log(`[压缩] 完成: ${(file.size / 1024 / 1024).toFixed(2)}MB → ${(compressedFile.size / 1024 / 1024).toFixed(2)}MB (节省${Math.round((1 - compressedFile.size / file.size) * 100)}%)`);
-              resolve(compressedFile);
-            },
-            'image/jpeg',
-            quality
-          );
+          
+          // 递归压缩函数：确保最终文件不超过800KB
+          const compressWithQuality = (currentQuality: number, attempt: number = 1): void => {
+            canvas.toBlob(
+              (blob) => {
+                if (!blob) {
+                  console.log('[压缩] Blob创建失败，返回原文件');
+                  resolve(file);
+                  return;
+                }
+                
+                // 如果压缩后仍然超过800KB且质量还可以降低
+                if (blob.size > SAFE_UPLOAD_SIZE && currentQuality > 0.4 && attempt < 5) {
+                  const newQuality = currentQuality - 0.1;
+                  console.log(`[压缩] 仍超标(${(blob.size/1024).toFixed(0)}KB)，降低质量: ${currentQuality}→${newQuality}`);
+                  compressWithQuality(newQuality, attempt + 1);
+                  return;
+                }
+                
+                // 如果压缩后更大，返回原文件
+                if (blob.size >= file.size) {
+                  console.log('[压缩] 压缩后更大，保留原文件');
+                  resolve(file);
+                  return;
+                }
+                
+                const compressedFile = new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), {
+                  type: 'image/jpeg',
+                  lastModified: Date.now(),
+                });
+                console.log(`[压缩] 完成: ${(file.size / 1024).toFixed(0)}KB → ${(compressedFile.size / 1024).toFixed(0)}KB (节省${Math.round((1 - compressedFile.size / file.size) * 100)}%)`);
+                resolve(compressedFile);
+              },
+              'image/jpeg',
+              currentQuality
+            );
+          };
+          
+          compressWithQuality(quality);
         };
         img.onerror = () => {
           console.log('[压缩] 图片加载失败，返回原文件');
