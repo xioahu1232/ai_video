@@ -208,7 +208,15 @@ export default function Home() {
         headers: { Authorization: `Bearer ${token}` },
       });
       
-      const data = await res.json();
+      // 🛡️ 改进错误处理：先获取响应文本，再尝试解析JSON
+      let data;
+      try {
+        const responseText = await res.text();
+        data = responseText ? JSON.parse(responseText) : {};
+      } catch (parseError) {
+        console.error('JSON parse error:', parseError);
+        return;
+      }
       
       if (data.success && data.tasks) {
         const formattedTasks: Task[] = data.tasks.map((t: Record<string, unknown>) => ({
@@ -242,7 +250,15 @@ export default function Home() {
         headers: { Authorization: `Bearer ${token}` },
       });
       
-      const data = await res.json();
+      // 🛡️ 改进错误处理：先获取响应文本，再尝试解析JSON
+      let data;
+      try {
+        const responseText = await res.text();
+        data = responseText ? JSON.parse(responseText) : {};
+      } catch (parseError) {
+        console.error('JSON parse error:', parseError);
+        return;
+      }
       
       if (data.success) {
         setBalance(data.balance.balance);
@@ -298,7 +314,16 @@ export default function Home() {
         }),
       });
       
-      const data = await res.json();
+      // 🛡️ 改进错误处理：先获取响应文本，再尝试解析JSON
+      let data;
+      try {
+        const responseText = await res.text();
+        data = responseText ? JSON.parse(responseText) : {};
+      } catch (parseError) {
+        console.error('JSON parse error:', parseError);
+        return null;
+      }
+      
       return data.success ? data.task : null;
     } catch (error) {
       console.error('保存任务失败:', error);
@@ -574,14 +599,18 @@ export default function Home() {
 
       clearTimeout(timeoutId);
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
+      // 🛡️ 改进错误处理：先获取响应文本，再尝试解析JSON
+      let data;
+      try {
+        const responseText = await response.text();
+        data = responseText ? JSON.parse(responseText) : {};
+      } catch (parseError) {
+        console.error('JSON parse error:', parseError);
+        throw new Error(`服务器响应格式错误 (${response.status})，请稍后重试`);
       }
 
-      const data = await response.json();
-      
-      if (!data.success) {
-        throw new Error(data.error || '图片上传失败');
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || `上传失败 (${response.status})`);
       }
 
       return data.url;
@@ -631,14 +660,26 @@ export default function Home() {
 
       clearTimeout(timeoutId);
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
+      // 🛡️ 改进错误处理：先获取响应文本，再尝试解析JSON
+      let data;
+      try {
+        const responseText = await response.text();
+        data = responseText ? JSON.parse(responseText) : {};
+      } catch (parseError) {
+        console.error('JSON parse error:', parseError);
+        throw new Error(`服务器响应格式错误 (${response.status})，请稍后重试`);
       }
 
-      const data = await response.json();
-      
-      if (!data.success) {
-        throw new Error(data.error || '提示词生成失败');
+      if (!response.ok || !data.success) {
+        // 优先使用API返回的错误信息
+        const errorMsg = data.error || `请求失败 (${response.status})`;
+        
+        // 如果返回了余额信息，更新本地余额
+        if (data.balance !== undefined) {
+          setBalance(data.balance);
+        }
+        
+        throw new Error(errorMsg);
       }
 
       return {
