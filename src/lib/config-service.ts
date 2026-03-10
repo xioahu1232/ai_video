@@ -3,7 +3,7 @@ import { getSupabaseClient } from '@/storage/database/supabase-client';
 // 系统配置键名
 export const CONFIG_KEYS = {
   COZE_API_KEY: 'coze_api_key',
-  WORKFLOW_ID: 'workflow_id',
+  WORKFLOW_ID: 'coze_workflow_id',
 } as const;
 
 // 系统配置项
