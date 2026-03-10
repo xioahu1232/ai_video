@@ -72,13 +72,7 @@ export async function deductBalance(
             error: '余额不足',
           };
         }
-        // 返回错误而不是抛出
-        return {
-          success: false,
-          previousBalance: 0,
-          newBalance: 0,
-          error: fetchError.message || '获取余额失败',
-        };
+        throw fetchError;
       }
 
       const previousBalance = current.balance;
@@ -112,13 +106,7 @@ export async function deductBalance(
           await sleep(RETRY_DELAY * attempt);
           continue;
         }
-        // 返回错误而不是抛出
-        return {
-          success: false,
-          previousBalance,
-          newBalance: previousBalance,
-          error: updateError.message || '余额更新失败',
-        };
+        throw updateError;
       }
 
       // 4. 验证更新是否成功
@@ -149,15 +137,7 @@ export async function deductBalance(
       };
 
     } catch (error) {
-      // 处理各种类型的错误
-      if (error instanceof Error) {
-        lastError = error;
-      } else if (typeof error === 'object' && error !== null && 'message' in error) {
-        // Supabase 错误对象
-        lastError = new Error((error as { message: string }).message);
-      } else {
-        lastError = new Error(String(error));
-      }
+      lastError = error instanceof Error ? error : new Error(String(error));
       if (attempt < MAX_RETRIES) {
         await sleep(RETRY_DELAY * attempt);
       }
@@ -192,13 +172,7 @@ export async function addBalance(
         .single();
 
       if (fetchError) {
-        // 返回错误而不是抛出
-        return {
-          success: false,
-          previousBalance: 0,
-          newBalance: 0,
-          error: fetchError.message || '获取余额失败',
-        };
+        throw fetchError;
       }
 
       const previousBalance = current.balance;
@@ -220,13 +194,7 @@ export async function addBalance(
           await sleep(RETRY_DELAY * attempt);
           continue;
         }
-        // 返回错误而不是抛出
-        return {
-          success: false,
-          previousBalance,
-          newBalance: previousBalance,
-          error: updateError.message || '余额更新失败',
-        };
+        throw updateError;
       }
 
       return {
@@ -236,14 +204,7 @@ export async function addBalance(
       };
 
     } catch (error) {
-      // 处理各种类型的错误
-      if (error instanceof Error) {
-        lastError = error;
-      } else if (typeof error === 'object' && error !== null && 'message' in error) {
-        lastError = new Error((error as { message: string }).message);
-      } else {
-        lastError = new Error(String(error));
-      }
+      lastError = error instanceof Error ? error : new Error(String(error));
       if (attempt < MAX_RETRIES) {
         await sleep(RETRY_DELAY * attempt);
       }
