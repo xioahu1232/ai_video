@@ -146,6 +146,11 @@ export default function Home() {
   const [language, setLanguage] = useState('es');
   const [isSubmitting, setIsSubmitting] = useState(false);
   
+  // AI 建议卖点状态
+  const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [productType, setProductType] = useState<string>('');
+  
   // 任务列表状态
   const [tasks, setTasks] = useState<Task[]>([]);
   
@@ -736,7 +741,73 @@ export default function Home() {
       if (compressedFile.size < file.size) {
         console.log(`图片压缩: ${(file.size / 1024).toFixed(1)}KB → ${(compressedFile.size / 1024).toFixed(1)}KB (节省 ${Math.round((1 - compressedFile.size / file.size) * 100)}%)`);
       }
+
+      // 🤖 AI 分析图片，建议卖点
+      analyzeProductImage(previewUrl);
     }
+  };
+
+  // 🤖 AI 分析产品图片，生成卖点建议
+  const analyzeProductImage = async (imageUrl: string) => {
+    if (!imageUrl) return;
+
+    setIsAnalyzing(true);
+    setAiSuggestions([]);
+    setProductType('');
+
+    try {
+      console.log('[AI] Starting image analysis...');
+
+      // 将图片转换为 base64
+      const response = await fetch(imageUrl);
+      const blob = await response.blob();
+      
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+
+      // 调用分析 API
+      const apiResponse = await fetch('/api/analyze-image', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          imageBase64: base64,
+          language,
+        }),
+      });
+
+      const data = await apiResponse.json();
+
+      if (data.success) {
+        console.log('[AI] Analysis complete:', data.suggestions);
+        setAiSuggestions(data.suggestions || []);
+        setProductType(data.productType || '');
+      } else {
+        console.error('[AI] Analysis failed:', data.error);
+      }
+    } catch (error) {
+      console.error('[AI] Analysis error:', error);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  // 采纳 AI 建议的卖点
+  const adoptSuggestion = (suggestion: string) => {
+    // 如果已有内容，追加；否则直接替换
+    if (coreSellingPoint.trim()) {
+      setCoreSellingPoint(prev => prev + '，' + suggestion);
+    } else {
+      setCoreSellingPoint(suggestion);
+    }
+    // 清空建议列表
+    setAiSuggestions([]);
   };
 
   // 移除图片
@@ -1757,6 +1828,46 @@ ${'='.repeat(50)}`;
                   className="hidden"
                 />
               </div>
+
+              {/* AI 建议卖点 */}
+              {(isAnalyzing || aiSuggestions.length > 0) && (
+                <div className="ai-suggestions-card">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center">
+                      <Sparkles className="w-4 h-4 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-gray-800">AI 智能分析</p>
+                      {productType && (
+                        <p className="text-xs text-gray-500">识别为：{productType}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {isAnalyzing ? (
+                    <div className="flex items-center gap-3 py-4">
+                      <Loader2 className="w-5 h-5 text-purple-500 animate-spin" />
+                      <span className="text-sm text-gray-600">正在分析产品图片...</span>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <p className="text-xs text-gray-500 mb-2">点击下方建议可快速填入：</p>
+                      {aiSuggestions.map((suggestion, index) => (
+                        <button
+                          key={index}
+                          onClick={() => adoptSuggestion(suggestion)}
+                          className="w-full text-left px-4 py-3 rounded-xl bg-gradient-to-r from-purple-50 to-blue-50 hover:from-purple-100 hover:to-blue-100 border border-purple-100 hover:border-purple-200 transition-all group"
+                        >
+                          <div className="flex items-start gap-2">
+                            <Lightbulb className="w-4 h-4 text-purple-500 flex-shrink-0 mt-0.5 group-hover:scale-110 transition-transform" />
+                            <span className="text-sm text-gray-700 group-hover:text-purple-700">{suggestion}</span>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* 时长预设 */}
               <div className="space-y-2 sm:space-y-3 md:space-y-4">
