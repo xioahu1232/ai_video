@@ -225,10 +225,21 @@ export async function POST(request: NextRequest): Promise<NextResponse<TaskRespo
 
   } catch (error) {
     console.error('Generate Video Error:', error);
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack');
+    
+    // 如果是认证错误，返回401
+    if (error instanceof Error && error.message.includes('JWT')) {
+      return NextResponse.json(
+        { success: false, error: '登录已过期，请重新登录' },
+        { status: 401 }
+      );
+    }
+    
     return NextResponse.json(
       { 
         success: false, 
-        error: error instanceof Error ? error.message : '服务器内部错误' 
+        error: error instanceof Error ? error.message : '服务器内部错误',
+        details: process.env.NODE_ENV === 'development' ? String(error) : undefined
       },
       { status: 500 }
     );

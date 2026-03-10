@@ -473,6 +473,16 @@ export default function Home() {
                   return;
                 }
                 
+                // 如果最终仍然超标，尝试缩小尺寸
+                if (blob.size > SAFE_UPLOAD_SIZE && newWidth > 640) {
+                  console.log(`[压缩] 质量已最低仍超标，缩小尺寸: ${newWidth}px→${Math.round(newWidth * 0.8)}px`);
+                  canvas.width = Math.round(newWidth * 0.8);
+                  canvas.height = Math.round(newHeight * 0.8);
+                  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                  compressWithQuality(0.5, attempt + 1);
+                  return;
+                }
+                
                 // 如果压缩后更大，返回原文件
                 if (blob.size >= file.size) {
                   console.log('[压缩] 压缩后更大，保留原文件');
