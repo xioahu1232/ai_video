@@ -8,7 +8,7 @@ import {
   Edit3, X, Clock, Video, Sparkles, Globe,
   Zap, Brain, Eye, Lightbulb, PenTool, FileText,
   LogIn, LogOut, User, Gift, Coins, Shield, Download,
-  ExternalLink
+  ExternalLink, WifiOff
 } from 'lucide-react';
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
@@ -186,17 +186,50 @@ export default function Home() {
         if (prefs.language) setLanguage(prefs.language);
         if (prefs.speechDuration) setSpeechDuration(prefs.speechDuration);
         if (prefs.videoDuration) setVideoDuration(prefs.videoDuration);
+        // 恢复核心卖点（如果有）
+        if (prefs.coreSellingPoint) setCoreSellingPoint(prefs.coreSellingPoint);
+        // 恢复图片预览（如果有）
+        if (prefs.imagePreview) setImagePreview(prefs.imagePreview);
       } catch (e) {
         console.error('Failed to load user preferences:', e);
       }
     }
   }, []);
   
-  // 表单记忆功能：保存用户偏好
+  // 表单记忆功能：保存用户偏好（包括核心卖点）
   const saveUserPrefs = useCallback(() => {
-    const prefs = { language, speechDuration, videoDuration };
+    const prefs = { 
+      language, 
+      speechDuration, 
+      videoDuration,
+      coreSellingPoint, // 保存核心卖点
+      imagePreview, // 保存图片预览（base64）
+    };
     localStorage.setItem('user_form_prefs', JSON.stringify(prefs));
-  }, [language, speechDuration, videoDuration]);
+  }, [language, speechDuration, videoDuration, coreSellingPoint, imagePreview]);
+  
+  // 自动保存核心卖点（防抖）
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (coreSellingPoint.trim()) {
+        const savedPrefs = localStorage.getItem('user_form_prefs');
+        const prefs = savedPrefs ? JSON.parse(savedPrefs) : {};
+        prefs.coreSellingPoint = coreSellingPoint;
+        localStorage.setItem('user_form_prefs', JSON.stringify(prefs));
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [coreSellingPoint]);
+  
+  // 自动保存图片预览
+  useEffect(() => {
+    if (imagePreview) {
+      const savedPrefs = localStorage.getItem('user_form_prefs');
+      const prefs = savedPrefs ? JSON.parse(savedPrefs) : {};
+      prefs.imagePreview = imagePreview;
+      localStorage.setItem('user_form_prefs', JSON.stringify(prefs));
+    }
+  }, [imagePreview]);
 
   // 从数据库加载任务
   const loadTasksFromDB = useCallback(async () => {
@@ -316,6 +349,45 @@ export default function Home() {
   // 初始化：加载任务
   useEffect(() => {
     setMounted(true);
+  }, []);
+
+  // 【刷新警告】处理中刷新/关闭页面时警告用户
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isSubmitting) {
+        e.preventDefault();
+        e.returnValue = '任务正在处理中，离开页面会导致任务失败。确定要离开吗？';
+        return e.returnValue;
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isSubmitting]);
+
+  // 【网络状态监测】检测网络状态变化
+  const [isOnline, setIsOnline] = useState(true);
+  const [showOfflineToast, setShowOfflineToast] = useState(false);
+
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true);
+      setShowOfflineToast(false);
+    };
+    const handleOffline = () => {
+      setIsOnline(false);
+      setShowOfflineToast(true);
+    };
+
+    // 初始检测
+    setIsOnline(navigator.onLine);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
   }, []);
 
   // 登录状态变化时加载任务和余额
@@ -941,6 +1013,12 @@ export default function Home() {
       return;
     }
 
+    // 检查网络状态
+    if (!navigator.onLine) {
+      alert('网络已断开，请检查网络连接后重试');
+      return;
+    }
+
     // 检查是否登录
     if (!user || !token) {
       setShowAuthModal(true);
@@ -1008,6 +1086,16 @@ export default function Home() {
     setProductImage(null);
     setImagePreview(null);
     // 不重置 speechDuration、videoDuration、language，保留用户偏好
+    
+    // 清除 localStorage 中保存的核心卖点和图片预览
+    const savedPrefs = localStorage.getItem('user_form_prefs');
+    if (savedPrefs) {
+      const prefs = JSON.parse(savedPrefs);
+      delete prefs.coreSellingPoint;
+      delete prefs.imagePreview;
+      localStorage.setItem('user_form_prefs', JSON.stringify(prefs));
+    }
+    
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -1321,6 +1409,16 @@ ${'='.repeat(50)}`;
     <div className="min-h-screen page-bg relative overflow-hidden">
       {/* 装饰波浪 */}
       <div className="wave-decoration" />
+      
+      {/* 离线提示 */}
+      {showOfflineToast && (
+        <div className="fixed top-0 left-0 right-0 z-[100] bg-red-500 text-white text-center py-3 px-4 text-sm font-medium animate-fadeInUp">
+          <div className="flex items-center justify-center gap-2">
+            <WifiOff className="w-4 h-4" />
+            <span>网络已断开，请检查网络连接</span>
+          </div>
+        </div>
+      )}
       
       {/* 白色顶部导航栏 */}
       <header className="bg-white shadow-sm relative z-10">
