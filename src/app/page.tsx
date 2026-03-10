@@ -20,7 +20,6 @@ import ContactButton from '@/components/ContactButton';
 import Footer from '@/components/Footer';
 import { SmartBlessing } from '@/components/BlessingToast';
 import { TourGuide, TourHelpButton } from '@/components/TourGuide';
-import SmartSEO from '@/components/SmartSEO';
 
 // 语言选项
 const LANGUAGES = [
@@ -1810,15 +1809,6 @@ ${'='.repeat(50)}`;
                               </>
                             )}
                           </button>
-                          
-                          {/* AI SEO优化按钮 */}
-                          <SmartSEO
-                            prompt={task.sora || task.seedance || ''}
-                            sellingPoint={task.coreSellingPoint}
-                            language={task.language}
-                            token={token || undefined}
-                            onBalanceUpdate={setBalance}
-                          />
                           
                           {/* 视频生成快捷链接 */}
                           <div className="flex items-center justify-center gap-4 pt-2">
