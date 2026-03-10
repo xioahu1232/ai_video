@@ -8,6 +8,12 @@ interface ConfigItem {
   updated_at: string;
 }
 
+// 预定义的配置项
+const CONFIG_DEFINITIONS = [
+  { key: 'coze_api_key', description: 'Coze API 密钥，用于调用工作流' },
+  { key: 'coze_workflow_id', description: 'Coze 工作流 ID' },
+];
+
 // 获取所有系统配置
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
@@ -37,27 +43,38 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: '无权限访问' }, { status: 403 });
     }
 
-    // 获取所有配置
-    const { data: configs, error } = await supabase
+    // 获取已有配置
+    const { data: existingConfigs, error } = await supabase
       .from('system_config')
-      .select('*')
-      .order('key');
+      .select('*');
 
     if (error) {
       console.error('Failed to fetch configs:', error);
       return NextResponse.json({ error: '获取配置失败' }, { status: 500 });
     }
 
-    // 对敏感信息进行脱敏处理
-    const sanitizedConfigs = (configs as ConfigItem[])?.map(config => ({
-      ...config,
-      value: config.key === 'coze_api_key' && config.value 
-        ? `${config.value.substring(0, 10)}...${config.value.substring(config.value.length - 4)}`
-        : config.value,
-      hasValue: !!config.value,
-    }));
+    // 合并预定义配置和已有配置
+    const configMap = new Map<string, ConfigItem>();
+    (existingConfigs as ConfigItem[])?.forEach(config => {
+      configMap.set(config.key, config);
+    });
 
-    return NextResponse.json({ configs: sanitizedConfigs });
+    const configs = CONFIG_DEFINITIONS.map(def => {
+      const existing = configMap.get(def.key);
+      return {
+        key: def.key,
+        description: def.description,
+        value: existing?.value 
+          ? (def.key === 'coze_api_key' 
+            ? `${existing.value.substring(0, 10)}...${existing.value.substring(existing.value.length - 4)}`
+            : existing.value)
+          : '',
+        hasValue: !!existing?.value,
+        updated_at: existing?.updated_at || '',
+      };
+    });
+
+    return NextResponse.json({ configs });
 
   } catch (error) {
     console.error('Get config error:', error);
